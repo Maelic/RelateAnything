@@ -1,0 +1,94 @@
+{
+ "_comment": [
+  "Single source of truth for the release family. Every release script (build_release.py,",
+  "make_model_cards.py, hf_upload.py, upload_datasets.py) iterates this list.",
+  "FINAL epoch ships (checkpoint_last, EMA weights; calibration.json is fitted on it).",
+  "Released family = HICO-DET 0.05 + source-aware negative masking recipe on the full pack.",
+  "The *-zeroshot entries are the same recipe with no HICO-DET in the mixture: the paper's",
+  "zero-shot rows. run_dir names the training run under $RA_RUNS/train on the training machine;",
+  "hf_repo is where the weights are published."
+ ],
+ "models": [
+  {
+   "model_id": "relsgg-vits16",
+   "run_dir": "runs/train/full_v42cfg_wv2-512_lora12_mixvghico0.05_sig0.25_btd0.3_negmask_def4h8v3n2_vits16_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5_hicov2",
+   "family": "dinov3_vit",
+   "backbone_model": "facebook/dinov3-vits16-pretrain-lvd1689m",
+   "status": "final",
+   "notes": "official ViT-S/16; CPU/laptop pick (backbone dominates CPU time)",
+   "gate": {
+    "date": "2026-08-27",
+    "gates": "G1 OVS-F1>=zeroshot-0.003, G2 OVS-mR same, G3 HICO F1@50>=0.30, G4 A6>=0.349",
+    "result": "PASS 4/4",
+    "ovs_f1": 0.3932,
+    "ovs_mr": 0.3496
+   },
+   "checkpoint": "checkpoint_last.pth",
+   "hf_repo": "maelic/relsgg-vits16"
+  },
+  {
+   "model_id": "relsgg-vits16plus",
+   "run_dir": "runs/train/full_v42cfg_wv2-512_lora12_mixvghico0.05_sig0.25_btd0.3_negmask_def4h8v3n2_vits16plus_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5_hicov2",
+   "family": "dinov3_vit",
+   "backbone_model": "facebook/dinov3-vits16plus-pretrain-lvd1689m",
+   "status": "final",
+   "notes": "official ViT-S/16+; the recommended default (OVS = canonical ViT-B at half the params)",
+   "gate": {
+    "date": "2026-08-27",
+    "gates": "G1 OVS-F1>=zeroshot-0.003, G2 OVS-mR same, G3 HICO F1@50>=0.30, G4 A6>=0.349",
+    "result": "PASS 4/4",
+    "ovs_f1": 0.411,
+    "ovs_mr": 0.3685
+   },
+   "checkpoint": "checkpoint_last.pth",
+   "hf_repo": "maelic/relsgg-vits16plus"
+  },
+  {
+   "model_id": "relsgg-vitb16",
+   "run_dir": "runs/train/full_v42cfg_wv2-512_lora12_mixvghico0.05_sig0.25_btd0.3_negmask_def4h8v3n2_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5_hicov2",
+   "family": "dinov3_vit",
+   "backbone_model": "facebook/dinov3-vitb16-pretrain-lvd1689m",
+   "status": "final",
+   "notes": "official ViT-B/16; same bs1 GPU latency as S (dispatch-bound), 2.2x params",
+   "gate": {
+    "date": "2026-08-27",
+    "gates": "G1 OVS-F1>=zeroshot-0.003, G2 OVS-mR same, G3 HICO F1@50>=0.30, G4 A6>=0.349",
+    "result": "PASS 4/4",
+    "ovs_f1": 0.4174,
+    "ovs_mr": 0.3737
+   },
+   "checkpoint": "checkpoint_last.pth",
+   "hf_repo": "maelic/relsgg-vitb16"
+  },
+  {
+   "model_id": "relsgg-vits16-zeroshot",
+   "run_dir": "runs/train/full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_vits16_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5",
+   "family": "dinov3_vit",
+   "backbone_model": "facebook/dinov3-vits16-pretrain-lvd1689m",
+   "status": "final",
+   "notes": "canonical zero-shot recipe (paper headline row); OVS-F1 0.3756",
+   "hf_repo": "maelic/relsgg-vits16-zeroshot",
+   "checkpoint": "checkpoint_last.pth"
+  },
+  {
+   "model_id": "relsgg-vits16plus-zeroshot",
+   "run_dir": "runs/train/full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_vits16plus_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5",
+   "family": "dinov3_vit",
+   "backbone_model": "facebook/dinov3-vits16plus-pretrain-lvd1689m",
+   "status": "final",
+   "notes": "canonical zero-shot recipe; OVS-F1 0.3860; source of the 08-21 OpenVINO laptop bundle",
+   "hf_repo": "maelic/relsgg-vits16plus-zeroshot",
+   "checkpoint": "checkpoint_last.pth"
+  },
+  {
+   "model_id": "relsgg-vitb16-zeroshot",
+   "run_dir": "runs/train/full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5",
+   "family": "dinov3_vit",
+   "backbone_model": "facebook/dinov3-vitb16-pretrain-lvd1689m",
+   "status": "final",
+   "notes": "canonical zero-shot recipe; OVS-F1 0.3948",
+   "hf_repo": "maelic/relsgg-vitb16-zeroshot",
+   "checkpoint": "checkpoint_last.pth"
+  }
+ ]
+}

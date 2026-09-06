@@ -1,0 +1,24 @@
+{
+  "a": 0.5661,
+  "b": -1.9795,
+  "score": "sigmoid(a*(pred_logit+pair_logit)+b)",
+  "fit_on": "runs/packed/haystack test, 23,216 ADJUDICATED cells (2,858 pos / 20,358 explicit neg), 2-fold CV reported",
+  "means": "P(a human adjudicator calls this relation true). This is the deployment question and the analog of how a detector is calibrated against exhaustively-labelled COCO negatives.",
+  "ece_raw": 0.1587,
+  "ece_out_of_fold": [
+    0.0115,
+    0.0135
+  ],
+  "auc_out_of_fold": [
+    0.9074,
+    0.9045
+  ],
+  "provenance": {
+    "checkpoint": "runs/train/full_v42cfg_wv2-512_lora12_mixvghico0.05_sig0.25_btd0.3_negmask_def4h8v3n2_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5_hicov2/checkpoint_last.pth",
+    "weights": "ema",
+    "eval_budget": 992,
+    "produced_by": "deploy/fit_calibration.py",
+    "git": "e9ea42a",
+    "utc": "2026-08-27T03:20:18+00:00"
+  }
+}

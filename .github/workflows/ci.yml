@@ -1,0 +1,37 @@
+# CPU-only smoke: install path + imports + evaluator math + edge decode.
+# Deliberately NO gated weights, NO HF network, NO GPU — the point is that a
+# fresh clone installs and the release-critical math holds. Model-forward
+# parity with real weights stays a local check; tests/test_soft_parity.py covers the loss algebra.
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      # requires-python is >=3.12 (numpy 2.5); the released checkpoints were
+      # trained and verified on 3.13. Both ends of the range run.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      # CPU wheels only — the CUDA wheel is ~2.5 GB and useless here. The
+      # versions are PINNED to the same constraints pyproject declares: an
+      # unpinned install here resolves to whatever is latest on the CPU index,
+      # and the `pip install -e .` below then silently re-resolves torch from
+      # PyPI (i.e. pulls the CUDA wheel this step exists to avoid).
+      - name: Install torch (CPU)
+        run: pip install "torch~=2.13" "torchvision~=0.28" --index-url https://download.pytorch.org/whl/cpu
+      - name: Install package
+        run: pip install -e ".[dev]"
+      - name: Run tests
+        run: pytest tests/ -q

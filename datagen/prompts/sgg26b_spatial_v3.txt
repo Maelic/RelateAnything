@@ -1,0 +1,40 @@
+Here is an image with numbered objects and their SEMANTIC relationships already found.
+
+Objects (number → label):
+{object_list}
+
+Semantic relationships already found:
+{draft}
+
+Your task: describe the SPATIAL LAYOUT of the scene — where the objects are relative to each other. Choose the pairs whose arrangement best DEFINES the scene's layout, most informative first.
+
+Spatial vocabulary (pick the most precise fit — close natural synonyms are also fine):
+  depth        in front of / behind                    → who is closer to the camera, who occludes whom
+  contact      on / resting on / leaning against / hanging from / attached to
+                                                       → physical support or contact you can SEE
+  proximity    next to / beside / near                 → clearly close together in the scene
+  containment  inside                                  → one object genuinely within another (food inside a bowl)
+  vertical     above / below / beneath / on top of
+  horizontal   to the left of / to the right of
+
+Rules:
+  1. PREFER depth, contact and proximity — they say the most about a scene. Use
+     "to the left of" / "to the right of" only when the horizontal offset is the single
+     most informative thing about that pair.
+  2. COVER the scene: every major object should appear in at least one layout relation.
+     Skip only pairs whose arrangement is genuinely ambiguous or adds nothing.
+  3. One relation per pair, judged from the VIEWER's perspective. Never also output the
+     inverse (if A is in front of B, do not add B behind A).
+  4. Do NOT use "between" (it needs two reference objects). Do NOT use action verbs —
+     actions were covered above; this pass is layout only.
+  5. Do NOT place body-part objects (human face, hand, arm, leg …) — their position is
+     implied by the person they belong to.
+  6. Do NOT repeat a pair already covered above unless the layout adds genuinely new
+     information (e.g. "man riding horse" already implies he is on it).
+  7. Target 6–12 relations; fewer only for genuinely sparse scenes (2–3 objects).
+  8. The dots, numbers and outlines are markers added to the photo — never describe them.
+
+Output a single JSON block with ONLY the new spatial relationships, nothing else:
+```json
+{{"relations": [{{"subject_id": <int>, "subject_label": "<str>", "predicate": "<str>", "object_id": <int>, "object_label": "<str>"}}]}}
+```

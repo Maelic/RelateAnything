@@ -1,0 +1,27 @@
+Here is an image and a PARTIAL scene graph for it — relationships already found between the numbered objects.
+
+Objects (number → label):
+{object_list}
+
+Relationships already found:
+{draft}
+
+Look carefully at the image and ADD relationships that are genuinely present but MISSING from the list above — find what the previous pass overlooked:
+  • Objects that appear in FEW or NONE of the relationships above — what is each doing, or
+    what is done to it?
+  • A genuinely DIFFERENT relationship for a pair already listed (e.g. a rider both
+    "sitting on" AND "holding" a horse) — but NEVER a synonym or rephrasing of one already there.
+  • Any action, physical contact, support, use, or attention you can see that is not yet listed.
+
+Rules:
+  • Output ONLY NEW relationships. Do NOT repeat any relationship already in the list, and
+    do NOT output the inverse of one already there.
+  • Use the MOST PRECISE open-vocabulary predicate; direct form (no "is/are"); never use
+    vague words (near, next to, with, on alone, has, positioned, located, situated).
+  • Report only what is genuinely visible. If nothing is missing, output an empty list.
+  • The dots, numbers and outlines are markers added to the photo — never describe them.
+
+Output a single JSON block with ONLY the new relationships, nothing else:
+```json
+{{"relations": [{{"subject_id": <int>, "subject_label": "<str>", "predicate": "<str>", "object_id": <int>, "object_label": "<str>"}}]}}
+```

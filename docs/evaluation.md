@@ -1,0 +1,154 @@
+# Evaluation
+
+## The argument
+
+Scene-graph benchmarks share their predicate vocabulary with the corpora models
+train on. VG150's test split uses the same 50 predicate strings as its training
+split, so a VG150-trained model faces **no vocabulary novelty at all**. The field
+nonetheless ranks open-vocabulary methods on exactly that number.
+
+We quantify this per (corpus, benchmark) cell as **annotation-style overlap**:
+the fraction of a training corpus's relation *instances* whose predicate string
+appears verbatim in the benchmark's vocabulary. It involves zero image overlap,
+so it is complementary to a leakage check, not a substitute for one.
+
+`python benchmark/annotation_overlap.py`
+
+| training corpus | distinct predicates | vg150/test | psg/test | indoorvg/test | haystack |
+|---|---|---|---|---|---|
+| OvSGTR — vg150/train | **50** | **100.0 %** | 57.3 % | **95.7 %** | 57.3 % |
+| ours — megasg_clean | 9,848 | 49.1 % | 35.3 % | 45.4 % | 35.3 % |
+| ours — vg_raw | 17,352 | 74.6 % | 47.9 % | 71.4 % | 47.9 % |
+
+**No existing benchmark is neutral.** And the correspondence is empirical, not
+theoretical: micro R@50 tracks the overlap gap and nothing else. Against
+OvSGTR we lose on IndoorVG (50-point overlap gap in their favour) and win on
+PSG (22-point gap) — while **every tail metric goes our way on both**.
+
+## OV-SGG: six axes
+
+The protocol, in full, is [`benchmark/SPEC.md`](../benchmark/SPEC.md).
+Six axes, chosen so that no single one can be won by prior matching.
+
+| axis | question | protocol | headline |
+|---|---|---|---|
+| **A1** Transfer | generalises across annotation styles? | GT boxes, closed vocab, graph-constrained, ≥3 sources of differing overlap | wR@50 + bucket split |
+| **A2** Precision | hallucinates rare predicates? | Haystack's explicit negatives | fAP, P-AUC |
+| **A3** Open-vocab | *means* the right relation? | full training vocabulary deployed, synonym matcher at calibrated τ | open-vocab mR@50 |
+| **A4** Deployment | survives a real detector? | SGDet on a **shared** open-vocab detector | wR@50 vs pair-recall ceiling |
+| **A5** Graph quality | is the graph *as a whole* good? | LLM oracle, pairwise, **no GT in the prompt** | win rate, gated on controls |
+| **A6** Spatial | understands space, or co-occurrence? | SpatialSense balanced adversarial true/false | AUC (chance 0.5) |
+
+Each axis is load-bearing, and each is individually gameable:
+
+- **A1 alone** is won by corpus match.
+- **A2 alone** is invariant to uniform score depression — fAP ranks *within* a
+  predicate, so a model that knows a relation but never says it still scores well.
+- **A3 alone** rewards head collapse: under a graph constraint the argmax of a
+  collapsed model lands on `on`/`in`/`has`, which sit in nearly every accepted
+  synonym set.
+- **A4 alone** is bounded by the detector, not the relation model.
+- **A6** is the only axis where a wrong answer is *provably* wrong — annotators
+  wrote triples a model would get wrong, and the split is exactly balanced.
+
+A6 earned its place empirically: **every recipe change from v41 to v43 moved A1
+by +40–47 % and A6 by nothing.** Recall-style gains are vocabulary and ranking
+gains. Without A6 the suite could not tell those apart from spatial
+understanding, and we would have claimed the latter.
+
+The composite (`benchmark/overall_score.py`) spans A1, A2, A4 and A6.
+It is chance-corrected and combined as a harmonic mean, so a weak axis cannot be
+averaged away. A3 and A5 are measured, reported and not summed: A3 cannot be run
+on the baseline, and A5 is a pairwise preference whose two values sum to 1.
+**Never select a model on the composite unless the run targets its weakest
+axis** — otherwise you are optimizing the aggregate rather than the deficiency.
+
+## Running an evaluation
+
+The packs come from the `maelic/OV-SGG-Bench` dataset repository and the
+checkpoint from `maelic/relsgg-<model>` (see
+[installation](installation.md#get-the-weights)); images are read from
+`RA_DATASETS`.
+
+```bash
+python benchmark/eval_zeroshot.py \
+  --checkpoint <snapshot>/model.pth \
+  --data_roots runs/packed/psg runs/packed/vg150 runs/packed/indoorvg \
+  --split test \
+  --graph_constraint \
+  --out_dir runs/eval/<name>
+```
+
+Open-vocabulary mode — the model is never told the benchmark's label set:
+
+```bash
+python benchmark/eval_zeroshot.py ... --open_vocab --tau_eval 0.72
+```
+
+Other entry points:
+
+| script | what |
+|---|---|
+| `benchmark/eval_zeroshot.py` | the main closed / open-vocabulary protocol (A1, A3) |
+| `benchmark/detect_boxes.py`, `benchmark/eval_zeroshot_detbox.py`, `benchmark/eval_detboxes.py` | SGDet with a real detector (A4) |
+| `benchmark/detector_recall_ceiling.py` | the pair-recall ceiling a detector imposes (A4) |
+| `benchmark/eval_spatialsense.py` | adversarial spatial probe (A6) |
+| `benchmark/eval_haystack.py`, `benchmark/eval_hico_map.py` | federated precision on explicit negatives (A2) |
+| `benchmark/eval_decomposed.py` | the two-graph type-stratified protocol |
+| `benchmark/llm_judge.py`, `benchmark/relation_precision.py` | GT-free graph quality, whole-graph and per-relation (A5) |
+| `benchmark/aggregate.py`, `benchmark/overall_score.py` | the benchmark table and the OVS composite |
+| `benchmark/release_gate.py` | the pre-registered ship/no-ship gate |
+| `benchmark/ovsgtr/` | the OvSGTR baseline adapter (runs in its own venv, scored by our evaluator) |
+
+## `--graph_constraint` is not optional
+
+Under the graph constraint each pair may contribute **one** predicate to the
+ranked list — the standard SGG protocol. Without it a pair contributes its whole
+predicate column, and R@K inflates by **12–19 points**.
+
+Every number in this repository's model cards, tables and README is
+graph-constrained. Ours were not always: an earlier round of results was
+unconstrained and therefore inflated, and comparisons against published methods
+were invalid until it was fixed. If you are comparing against a baseline,
+confirm which one they used.
+
+## Metrics
+
+- **R@K** — micro recall. Tracks vocabulary overlap; dominated by head predicates.
+- **mR@K** — macro (per-predicate mean) recall. The tail metric.
+- **F1@K** — harmonic mean of R@K and mR@K. A single number that neither head
+  collapse nor tail-only tuning can win. Computable retroactively from existing
+  per-class dumps (`benchmark/compute_f1.py`).
+- **SoftR / SoftmR / SoftF1** — the open-vocabulary versions, where a prediction
+  counts if it matches a ground-truth predicate through a synonym matcher at a
+  calibrated cosine threshold.
+- **fAP** — federated AP over labelled cells only, LVIS-style: absence is not a
+  negative unless it was adjudicated.
+
+## Detector boxes
+
+Ground-truth boxes are a laboratory condition. With a real detector, retention
+is **53–63 % on PSG and 29–32 % on IndoorVG** of the GT-box number.
+
+The important finding is that this does **not** flatten the family: model
+improvements from v35 to v43 survive detector boxes at +42–105 %. But retention
+itself slid (91 % → 78 %) as models improved, so a gain measured on GT boxes
+overstates the deployed gain. Report both.
+
+The dominant term is **detector recall**, not box noise — jittering GT boxes
+does not reproduce the drop. And the detector operating point is worth several
+times the spread between published methods on the open-vocabulary leaderboard,
+so an unreported one makes a comparison meaningless.
+
+## Comparing against other methods
+
+- **Use the same evaluator.** `benchmark/react_same_eval_table.py` and
+  the OvSGTR harness under `benchmark/ovsgtr/` exist so baselines run through
+  our scorer rather than through their reported numbers.
+- **Check the matcher.** A matcher with no assignment constraint is worth as
+  much as a backbone upgrade. Our OvSGTR reproduction gap closed to 0.35 points
+  once duplicate-box credit was replaced by one-to-one matching.
+- **Check the graph constraint** on both sides.
+- **Report the detector operating point.**
+
+Then read [pitfalls](pitfalls.md) before writing the number down.

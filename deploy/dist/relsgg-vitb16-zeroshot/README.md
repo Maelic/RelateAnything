@@ -1,0 +1,155 @@
+---
+license: other
+license_name: dinov3-license
+license_link: https://ai.meta.com/resources/models-and-libraries/dinov3-license/
+tags:
+  - scene-graph-generation
+  - open-vocabulary
+  - visual-relationship-detection
+  - onnx
+library_name: relsgg
+model-index:
+  - name: relsgg-vitb16-zeroshot
+    results:
+      - task:
+          type: scene-graph-generation
+        dataset:
+          type: vg150
+          name: Visual Genome 150 (test)
+        metrics:
+          - type: F1@50
+            value: 0.3748
+            name: 'F1@50 (vg150 test, graph-constrained)'
+---
+# relsgg-vitb16-zeroshot
+
+Open-vocabulary relation prediction from any boxes or masks. Give the model an
+image and regions from any source (a detector, a segmenter, ground truth); it
+returns ranked relations over a predicate vocabulary supplied at inference,
+and optionally two graphs (spatial + semantic) from the same forward pass.
+Object class labels are never an input.
+
+Part of **RelateAnything** ([code](https://github.com/Maelic/RelateAnything) · paper: *RelateAnything: Real-Time
+Open-Vocabulary Relation Prediction From Any Inputs*). Trained on
+[RA-4M](https://huggingface.co/datasets/maelic/RA-4M); evaluated with
+[OV-SGG-Bench](https://huggingface.co/datasets/maelic/OV-SGG-Bench).
+
+## Use it
+
+```bash
+pip install git+https://github.com/Maelic/RelateAnything
+```
+
+```python
+from huggingface_hub import snapshot_download
+from relsgg.api import RelateAnything
+
+d = snapshot_download("maelic/relsgg-vitb16-zeroshot")
+model = RelateAnything.from_checkpoint(
+    f"{d}/model.pth", predicates=["holding", "riding", "next to"], device="cuda")
+triplets = model.predict(image, boxes_xyxy, topk=20)      # image: PIL / ndarray, boxes: [N, 4] pixels
+model.set_vocabulary(["about to collide with", "reflected in"])   # any strings, no retraining
+graphs = model.predict(image, boxes_xyxy, decompose=True)          # {"spatial": [...], "semantic": [...]}
+```
+
+`model.pth` embeds the backbone config, so nothing else is downloaded: no
+gated DINOv3 login is needed to run it. `text_student.pt` (the distilled
+predicate text encoder, with its CLIP tokenizer files) sits next to it and is
+found automatically.
+
+Files: `model.pth` (torch, EMA weights), `text_student.pt`, `README.md`.
+
+**Every number below is generated from measured eval artifacts
+(`release/make_model_cards.py`); none is hand-typed.**
+
+## Closed-vocabulary transfer (reparameterized, TEST, graph-constrained)
+
+| source | R@50 | mR@50 | F1@50 |
+|---|---|---|---|
+| vg150 | 0.527 | 0.291 | 0.375 |
+| psg | 0.403 | 0.300 | 0.344 |
+| indoorvg | 0.526 | 0.312 | 0.391 |
+| hicodet | 0.355 | 0.140 | 0.200 |
+
+## Open-vocabulary, NO reparameterization (all 19,103 predicates deployed)
+
+Synonym-matched at the calibrated tau (see provenance). This is the honest
+"the model never saw your label set" protocol.
+
+| source | SoftR@50 | SoftmR@50 | SoftF1@50 |
+|---|---|---|---|
+| vg150 | 0.558 | 0.349 | 0.429 |
+| psg | 0.318 | 0.295 | 0.306 |
+| indoorvg | 0.533 | 0.359 | 0.429 |
+
+## Spatial reasoning (SpatialSense, adversarial true/false; chance = 0.5)
+
+Macro AUC over predicates: **0.6991**
+
+## Two-graph decomposition (spatial / semantic, type-stratified protocol)
+
+| source | spatial R@50 / mR@50 | semantic R@50 / mR@50 |
+|---|---|---|
+| vg150 | 0.634 / 0.321 | 0.493 / 0.314 |
+| psg | 0.607 / 0.542 | 0.413 / 0.318 |
+| indoorvg | 0.617 / 0.369 | 0.425 / 0.314 |
+
+## Deployment thresholds (per-predicate best-F1, measured on THIS checkpoint)
+
+Score scales are checkpoint-specific (the output head is rank-trained), so
+these thresholds transfer to no other model. Regime: gt
+boxes, pair_weight=0, 5000
+val images. Top predicates by support:
+
+| predicate | threshold | best F1 | GT support |
+|---|---|---|---|
+| behind | 0.890 | 0.335 | 3600 |
+| in front of | 0.860 | 0.349 | 3574 |
+| wearing | 0.975 | 0.689 | 3417 |
+| to the right of | 0.865 | 0.386 | 3196 |
+| to the left of | 0.870 | 0.373 | 3101 |
+| resting on | 0.970 | 0.589 | 2167 |
+| on | 0.925 | 0.462 | 2042 |
+| holding | 0.975 | 0.464 | 1552 |
+| beside | 0.975 | 0.200 | 1403 |
+| next to | 0.940 | 0.245 | 1353 |
+| above | 0.875 | 0.332 | 1282 |
+| below | 0.865 | 0.316 | 1241 |
+| part of | 0.895 | 0.489 | 1134 |
+| supporting | 0.985 | 0.198 | 947 |
+| looking at | 0.965 | 0.267 | 873 |
+
+## Provenance
+
+| | |
+|---|---|
+| run | `full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5` |
+| git | `06e7afdf0a8b0d9d5086879d6b6abd3848a0b5ab` |
+| backbone | dinov3 (facebook/dinov3-vitb16-pretrain-lvd1689m) |
+| LoRA merged | False (pre-merge rank None) |
+| text student | `runs/packed/text_student_v2_512/student.pt` sha256 `e0317830b68ea51e...` |
+| ONNX opset / parity | 17 / max|Δ| 1.43e-05 |
+| torch / transformers | 2.13.0+cu130 / 5.14.1 |
+| training mixture | megasg_clean + vg_raw, per-image 0.919/0.081 |
+
+## License and data notices
+
+Weights are a derivative of Meta **DINOv3** pretrained weights and are
+distributed under the DINOv3 license. Training annotations (RA-4M) were
+generated by `gemma-4-26B` and carry the Gemma Terms of Use notice; images
+are referenced by identifier only (Objects365/COCO/OpenImages). The `vg_raw`
+subset derives from Visual Genome (CC BY 4.0). Predicate synonyms are
+deliberately never collapsed — surface-form diversity is part of the label
+space. Full notices: [THIRD_PARTY_NOTICES.md](https://github.com/Maelic/RelateAnything/blob/main/THIRD_PARTY_NOTICES.md)
+in the code repository.
+
+## Citation
+
+```bibtex
+@article{neau2026relateanything,
+  title   = {RelateAnything: Real-Time Open-Vocabulary Relation Prediction From Any Inputs},
+  author  = {Neau, Ma"elic},
+  journal = {arXiv preprint},
+  year    = {2026}
+}
+```

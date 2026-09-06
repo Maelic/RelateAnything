@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use RelateAnything, RA-4M or OV-SGG-Bench, please cite the paper below."
+title: "RelateAnything: Real-Time Open-Vocabulary Relation Prediction From Any Inputs"
+type: software
+authors:
+  - family-names: Neau
+    given-names: Maëlic
+repository-code: "https://github.com/Maelic/RelateAnything"
+url: "https://maelic.github.io/Relate-Anything-Project"
+license: Apache-2.0
+keywords:
+  - scene graph generation
+  - visual relationship detection
+  - open vocabulary
+  - real-time
+preferred-citation:
+  type: article
+  title: "RelateAnything: Real-Time Open-Vocabulary Relation Prediction From Any Inputs"
+  authors:
+    - family-names: Neau
+      given-names: Maëlic
+  journal: "arXiv preprint"
+  year: 2026

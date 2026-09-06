@@ -1,0 +1,11 @@
+# Laptop-side dependencies for the RelateAnything ONNX demo.
+# No torch, no ultralytics, no transformers — ~60 MB of wheels total.
+numpy>=1.24
+opencv-python>=4.8
+onnxruntime>=1.17
+
+# GPU alternatives — install ONE of these INSTEAD of onnxruntime, then run with
+#   --providers CUDAExecutionProvider CPUExecutionProvider
+# onnxruntime-gpu>=1.17        # NVIDIA (CUDA)
+# onnxruntime-directml>=1.17   # Windows, any DirectX 12 GPU (incl. integrated)
+# onnxruntime-silicon           # Apple Silicon (CoreML)

@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "relsgg"
+version = "1.0.0"
+description = "RelateAnything: real-time open-vocabulary relation prediction from any boxes or masks"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12"
+# Pinned as compatible releases (~=) against the environment every released
+# checkpoint was trained and verified with (Python 3.13; numpy 2.5 needs 3.12+).
+# Loosening a pin is fine for experimentation; the pins document what is KNOWN
+# to reproduce.
+dependencies = [
+    "torch~=2.13",
+    "torchvision~=0.28",
+    "transformers~=5.14",   # >=5.14: ships DINOv3ConvNextModel (ConvNeXt family)
+    "peft~=0.19",
+    "numpy~=2.5",
+    "Pillow~=12.3",
+    "opencv-python-headless~=5.0",
+    "scipy~=1.18",
+    "safetensors~=0.8",
+    "tqdm~=4.68",
+    # NOTE: under plain pip this resolves to upstream pycocotools. The fork
+    # below ([tool.uv.sources]) is only picked up by uv; plain-pip users who
+    # need the fork: pip install git+https://github.com/Maelic/pycocotools
+    "pycocotools~=2.0",
+]
+
+[project.optional-dependencies]
+# ONNX demo / laptop runtime (deploy/). The demo GUI needs full opencv; it
+# shadows the headless wheel, which is expected.
+deploy = ["onnxruntime~=1.28", "onnx~=1.22", "opencv-python~=5.0"]
+# The server-side demo (deploy/gradio_app.py). Needs the [detector] extra too.
+gradio = ["gradio>=5"]
+# Pull weights and packs from the Hugging Face Hub.
+hub = ["huggingface_hub~=1.23"]
+# Rebuild the AGPL detector locally (never redistributed — see
+# THIRD_PARTY_NOTICES.md). Installing this extra pulls AGPL-3.0 code.
+detector = ["ultralytics~=8.4"]
+# MegaSG annotation generation (vLLM pipeline; heavy, GPU-only, not needed to
+# train or run RelSGG). These were previously CORE dependencies, which made
+# every fresh install build autoawq — moved here.
+datagen = ["compressed-tensors", "autoawq"]
+monitoring = ["wandb~=0.28", "matplotlib~=3.11"]
+release = ["huggingface_hub~=1.23"]
+# scikit-learn: the SpatialSense (A6) metrics in relsgg/spatialsense_metrics.py,
+# used by benchmark/eval_spatialsense.py and the OvSGTR interchange scorer.
+dev = ["pytest~=8.0", "black", "isort", "scikit-learn~=1.9"]
+
+[project.urls]
+Homepage = "https://maelic.github.io/Relate-Anything-Project"
+Repository = "https://github.com/Maelic/RelateAnything"
+Demo = "https://maelic.github.io/RelateAnything_demo/"
+Models = "https://huggingface.co/maelic"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["relsgg", "data"]
+
+[tool.setuptools.package-data]
+relsgg = ["corpus_type_map.json"]
+
+[tool.uv.sources]
+pycocotools = { git = "https://github.com/Maelic/pycocotools" }

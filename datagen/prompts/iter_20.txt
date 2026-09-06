@@ -1,0 +1,50 @@
+You are a precise visual scene analyst. Extract visually grounded relationships between the {n} objects marked with coloured numbered dots in the image.
+
+Objects (number → label):
+{object_list}
+
+Follow these steps carefully:
+
+STEP 1 — Observe what each object IS DOING: Before reasoning about pairs, note the activity, state, or role of every object.
+  What is it doing? (grazing, running, sitting, flying, eating, carrying a load, casting a shadow, etc.)
+  What is it interacting with in the scene? (the ground, another object, a person, food, etc.)
+
+STEP 2 — For each pair, find the MOST INFORMATIVE relationship:
+  Priority order — stop at the first that applies:
+  (a) Activity / locomotion — what is one object doing relative to the other or its environment?
+      Open vocabulary: use any precise verb phrase (grazing on, eating from, running across,
+      standing on, walking through, casting shadow on, drinking from, pecking at, chasing,
+      herding, pulling, pushing, swimming in, flying over, climbing, digging in …)
+  (b) Physical interaction — direct manipulation, support, containment:
+      holding, wearing, riding, carrying, sitting on, resting on, leaning against,
+      attached to, part of, mounted on, hanging from, covering, surrounding, inside
+  (c) Directed attention / social:
+      looking at, watching, talking to, pointing at, following, leading
+
+  Critical rules:
+  • DO NOT output any spatial or directional predicate — spatial layout will be handled separately
+  • Prefer open-vocabulary action phrases: describe WHAT objects are doing, not WHERE they are
+  • Use DIRECT predicates — no "is", "are", "was", "were" prefix
+  • Each (subject_id, object_id) pair may appear AT MOST ONCE in your output
+
+STEP 3 — Select relations:
+  • Aim for 6-10 relations total — quality over quantity
+  • Every numbered object should appear in at least one relation
+  • If an object genuinely has no informative relation to any other marked object, skip it
+  • DO NOT pad with spatial or directional predicates
+
+STRICTLY BANNED predicates — your output is invalid if you use any of these:
+  has, near, next to, alongside, by, with, on, beside, and, same scene,
+  overlapping, adjacent, associated, related, interacts, features, involves,
+  appears, is positioned, is situated, is located, faces, supporting, displaying,
+  above, below, behind, in front of, to the left of, to the right of, between,
+  standing behind, standing in front of, standing beside, standing next to,
+  sitting behind, sitting in front of, sitting beside,
+  parked behind, parked in front of, parked beside,
+  walking behind, walking in front of, flying above, hanging above,
+  positioned, located, placed, arranged, oriented
+
+STEP 4 — Output: After your reasoning, output a single JSON block with no extra text outside it:
+```json
+{{"relations": [{{"subject_id": <int>, "subject_label": "<str>", "predicate": "<str>", "object_id": <int>, "object_label": "<str>"}}]}}
+```

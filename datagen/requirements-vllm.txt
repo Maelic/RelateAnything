@@ -1,0 +1,14 @@
+# Isolated environment for vLLM production generation (datagen/sgg_vllm_generate.py).
+# Install into a SEPARATE venv — vLLM pins its own torch and must NOT clobber the
+# main .venv (torch 2.9.1 / transformers 5.8.0) used by training and sgg_trial.py:
+#
+#   uv venv .venv-vllm --python 3.12
+#   uv pip install --python .venv-vllm -r requirements-vllm.txt
+#   source .venv-vllm/bin/activate     # puts `ninja` on PATH (flashinfer JIT needs it)
+#
+# Verified locally 2026-06-01 on RTX 4000 Ada (sm_89, CUDA 12.8 nvcc): vLLM resolves
+# Gemma4ForConditionalGeneration natively; E2B text + (batched) multimodal all pass.
+# vllm 0.22.0 pulls torch 2.11.0+cu130 and transformers 5.9.0 automatically.
+
+vllm==0.22.0
+ninja          # build tool for flashinfer's CUDA JIT (MoE kernels on the 26B model)

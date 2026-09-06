@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+/build/
+/dist/
+.pytest_cache/
+.venv/
+venv/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Weights, caches and data: downloaded or built, never committed
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+*.onnx
+*.bin
+*.xml
+*_deploy.pt
+checkpoints/
+datasets/
+runs/
+third_party/
+.hf_cache/
+wandb/
+mobileclip*.ts
+
+# deploy/dist: track only the small source-of-truth files per bundle. Graphs,
+# weights and the locally rebuilt detector (AGPL upstream) stay out.
+deploy/dist/*
+!deploy/dist/README.md
+!deploy/dist/requirements.txt
+!deploy/dist/relsgg-*/
+deploy/dist/relsgg-*/*
+!deploy/dist/relsgg-*/relateanything.json
+!deploy/dist/relsgg-*/predicate_bank.npz
+!deploy/dist/relsgg-*/thresholds.json
+!deploy/dist/relsgg-*/calibration.json
+!deploy/dist/relsgg-*/README.md

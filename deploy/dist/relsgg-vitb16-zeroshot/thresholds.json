@@ -1,0 +1,746 @@
+{
+  "checkpoint": "runs/train/full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5/checkpoint_last.pth",
+  "run": "full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5",
+  "git_sha": "06e7afdf0a8b0d9d5086879d6b6abd3848a0b5ab",
+  "date": "2026-08-27",
+  "regime": {
+    "boxes": "gt",
+    "pair_weight": 0,
+    "detector_conf": false,
+    "data": "runs/packed/megasg val",
+    "n_images": 5000,
+    "seed": 0,
+    "n_thresholds": 200
+  },
+  "predicates": [
+    {
+      "best_f1_thr": 0.975,
+      "best_f1": 0.6894278934880043,
+      "precision": 0.6272487407052051,
+      "recall": 0.765291191103307,
+      "n_neg": 154027,
+      "name": "wearing",
+      "gt_support": 3417
+    },
+    {
+      "best_f1_thr": 0.98,
+      "best_f1": 0.7391304347826088,
+      "precision": 0.6601941747572816,
+      "recall": 0.8395061728395061,
+      "n_neg": 157120,
+      "name": "riding",
+      "gt_support": 324
+    },
+    {
+      "best_f1_thr": 0.98,
+      "best_f1": 0.7702265372168285,
+      "precision": 0.7041420118343196,
+      "recall": 0.85,
+      "n_neg": 157164,
+      "name": "playing",
+      "gt_support": 280
+    },
+    {
+      "best_f1_thr": 0.975,
+      "best_f1": 0.5378787878787878,
+      "precision": 0.5290611028315947,
+      "recall": 0.5469953775038521,
+      "n_neg": 156795,
+      "name": "sitting on",
+      "gt_support": 649
+    },
+    {
+      "best_f1_thr": 0.97,
+      "best_f1": 0.2002129925452609,
+      "precision": 0.12239583333333333,
+      "recall": 0.5497076023391813,
+      "n_neg": 157273,
+      "name": "sitting at",
+      "gt_support": 171
+    },
+    {
+      "best_f1_thr": 0.975,
+      "best_f1": 0.4639751552795031,
+      "precision": 0.447841726618705,
+      "recall": 0.48131443298969073,
+      "n_neg": 155892,
+      "name": "holding",
+      "gt_support": 1552
+    },
+    {
+      "best_f1_thr": 0.98,
+      "best_f1": 0.17488076311605721,
+      "precision": 0.12168141592920353,
+      "recall": 0.3107344632768362,
+      "n_neg": 157267,
+      "name": "sitting in",
+      "gt_support": 177
+    },
+    {
+      "best_f1_thr": 0.965,
+      "best_f1": 0.2671031096563012,
+      "precision": 0.18698441796516957,
+      "recall": 0.46735395189003437,
+      "n_neg": 156571,
+      "name": "looking at",
+      "gt_support": 873
+    },
+    {
+      "best_f1_thr": 0.99,
+      "best_f1": 0.3943661971830986,
+      "precision": 0.4421052631578947,
+      "recall": 0.3559322033898305,
+      "n_neg": 157326,
+      "name": "using",
+      "gt_support": 118
+    },
+    {
+      "best_f1_thr": 0.98,
+      "best_f1": 0.43075302790942605,
+      "precision": 0.3822429906542056,
+      "recall": 0.49336550060313633,
+      "n_neg": 156615,
+      "name": "watching",
+      "gt_support": 829
+    },
+    {
+      "best_f1_thr": 0.965,
+      "best_f1": 0.1783783783783784,
+      "precision": 0.13865546218487396,
+      "recall": 0.25,
+      "n_neg": 157312,
+      "name": "standing on",
+      "gt_support": 132
+    },
+    {
+      "best_f1_thr": 0.97,
+      "best_f1": 0.38649592549476136,
+      "precision": 0.33877551020408164,
+      "recall": 0.44986449864498645,
+      "n_neg": 157075,
+      "name": "carrying",
+      "gt_support": 369
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.40390879478827363,
+      "precision": 0.36904761904761907,
+      "recall": 0.4460431654676259,
+      "n_neg": 157305,
+      "name": "talking to",
+      "gt_support": 139
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.33035714285714285,
+      "precision": 0.30578512396694213,
+      "recall": 0.3592233009708738,
+      "n_neg": 157341,
+      "name": "smiling at",
+      "gt_support": 103
+    },
+    {
+      "best_f1_thr": 0.97,
+      "best_f1": 0.10833333333333332,
+      "precision": 0.06735751295336788,
+      "recall": 0.2765957446808511,
+      "n_neg": 157350,
+      "name": "standing beside",
+      "gt_support": 94
+    },
+    {
+      "best_f1_thr": 0.99,
+      "best_f1": 0.3524904214559387,
+      "precision": 0.3511450381679389,
+      "recall": 0.35384615384615387,
+      "n_neg": 157314,
+      "name": "walking past",
+      "gt_support": 130
+    },
+    {
+      "best_f1_thr": 0.975,
+      "best_f1": 0.37719298245614036,
+      "precision": 0.296551724137931,
+      "recall": 0.5180722891566265,
+      "n_neg": 157361,
+      "name": "posing with",
+      "gt_support": 83
+    },
+    {
+      "best_f1_thr": 0.97,
+      "best_f1": 0.38202247191011235,
+      "precision": 0.3008849557522124,
+      "recall": 0.5230769230769231,
+      "n_neg": 157249,
+      "name": "leaning against",
+      "gt_support": 195
+    },
+    {
+      "best_f1_thr": 0.895,
+      "best_f1": 0.4886949623165411,
+      "precision": 0.4441240086517664,
+      "recall": 0.5432098765432098,
+      "n_neg": 156310,
+      "name": "part of",
+      "gt_support": 1134
+    },
+    {
+      "best_f1_thr": 0.97,
+      "best_f1": 0.5886884248935739,
+      "precision": 0.5249457700650759,
+      "recall": 0.6700507614213198,
+      "n_neg": 155277,
+      "name": "resting on",
+      "gt_support": 2167
+    },
+    {
+      "best_f1_thr": 0.925,
+      "best_f1": 0.46184297338904773,
+      "precision": 0.41916167664670656,
+      "recall": 0.5142017629774731,
+      "n_neg": 155402,
+      "name": "on",
+      "gt_support": 2042
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.47075208913649025,
+      "precision": 0.37920718025430067,
+      "recall": 0.620563035495716,
+      "n_neg": 156627,
+      "name": "covering",
+      "gt_support": 817
+    },
+    {
+      "best_f1_thr": 0.975,
+      "best_f1": 0.5039370078740157,
+      "precision": 0.48120300751879697,
+      "recall": 0.5289256198347108,
+      "n_neg": 157202,
+      "name": "inside",
+      "gt_support": 242
+    },
+    {
+      "best_f1_thr": 0.9,
+      "best_f1": 0.5125944584382871,
+      "precision": 0.4376344086021505,
+      "recall": 0.6185410334346505,
+      "n_neg": 156786,
+      "name": "on top of",
+      "gt_support": 658
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.3305785123966942,
+      "precision": 0.3007518796992481,
+      "recall": 0.3669724770642202,
+      "n_neg": 157335,
+      "name": "contained in",
+      "gt_support": 109
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.35754189944134074,
+      "precision": 0.35555555555555557,
+      "recall": 0.3595505617977528,
+      "n_neg": 157355,
+      "name": "hanging from",
+      "gt_support": 89
+    },
+    {
+      "best_f1_thr": 0.99,
+      "best_f1": 0.3566591422121896,
+      "precision": 0.30739299610894943,
+      "recall": 0.42473118279569894,
+      "n_neg": 157258,
+      "name": "surrounding",
+      "gt_support": 186
+    },
+    {
+      "best_f1_thr": 0.975,
+      "best_f1": 0.3152454780361757,
+      "precision": 0.3333333333333333,
+      "recall": 0.29901960784313725,
+      "n_neg": 157240,
+      "name": "attached to",
+      "gt_support": 204
+    },
+    {
+      "best_f1_thr": 0.86,
+      "best_f1": 0.34910179640718564,
+      "precision": 0.2713310580204778,
+      "recall": 0.4893676552881925,
+      "n_neg": 153870,
+      "name": "in front of",
+      "gt_support": 3574
+    },
+    {
+      "best_f1_thr": 0.975,
+      "best_f1": 0.200421536692853,
+      "precision": 0.1370545073375262,
+      "recall": 0.37277263007840344,
+      "n_neg": 156041,
+      "name": "beside",
+      "gt_support": 1403
+    },
+    {
+      "best_f1_thr": 0.87,
+      "best_f1": 0.37328687572590014,
+      "precision": 0.2917044835723362,
+      "recall": 0.5182199290551435,
+      "n_neg": 154343,
+      "name": "to the left of",
+      "gt_support": 3101
+    },
+    {
+      "best_f1_thr": 0.865,
+      "best_f1": 0.3856899488926746,
+      "precision": 0.3027277589588162,
+      "recall": 0.5312891113892365,
+      "n_neg": 154248,
+      "name": "to the right of",
+      "gt_support": 3196
+    },
+    {
+      "best_f1_thr": 0.89,
+      "best_f1": 0.33492252681764006,
+      "precision": 0.2606679035250464,
+      "recall": 0.4683333333333333,
+      "n_neg": 153844,
+      "name": "behind",
+      "gt_support": 3600
+    },
+    {
+      "best_f1_thr": 0.875,
+      "best_f1": 0.3324175824175824,
+      "precision": 0.25657336726039015,
+      "recall": 0.4719188767550702,
+      "n_neg": 156162,
+      "name": "above",
+      "gt_support": 1282
+    },
+    {
+      "best_f1_thr": 0.865,
+      "best_f1": 0.3160569105691057,
+      "precision": 0.23079777365491652,
+      "recall": 0.5012087026591459,
+      "n_neg": 156203,
+      "name": "below",
+      "gt_support": 1241
+    },
+    {
+      "best_f1_thr": 0.9400000000000001,
+      "best_f1": 0.24530795664816282,
+      "precision": 0.19094650205761318,
+      "recall": 0.3429416112342942,
+      "n_neg": 156091,
+      "name": "next to",
+      "gt_support": 1353
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.19848484848484846,
+      "precision": 0.15475487300649735,
+      "recall": 0.27666314677930304,
+      "n_neg": 156497,
+      "name": "supporting",
+      "gt_support": 947
+    },
+    {
+      "best_f1_thr": 0.965,
+      "best_f1": 0.218080888183981,
+      "precision": 0.1469017094017094,
+      "recall": 0.4230769230769231,
+      "n_neg": 156794,
+      "name": "containing",
+      "gt_support": 650
+    },
+    {
+      "best_f1_thr": 0.97,
+      "best_f1": 0.2859304084720121,
+      "precision": 0.19404517453798767,
+      "recall": 0.5431034482758621,
+      "n_neg": 157096,
+      "name": "worn by",
+      "gt_support": 348
+    },
+    {
+      "best_f1_thr": 0.99,
+      "best_f1": 0.5107084019769358,
+      "precision": 0.5065359477124183,
+      "recall": 0.5149501661129569,
+      "n_neg": 157143,
+      "name": "illuminating",
+      "gt_support": 301
+    },
+    {
+      "best_f1_thr": 0.9400000000000001,
+      "best_f1": 0.24200913242009137,
+      "precision": 0.22268907563025211,
+      "recall": 0.265,
+      "n_neg": 157244,
+      "name": "near",
+      "gt_support": 200
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.316017316017316,
+      "precision": 0.27137546468401486,
+      "recall": 0.37823834196891193,
+      "n_neg": 157251,
+      "name": "decorating",
+      "gt_support": 193
+    },
+    {
+      "best_f1_thr": 0.98,
+      "best_f1": 0.05090909090909091,
+      "precision": 0.028955532574974147,
+      "recall": 0.21052631578947367,
+      "n_neg": 157311,
+      "name": "resting in",
+      "gt_support": 133
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.1509433962264151,
+      "precision": 0.10909090909090909,
+      "recall": 0.24489795918367346,
+      "n_neg": 157297,
+      "name": "accompanying",
+      "gt_support": 147
+    },
+    {
+      "best_f1_thr": 0.99,
+      "best_f1": 0.48648648648648646,
+      "precision": 0.39705882352941174,
+      "recall": 0.627906976744186,
+      "n_neg": 157315,
+      "name": "shading",
+      "gt_support": 129
+    },
+    {
+      "best_f1_thr": 0.98,
+      "best_f1": 0.2645914396887159,
+      "precision": 0.20359281437125748,
+      "recall": 0.37777777777777777,
+      "n_neg": 157354,
+      "name": "mounted on",
+      "gt_support": 90
+    },
+    {
+      "best_f1_thr": 0.96,
+      "best_f1": 0.026779422128259338,
+      "precision": 0.013863553447646844,
+      "recall": 0.3917525773195876,
+      "n_neg": 157347,
+      "name": "resting against",
+      "gt_support": 97
+    },
+    {
+      "best_f1_thr": 0.98,
+      "best_f1": 0.1935483870967742,
+      "precision": 0.15483870967741936,
+      "recall": 0.25806451612903225,
+      "n_neg": 157351,
+      "name": "touching",
+      "gt_support": 93
+    },
+    {
+      "best_f1_thr": 0.98,
+      "best_f1": 0.13888888888888887,
+      "precision": 0.18518518518518517,
+      "recall": 0.1111111111111111,
+      "n_neg": 157354,
+      "name": "standing behind",
+      "gt_support": 90
+    },
+    {
+      "best_f1_thr": 0.98,
+      "best_f1": 0.33066666666666666,
+      "precision": 0.23846153846153847,
+      "recall": 0.5391304347826087,
+      "n_neg": 157329,
+      "name": "forming part of",
+      "gt_support": 115
+    },
+    {
+      "best_f1_thr": 0.99,
+      "best_f1": 0.17486338797814205,
+      "precision": 0.14035087719298245,
+      "recall": 0.2318840579710145,
+      "n_neg": 157375,
+      "name": "walking through",
+      "gt_support": 69
+    },
+    {
+      "best_f1_thr": 0.99,
+      "best_f1": 0.33457249070631967,
+      "precision": 0.2795031055900621,
+      "recall": 0.4166666666666667,
+      "n_neg": 157336,
+      "name": "driving past",
+      "gt_support": 108
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.20437956204379562,
+      "precision": 0.14432989690721648,
+      "recall": 0.35,
+      "n_neg": 157364,
+      "name": "casting shadow on",
+      "gt_support": 80
+    },
+    {
+      "best_f1_thr": 0.99,
+      "best_f1": 0.3466666666666666,
+      "precision": 0.2785714285714286,
+      "recall": 0.4588235294117647,
+      "n_neg": 157359,
+      "name": "depicting",
+      "gt_support": 85
+    },
+    {
+      "best_f1_thr": 0.97,
+      "best_f1": 0.12844036697247707,
+      "precision": 0.112,
+      "recall": 0.15053763440860216,
+      "n_neg": 157351,
+      "name": "standing in front of",
+      "gt_support": 93
+    },
+    {
+      "best_f1_thr": 0.965,
+      "best_f1": 0.13870246085011184,
+      "precision": 0.08587257617728532,
+      "recall": 0.36046511627906974,
+      "n_neg": 157358,
+      "name": "standing by",
+      "gt_support": 86
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.27848101265822783,
+      "precision": 0.20625,
+      "recall": 0.42857142857142855,
+      "n_neg": 157367,
+      "name": "growing in",
+      "gt_support": 77
+    },
+    {
+      "best_f1_thr": 0.99,
+      "best_f1": 0.34210526315789475,
+      "precision": 0.24074074074074073,
+      "recall": 0.5909090909090909,
+      "n_neg": 157378,
+      "name": "covering head of",
+      "gt_support": 66
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.4780487804878049,
+      "precision": 0.37404580152671757,
+      "recall": 0.6621621621621622,
+      "n_neg": 157370,
+      "name": "tucked under",
+      "gt_support": 74
+    },
+    {
+      "best_f1_thr": 0.97,
+      "best_f1": 0.30324909747292417,
+      "precision": 0.22340425531914893,
+      "recall": 0.47191011235955055,
+      "n_neg": 157355,
+      "name": "reflecting",
+      "gt_support": 89
+    },
+    {
+      "best_f1_thr": 0.97,
+      "best_f1": 0.09944751381215469,
+      "precision": 0.07692307692307693,
+      "recall": 0.140625,
+      "n_neg": 157380,
+      "name": "standing in",
+      "gt_support": 64
+    },
+    {
+      "best_f1_thr": 0.975,
+      "best_f1": 0.18484288354898334,
+      "precision": 0.11061946902654868,
+      "recall": 0.5617977528089888,
+      "n_neg": 157355,
+      "name": "parked near",
+      "gt_support": 89
+    },
+    {
+      "best_f1_thr": 0.995,
+      "best_f1": 0.14754098360655737,
+      "precision": 0.15,
+      "recall": 0.14516129032258066,
+      "n_neg": 157382,
+      "name": "occupying",
+      "gt_support": 62
+    },
+    {
+      "best_f1_thr": 0.96,
+      "best_f1": 0.17307692307692307,
+      "precision": 0.11464968152866242,
+      "recall": 0.35294117647058826,
+      "n_neg": 157393,
+      "name": "held by",
+      "gt_support": 51
+    },
+    {
+      "best_f1_thr": 0.92,
+      "best_f1": 0.08196721311475409,
+      "precision": 0.045787545787545784,
+      "recall": 0.390625,
+      "n_neg": 157380,
+      "name": "hanging on",
+      "gt_support": 64
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.04395604395604395,
+      "precision": 0.058823529411764705,
+      "recall": 0.03508771929824561,
+      "n_neg": 157387,
+      "name": "standing near",
+      "gt_support": 57
+    },
+    {
+      "best_f1_thr": 0.99,
+      "best_f1": 0.5079365079365079,
+      "precision": 0.463768115942029,
+      "recall": 0.5614035087719298,
+      "n_neg": 157387,
+      "name": "singing into",
+      "gt_support": 57
+    },
+    {
+      "best_f1_thr": 0.99,
+      "best_f1": 0.34375,
+      "precision": 0.3013698630136986,
+      "recall": 0.4,
+      "n_neg": 157389,
+      "name": "embracing",
+      "gt_support": 55
+    },
+    {
+      "best_f1_thr": 0.99,
+      "best_f1": 0.2672064777327935,
+      "precision": 0.19298245614035087,
+      "recall": 0.4342105263157895,
+      "n_neg": 157368,
+      "name": "following",
+      "gt_support": 76
+    },
+    {
+      "best_f1_thr": 0.98,
+      "best_f1": 0.14583333333333331,
+      "precision": 0.1320754716981132,
+      "recall": 0.16279069767441862,
+      "n_neg": 157401,
+      "name": "facing",
+      "gt_support": 43
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.3669724770642202,
+      "precision": 0.37037037037037035,
+      "recall": 0.36363636363636365,
+      "n_neg": 157389,
+      "name": "operating",
+      "gt_support": 55
+    },
+    {
+      "best_f1_thr": 0.995,
+      "best_f1": 0.26966292134831465,
+      "precision": 0.26666666666666666,
+      "recall": 0.2727272727272727,
+      "n_neg": 157400,
+      "name": "framing",
+      "gt_support": 44
+    },
+    {
+      "best_f1_thr": 0.965,
+      "best_f1": 0.075,
+      "precision": 0.03956043956043956,
+      "recall": 0.72,
+      "n_neg": 157419,
+      "name": "riding in",
+      "gt_support": 25
+    },
+    {
+      "best_f1_thr": 0.99,
+      "best_f1": 0.2677165354330709,
+      "precision": 0.2236842105263158,
+      "recall": 0.3333333333333333,
+      "n_neg": 157393,
+      "name": "passing",
+      "gt_support": 51
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.05102040816326531,
+      "precision": 0.03225806451612903,
+      "recall": 0.12195121951219512,
+      "n_neg": 157403,
+      "name": "parked on",
+      "gt_support": 41
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.5205479452054794,
+      "precision": 0.5757575757575758,
+      "recall": 0.475,
+      "n_neg": 157404,
+      "name": "steering",
+      "gt_support": 40
+    },
+    {
+      "best_f1_thr": 0.98,
+      "best_f1": 0.16194331983805668,
+      "precision": 0.09345794392523364,
+      "recall": 0.6060606060606061,
+      "n_neg": 157411,
+      "name": "comprising",
+      "gt_support": 33
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.19298245614035092,
+      "precision": 0.12790697674418605,
+      "recall": 0.39285714285714285,
+      "n_neg": 157416,
+      "name": "hugging",
+      "gt_support": 28
+    },
+    {
+      "best_f1_thr": 0.97,
+      "best_f1": 0.34285714285714286,
+      "precision": 0.23809523809523808,
+      "recall": 0.6122448979591837,
+      "n_neg": 157395,
+      "name": "eating",
+      "gt_support": 49
+    },
+    {
+      "best_f1_thr": 0.985,
+      "best_f1": 0.3859649122807018,
+      "precision": 0.3055555555555556,
+      "recall": 0.5238095238095238,
+      "n_neg": 157402,
+      "name": "lying on",
+      "gt_support": 42
+    },
+    {
+      "best_f1_thr": 0.98,
+      "best_f1": 0.3698630136986301,
+      "precision": 0.2571428571428571,
+      "recall": 0.6585365853658537,
+      "n_neg": 157403,
+      "name": "towering over",
+      "gt_support": 41
+    }
+  ]
+}
