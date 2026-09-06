@@ -119,10 +119,9 @@ val images. Top predicates by support:
 
 | | |
 |---|---|
-| run | `full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5` |
+| run | `relsgg-vitb16-zeroshot` |
 | git | `06e7afdf0a8b0d9d5086879d6b6abd3848a0b5ab` |
-| backbone | dinov3 (facebook/dinov3-vitb16-pretrain-lvd1689m) |
-| LoRA merged | False (pre-merge rank None) |
+| backbone | facebook/dinov3-vitb16-pretrain-lvd1689m |
 | text student | `runs/packed/text_student_v2_512/student.pt` sha256 `e0317830b68ea51e...` |
 | ONNX opset / parity | 17 / max|Δ| 1.43e-05 |
 | torch / transformers | 2.13.0+cu130 / 5.14.1 |

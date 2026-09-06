@@ -39,7 +39,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # path insert above, not `from training.bias_baselines import...`.
 from research.bias_baselines import FreqBaseline, load_split  # noqa: E402
 
-B = "full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
+B = "relsgg-vits16plus-zeroshot"
 S = "_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5"
 TOWERS = [("ViT-S", f"{B}_vits16{S}"), ("ViT-S+", f"{B}_vits16plus{S}"),
           ("ViT-B", f"{B}{S}")]

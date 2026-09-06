@@ -13,7 +13,7 @@ No model change: unsampled pairs score 0.0, which is what the deployed system
 emits when the relatedness sampler drops a pair. See relsgg/haystack_eval.py.
 
     python benchmark/eval_haystack.py \
-        --checkpoint runs/train/v35_lora_clean_6ep/checkpoint_best.pth
+        --checkpoint runs/train/relsgg-vits16plus/model.pth
 """
 from __future__ import annotations
 

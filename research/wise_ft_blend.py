@@ -5,7 +5,6 @@ pretrained init (Wortsman et al., robust fine-tuning). Everything trained
 from scratch keeps its fine-tuned value:
   - the whole relation head (no meaningful init anchor),
   - backbone.layer_weights (zero-init scalar combiner, from scratch),
-  - lora_* / stage_proj.* if ever present.
 Both "model" and "ema_model" are blended; optimizer/scheduler state is
 dropped so the output stays ~1 GB on a 98%-full filesystem.
 
@@ -23,7 +22,7 @@ import torch
 
 from relsgg.model.backbone import Backbone
 
-SKIP_SUBSTRINGS = ("layer_weights", "stage_proj", "lora_")
+SKIP_SUBSTRINGS = ("layer_weights",)
 
 
 def blend_state_dict(sd: dict, init_sd: dict, alpha: float) -> tuple[dict, int, int]:
@@ -62,8 +61,6 @@ def main() -> None:
         backbone_type=a["backbone_type"],
         **({"model_name": a["backbone_model"]} if a.get("backbone_model") else {}),
         **({"patch_size": a["patch_size"]} if a.get("patch_size") else {}),
-        lora_rank=a["lora_rank"],
-        lora_layers=a.get("lora_layers"),
         pretrained=True,
 )
     init_sd = {f"backbone.{k}": v for k, v in backbone.state_dict().items()}

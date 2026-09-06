@@ -1,6 +1,6 @@
 {
-  "checkpoint": "runs/train/full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_vits16_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5/checkpoint_last.pth",
-  "run": "full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_vits16_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5",
+  "checkpoint": "runs/train/relsgg-vits16-zeroshot/checkpoint_last.pth",
+  "run": "relsgg-vits16-zeroshot",
   "git_sha": "06e7afdf0a8b0d9d5086879d6b6abd3848a0b5ab",
   "date": "2026-08-27",
   "regime": {

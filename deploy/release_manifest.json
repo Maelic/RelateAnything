@@ -11,7 +11,7 @@
  "models": [
   {
    "model_id": "relsgg-vits16",
-   "run_dir": "runs/train/full_v42cfg_wv2-512_lora12_mixvghico0.05_sig0.25_btd0.3_negmask_def4h8v3n2_vits16_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5_hicov2",
+   "run_dir": "runs/train/relsgg-vits16",
    "family": "dinov3_vit",
    "backbone_model": "facebook/dinov3-vits16-pretrain-lvd1689m",
    "status": "final",
@@ -28,7 +28,7 @@
   },
   {
    "model_id": "relsgg-vits16plus",
-   "run_dir": "runs/train/full_v42cfg_wv2-512_lora12_mixvghico0.05_sig0.25_btd0.3_negmask_def4h8v3n2_vits16plus_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5_hicov2",
+   "run_dir": "runs/train/relsgg-vits16plus",
    "family": "dinov3_vit",
    "backbone_model": "facebook/dinov3-vits16plus-pretrain-lvd1689m",
    "status": "final",
@@ -45,7 +45,7 @@
   },
   {
    "model_id": "relsgg-vitb16",
-   "run_dir": "runs/train/full_v42cfg_wv2-512_lora12_mixvghico0.05_sig0.25_btd0.3_negmask_def4h8v3n2_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5_hicov2",
+   "run_dir": "runs/train/relsgg-vitb16",
    "family": "dinov3_vit",
    "backbone_model": "facebook/dinov3-vitb16-pretrain-lvd1689m",
    "status": "final",
@@ -62,7 +62,7 @@
   },
   {
    "model_id": "relsgg-vits16-zeroshot",
-   "run_dir": "runs/train/full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_vits16_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5",
+   "run_dir": "runs/train/relsgg-vits16-zeroshot",
    "family": "dinov3_vit",
    "backbone_model": "facebook/dinov3-vits16-pretrain-lvd1689m",
    "status": "final",
@@ -72,7 +72,7 @@
   },
   {
    "model_id": "relsgg-vits16plus-zeroshot",
-   "run_dir": "runs/train/full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_vits16plus_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5",
+   "run_dir": "runs/train/relsgg-vits16plus-zeroshot",
    "family": "dinov3_vit",
    "backbone_model": "facebook/dinov3-vits16plus-pretrain-lvd1689m",
    "status": "final",
@@ -82,7 +82,7 @@
   },
   {
    "model_id": "relsgg-vitb16-zeroshot",
-   "run_dir": "runs/train/full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5",
+   "run_dir": "runs/train/relsgg-vitb16-zeroshot",
    "family": "dinov3_vit",
    "backbone_model": "facebook/dinov3-vitb16-pretrain-lvd1689m",
    "status": "final",

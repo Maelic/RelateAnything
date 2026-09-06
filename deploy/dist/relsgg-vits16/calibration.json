@@ -14,7 +14,7 @@
     0.9001
   ],
   "provenance": {
-    "checkpoint": "runs/train/full_v42cfg_wv2-512_lora12_mixvghico0.05_sig0.25_btd0.3_negmask_def4h8v3n2_vits16_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5_hicov2/checkpoint_last.pth",
+    "checkpoint": "runs/train/relsgg-vits16/checkpoint_last.pth",
     "weights": "ema",
     "eval_budget": 992,
     "produced_by": "deploy/fit_calibration.py",

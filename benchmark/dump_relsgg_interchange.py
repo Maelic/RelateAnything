@@ -9,7 +9,7 @@ dumped predictions are exactly the ones behind the reported metrics — not a
 re-derivation that could drift.
 
     python benchmark/dump_relsgg_interchange.py \
-        --checkpoint runs/train/v35_lora_clean_6ep/checkpoint_best.pth \
+        --checkpoint runs/train/relsgg-vits16plus/model.pth \
         --dataset_root runs/packed/psg --split test --dataset_name psg_test \
         --det runs/detect/yoloworld_ov_psg_test.npz --det_vocab pack \
         --out runs/judge/relsgg_psg_test_yoloworld.npz

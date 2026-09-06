@@ -26,7 +26,7 @@ WebGPU/WASM) at https://maelic.github.io/RelateAnything_demo/ — repo
 
 ## 1. Build a model's distribution (once, on the training box)
 
-One driver runs the whole chain — LoRA merge (if needed) → ONNX export with
+One driver runs the whole chain — ONNX export with
 parity check → per-checkpoint threshold calibration → predicate bank:
 
 ```bash

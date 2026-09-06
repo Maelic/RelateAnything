@@ -258,8 +258,7 @@ val images. Top predicates by support:
 |---|---|
 | run | `{exp['run_name']}` |
 | git | `{exp['git_sha']}` |
-| backbone | {exp['backbone_type']} ({m.get('backbone_model') or exp.get('backbone_model')}) |
-| LoRA merged | {exp.get('merged')} (pre-merge rank {exp.get('lora_rank_premerge')}) |
+| backbone | {m.get('backbone_model') or exp.get('backbone_model')} |
 | text student | `{exp.get('text_student')}` sha256 `{str(exp.get('text_student_sha256'))[:16]}...` |
 | ONNX opset / parity | {exp.get('opset')} / max|Δ| {exp.get('check_max_abs_delta', float('nan')):.2e} |
 | torch / transformers | {exp.get('torch')} / {exp.get('transformers')} |

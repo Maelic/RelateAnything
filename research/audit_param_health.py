@@ -15,7 +15,7 @@ parameter, the relative movement from initialisation
 
 and flags:
   DEAD      trainable, delta ~ 0            -> receives no gradient. A BUG.
-  FROZEN    requires_grad False             -> by design (LoRA base weights)
+  FROZEN    requires_grad False             -> by design
   TINY      trainable, delta < --tiny       -> trains, but barely moves
   SATURATED |w| at a clamp boundary         -> e.g. logit_scale.exp() clamp
 
@@ -80,9 +80,6 @@ def main() -> None:
             continue
         n0 = w0.detach().float().norm().item()
         d = (w.detach().float() - w0.detach().float()).norm().item()
-        # LoRA's B matrices are ZERO-initialised by construction, so a relative
-        # move is a division by ~0 and reports absurd magnitudes. For those the
-        # absolute movement IS the signal: nonzero means it trained.
         zero_init = n0 < 1e-8
         rel = d if zero_init else d / (n0 + 1e-12)
         rows.append({"name": name, "numel": w.numel(),

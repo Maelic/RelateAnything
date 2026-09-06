@@ -247,7 +247,6 @@ def probe_checkpoint(
         "spatial_predicates": _stats(spa),
         "semantic_predicates": _stats(~spa),
         "_ckpt_args": {"backbone_type": ck_args.get("backbone_type"),
-                       "lora_rank": ck_args.get("lora_rank"),
                        "epoch": ckpt.get("epoch")},
     }
 

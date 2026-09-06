@@ -1,7 +1,8 @@
-# CPU-only smoke: install path + imports + evaluator math + edge decode.
-# Deliberately NO gated weights, NO HF network, NO GPU — the point is that a
-# fresh clone installs and the release-critical math holds. Model-forward
-# parity with real weights stays a local check; tests/test_soft_parity.py covers the loss algebra.
+# CPU-only: install path, imports, config round-trip, evaluator arithmetic,
+# score-contract parity, and one step of the real training objective on a tiny
+# model. No gated weights, no network, no GPU — the point is that a fresh clone
+# installs and the release-critical arithmetic holds. Forward parity against
+# released weights stays a local check.
 name: ci
 on:
   push:

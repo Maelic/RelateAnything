@@ -52,8 +52,7 @@ sys.path.insert(0, REPO)
 CHUNK = 90 * 1024 * 1024
 DETECTOR_WEIGHTS = ["yolo26n.pt", "yolo26s.pt", "yoloe-11s-seg.pt", "yoloe-11s-seg-pf.pt",
                     "yolo12s.pt", "yolo26s-seg.pt", "FastSAM-s.pt"]
-DEFAULT_CKPT = ("runs/train/full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_vits16plus_r0_lr4e-4_ep12_"
-                "newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5/checkpoint_last.pth")
+DEFAULT_CKPT = "runs/train/relsgg-vits16plus/model.pth"
 
 
 # --------------------------------------------------------------------------- onnx helpers

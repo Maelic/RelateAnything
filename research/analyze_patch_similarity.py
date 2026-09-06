@@ -56,7 +56,7 @@ def load_models(ckpts, labels, weights, device):
     ck0 = torch.load(ckpts[0], map_location="cpu", weights_only=False)
     a0 = ck0["args"] if isinstance(ck0["args"], dict) else vars(ck0["args"])
     kw = dict(backbone_type=a0.get("backbone_type", "dinov3"), model_name=a0.get("backbone_model") or None,
-              lora_rank=-1, pretrained=True)
+              pretrained=True)
     models = {"pretrained": Backbone(**kw, norm_taps=False).to(device).eval()}
     for p, lab in zip(ckpts, labels):
         ck = torch.load(p, map_location="cpu", weights_only=False)

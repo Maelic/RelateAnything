@@ -306,7 +306,7 @@ def main() -> None:
     a0 = ck0["args"] if isinstance(ck0["args"], dict) else vars(ck0["args"])
     bb_kwargs = dict(backbone_type=a0.get("backbone_type", "dinov3"),
                      model_name=a0.get("backbone_model") or None,
-                     lora_rank=-1, pretrained=True)
+                     pretrained=True)
     models: dict[str, Backbone] = {}
     # The pretrained reference keeps the ARCHITECTURAL default (norm_taps off).
     # Its fused map is only a formality anyway: layer_weights is zero-init, so
