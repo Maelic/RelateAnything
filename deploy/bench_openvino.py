@@ -10,7 +10,7 @@ On the Intel laptop:
     python deploy/bench_openvino.py --dist deploy/dist/relsgg-vits16plus \
         --variant int8 --device GPU --images ~/photos --n 30
     python deploy/bench_openvino.py --dist deploy/dist/relsgg-vits16plus \
-        --variant int8 fp16 --device CPU --compare onnx --images ...
+        --variant int8 fp16 --device CPU --compare onnx --images...
 
 Variants: onnx (onnxruntime fp32 baseline), fp16 / int8 / w4 (OpenVINO IR).
 Devices apply to OpenVINO variants only; onnx always runs its CPU EP here.

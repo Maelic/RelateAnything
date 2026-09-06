@@ -34,8 +34,8 @@ import torch
 PROJ = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJ))
 
-from relsgg.text_student import PredicateTextStudent  # noqa: E402
-from training.text_space_diag import (  # noqa: E402
+from relsgg.text.student import PredicateTextStudent  # noqa: E402
+from training.text_space_diag import (# noqa: E402
     TEMPLATE_SETS, build_groups, combine_templates, encode_all_templates,
     encode_dinotxt, evaluate,
 )
@@ -166,7 +166,7 @@ def main() -> None:
                     # plain unicode arrays: train.py loads without allow_pickle
                     predicates=np.array([str(p) for p in preds]),
                     templates=np.array([str(t) for t in templates]),
-                )
+)
             print(f"  emitted pred_embeds_student_*.npz ({len(preds)} preds, meta order)")
 
             # generalization on UNSEEN strings. Random holdout shatters oracle

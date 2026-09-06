@@ -1,33 +1,38 @@
 """Import tripwire.
 
-The single highest-value test in the suite: the repo shipped for weeks with
-data/ (a source package train.py imports) swallowed by .gitignore, so every
-fresh clone died at import while every local checkout worked. CI runs on a
-fresh clone, so this file makes that class of bug impossible to reintroduce.
+The repository once shipped with ``data/`` — a source package the trainer
+imports — excluded by.gitignore, so every fresh clone failed at import while
+every local checkout worked. CI runs on a fresh clone, so this file makes
+that class of failure impossible to reintroduce.
 """
 
 
-def test_core_packages_import():
-    import relsgg.api          # noqa: F401
-    import relsgg.model        # noqa: F401
-    import relsgg.evaluator    # noqa: F401
-    import relsgg.geometry     # noqa: F401
-    import relsgg.vocab        # noqa: F401
+def test_package_imports():
+    import relsgg                       # noqa: F401
+    import relsgg.api                   # noqa: F401
+    import relsgg.config                # noqa: F401
+    import relsgg.model                 # noqa: F401
+    import relsgg.model.geometry        # noqa: F401
+    import relsgg.data.dataset          # noqa: F401
+    import relsgg.data.multipack        # noqa: F401
+    import relsgg.eval.evaluator        # noqa: F401
+    import relsgg.training.losses       # noqa: F401
+    import relsgg.training.engine       # noqa: F401
+    import relsgg.text.student          # noqa: F401
 
 
-def test_data_package_imports():
-    # THE regression this suite exists for.
-    import data.relation_dataset   # noqa: F401
-    import data.multipack          # noqa: F401
+def test_torch_free_modules_import_without_torch():
+    """The ONNX runtime ships without torch, and imports these two."""
+    import relsgg.decompose              # noqa: F401
+    import relsgg.scoring                # noqa: F401
 
 
 def test_deploy_modules_import():
-    # deploy/ is a script dir (no __init__); conftest puts it on sys.path the
-    # way the demo does. These must import WITHOUT torch being exercised —
-    # the laptop runtime is numpy + onnxruntime only.
-    import postprocess             # noqa: F401
-    import vocab                   # noqa: F401
+    # deploy/ is a script directory (no __init__.py — its files run directly
+    # on edge devices); conftest puts it on sys.path as the demo does.
+    import postprocess                   # noqa: F401
+    import vocab                         # noqa: F401
 
 
 def test_train_entrypoint_imports():
-    import train                   # noqa: F401
+    import train                         # noqa: F401

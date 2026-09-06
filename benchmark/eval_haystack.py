@@ -30,10 +30,10 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data import RelationDataset, collate_fn                      # noqa: E402
-from relsgg.haystack_eval import HaystackEvaluator                # noqa: E402
-from relsgg.train_engine import evaluate                          # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES                          # noqa: E402
+from relsgg.data import RelationDataset, collate_fn                      # noqa: E402
+from relsgg.eval.haystack import HaystackEvaluator                # noqa: E402
+from relsgg.training.engine import evaluate                          # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES                          # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt             # noqa: E402
 
 
@@ -99,7 +99,7 @@ def main() -> None:
     ts = ck_args.get("text_student") or ""
     if not ts:
         raise SystemExit("checkpoint was not trained in student text space")
-    from relsgg.text_student import encode_texts_student
+    from relsgg.text.student import encode_texts_student
     E = encode_texts_student(pred_names, ts, templates=TRAIN_TEMPLATES,
                              device=device)
     model.vocab_head.set_vocabulary_matrix(pred_names, E)

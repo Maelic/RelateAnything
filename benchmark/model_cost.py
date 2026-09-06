@@ -27,7 +27,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from relsgg.api import TRAIN_TEMPLATES  # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES  # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt  # noqa: E402
 from benchmark.vocab_stub import real_vocabulary, stub_vocabulary  # noqa: E402
 
@@ -100,14 +100,17 @@ def main():
         if real is not None and args.vocab == "open":
             names, E = real
         elif ts and os.path.exists(ts):
-            from relsgg.text_student import encode_texts_student
+            from relsgg.text.student import encode_texts_student
             E = encode_texts_student(names, ts, templates=TRAIN_TEMPLATES, device=dev)
         elif args.synthetic_vocab:
             names, E = stub_vocabulary(names, int(ck_args.get("text_dim") or 512), dev)
             synthetic = True
             print(f"  [synthetic vocab] V={len(names)} stand-in; params/FLOPs only")
         elif not ts:
-            model.vocab_head.encode_vocabulary_dinotxt(names, templates=TRAIN_TEMPLATES)
+            raise SystemExit(
+                "this checkpoint names no text student. The vocabulary has to be "
+                "encoded by the encoder the head was trained against; pass "
+                "--text_student, or use a released model, which ships its own.")
             E = None
         else:
             raise SystemExit(f"{name}: text student '{ts}' absent; pass --synthetic_vocab")

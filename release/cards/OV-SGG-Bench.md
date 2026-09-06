@@ -62,7 +62,7 @@ from huggingface_hub import snapshot_download
 snapshot_download("maelic/OV-SGG-Bench", repo_type="dataset", local_dir="runs/ovsgg_bench")
 PY
 ln -s ovsgg_bench/packs/* runs/packed/          # or point --data_roots at the packs directly
-export RA_DATASETS=/path/to/datasets           # images: VG150_coco_format/, PSG_coco_format/, ...
+export RA_DATASETS=/path/to/datasets           # images: VG150_coco_format/, PSG_coco_format/,...
 
 python benchmark/eval_zeroshot.py --checkpoint model.pth \
     --data_roots runs/packed/vg150 runs/packed/psg runs/packed/indoorvg runs/packed/hicodet

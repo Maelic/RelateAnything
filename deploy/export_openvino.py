@@ -9,7 +9,7 @@ Produces, inside --dist (self-contained laptop bundle):
                                      exact inference preprocessing
     relateanything_w4.xml/.bin       --weights4: int4 weight-only compression
                                      (download-size lever, not a speed lever)
-Each .xml gets a .json sidecar (the ONNX sidecar + conversion provenance), so
+Each.xml gets a.json sidecar (the ONNX sidecar + conversion provenance), so
 deploy/ov_runtime.py reads metadata the same way the ONNX classes do.
 
 Calibration feeds are built by running the fp16 DETECTOR on the calibration
@@ -23,7 +23,7 @@ that subgraph is microseconds of compute, and quantizing unit-norm embedding
 activations is precision spent exactly where the model keeps its meaning.
 
     python deploy/export_openvino.py --dist deploy/dist/relsgg-vits16plus \
-        --int8 --calib-dir ../DATASETS/PSG_coco_format/val
+        --int8 --calib-dir../DATASETS/PSG_coco_format/val
 """
 from __future__ import annotations
 
@@ -108,7 +108,7 @@ def main() -> None:
                          "head/sampler/geometry fp — full-graph int8 is faster "
                          "but measurably wrong (top-1 agreement 0.50)")
     ap.add_argument("--calib-dir", default="",
-                    help="directory of raw .jpg calibration images (e.g. PSG val)")
+                    help="directory of raw.jpg calibration images (e.g. PSG val)")
     ap.add_argument("--calib-n", type=int, default=192,
                     help="calibration images (those yielding <2 boxes are skipped "
                          "for the relation head, so it sees slightly fewer)")
@@ -220,7 +220,7 @@ def main() -> None:
         ignored = [
             n for op in rel32.get_ops()
             if op.get_type_name() not in ("Constant", "Parameter", "Result")
-            and not ((n := op.get_friendly_name()).startswith("/model/model/")
+            and not ((n:= op.get_friendly_name()).startswith("/model/model/")
                      and "/rope_embeddings/" not in n)]
     else:
         ignored = _downstream_of(rel32, {"W", "alpha"})

@@ -36,7 +36,7 @@ import torch.nn.functional as F
 PROJ = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJ))
 
-from relsgg.text_student import encode_texts_student              # noqa: E402
+from relsgg.text.student import encode_texts_student              # noqa: E402
 from training.distill.spatial_grammar import AXES, NEW_BASES, OPPOSITE, generate   # noqa: E402
 
 TRAIN_TEMPLATES = ["{p}", "one object is {p} another object",

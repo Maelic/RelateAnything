@@ -75,8 +75,9 @@ falsifies the label. The augmentation is deliberately absent — do not add it.
 ### The text space must match the checkpoint
 
 The head's `W` lives in the space of the text encoder the checkpoint was trained
-with — a distilled 512-d student for current models, raw dino.txt at 2048-d for
-pre-v34. Mixing them raises no error and produces meaningless cosines. Let
+with — the distilled 512-d student that ships beside every released model.
+Encoding a vocabulary with any other encoder raises no error and produces
+meaningless cosines. Let
 `from_checkpoint` read it from the checkpoint's own args.
 
 ### Thresholds do not transfer between checkpoints

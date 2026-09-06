@@ -40,9 +40,9 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data import RelationDataset, collate_fn                      # noqa: E402
-from relsgg.train_engine import evaluate                          # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES                          # noqa: E402
+from relsgg.data import RelationDataset, collate_fn                      # noqa: E402
+from relsgg.training.engine import evaluate                          # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES                          # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt             # noqa: E402
 from relsgg.paths import DATASETS, DATAMIX, RUNS, REPO  # noqa: E402
 
@@ -191,7 +191,7 @@ def main() -> None:
                           int(meta[i, 5]), int(meta[i, 6]))
         cat_of[i] = box_cats[b0:b0 + nb]
         xyxy_of[i] = cxcywh_to_xyxy(boxes_all[b0:b0 + nb])
-        for s, o, pr in rels_all[r0:r0 + nr, :3]:
+        for s, o, pr in rels_all[r0:r0 + nr,:3]:
             verb = pred_names[pr]
             oc = int(box_cats[b0 + o])
             hoi = next((h for h, v in hois_of_cat.get(oc, ())
@@ -210,7 +210,7 @@ def main() -> None:
     if not isinstance(ck_args, dict):
         ck_args = vars(ck_args)
     ts = ck_args.get("text_student") or ""
-    from relsgg.text_student import encode_texts_student
+    from relsgg.text.student import encode_texts_student
     E = encode_texts_student(pred_names, ts, templates=TRAIN_TEMPLATES,
                              device=device)
     model.vocab_head.set_vocabulary_matrix(pred_names, E)

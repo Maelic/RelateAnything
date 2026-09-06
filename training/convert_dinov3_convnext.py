@@ -57,7 +57,7 @@ def _geometry(sd: dict) -> tuple[list[int], list[int]]:
     depths = []
     for i in range(4):
         blocks = {int(m.group(1)) for k in sd
-                  if (m := re.match(rf"stages\.{i}\.(\d+)\.", k))}
+                  if (m:= re.match(rf"stages\.{i}\.(\d+)\.", k))}
         depths.append(len(blocks))
     return hidden, depths
 
@@ -72,10 +72,10 @@ def _remap(sd: dict) -> tuple[dict, list[str]]:
             continue
         if k.startswith("norm."):
             out["layer_norm." + k[len("norm."):]] = v
-        elif (m := re.match(r"downsample_layers\.(\d+)\.(\d+)\.(.+)", k)):
+        elif (m:= re.match(r"downsample_layers\.(\d+)\.(\d+)\.(.+)", k)):
             i, j, rest = m.group(1), m.group(2), m.group(3)
             out[f"model.stages.{i}.downsample_layers.{j}.{rest}"] = v
-        elif (m := re.match(r"stages\.(\d+)\.(\d+)\.(\w+)\.?(.*)", k)):
+        elif (m:= re.match(r"stages\.(\d+)\.(\d+)\.(\w+)\.?(.*)", k)):
             i, j, part, rest = m.groups()
             if part == "gamma":
                 out[f"model.stages.{i}.layers.{j}.gamma"] = v

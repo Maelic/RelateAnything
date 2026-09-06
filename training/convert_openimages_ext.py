@@ -31,11 +31,16 @@ from __future__ import annotations
 
 import csv
 import json
+
 import sys
 from collections import defaultdict
 from pathlib import Path
 
 from PIL import Image
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from training.convert_datamix import CocoSGGWriter  # noqa: E402
+from relsgg.paths import DATASETS, DATAMIX  # noqa: E402
 
 # Dataset and run roots come from relsgg.paths (RA_DATASETS / RA_RUNS).
 OI = DATASETS / "MEGASG_OI_ext"
@@ -43,10 +48,6 @@ MIX = DATAMIX
 SCRATCH = DATASETS / "MEGASG_OI_ext/meta"   # oidv6-*.csv downloaded from Open Images
 
 csv.field_size_limit(2**28)
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from training.convert_datamix import CocoSGGWriter  # noqa: E402
-from relsgg.paths import DATASETS, DATAMIX, RUNS, REPO  # noqa: E402
 
 
 def load_class_names() -> dict[str, str]:

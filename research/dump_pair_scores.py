@@ -44,12 +44,11 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data.relation_dataset import RelationDataset, collate_fn  # noqa: E402
-from relsgg.geometry import RelGeomEncoder  # noqa: E402
-from relsgg.text_student import encode_texts_student  # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES  # noqa: E402
+from relsgg.data.dataset import RelationDataset, collate_fn  # noqa: E402
+from relsgg.model.geometry import RelGeomEncoder  # noqa: E402
+from relsgg.text.student import encode_texts_student  # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES  # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt  # noqa: E402
-from relsgg.checkpoint import pad_geo_checkpoint as _pad_geo_checkpoint  # noqa: E402
 
 
 @torch.no_grad()
@@ -70,7 +69,6 @@ def main():
 
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ck = torch.load(a.checkpoint, map_location="cpu", weights_only=False)
-    _pad_geo_checkpoint(ck, RelGeomEncoder.NUM_GEO)
     model = build_model_from_ckpt(ck, "ema").to(dev).eval()
     model.sampler.geo_budget = a.geo_budget
     model.sampler.final_budget = a.final_budget
@@ -150,7 +148,7 @@ def main():
         # flags each checkpoint carried (e0_report.py derives its caveat here).
         ckpt_path=np.array(a.checkpoint),
         ckpt_args=np.array(json.dumps(ck.get("args", {}), default=str)),
-    )
+)
     mb = os.path.getsize(a.out) / 1e6
     print(f"wrote {a.out}: {n_img} imgs, {sum(pair_counts):,} pairs, "
           f"{sum(gt_counts):,} GT triples, {mb:.0f} MB")

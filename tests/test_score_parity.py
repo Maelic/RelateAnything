@@ -1,22 +1,18 @@
-"""Eval and deployment must compute the SAME number. Proven, not asserted.
+"""Evaluation and deployment compute the same number.
 
-This is the regression test for the class of bug that made every reported
-number come from a formula the product did not run: relsgg/evaluator.py scored
-sigmoid(pred + rel) while deploy/pipeline.py and deploy/postprocess.py scored
-sigmoid(pred) * sigmoid(rel). Both are defensible; having both is not. And the
-benchmarks could not catch it — on VG150 the wrong one reads BETTER (AUC 0.832
-vs 0.763), because multiplying up-weights the relatedness term and relatedness
-predicts annotation propensity rather than truth. Only Haystack's adjudicated
-negatives invert that (0.9038 vs 0.9108).
-
-So the guard cannot be "the numbers look right". It has to be that every path
-is the same code. These tests pin that down:
+Two plausible ways to fuse a predicate logit with a pair-existence logit —
+sigmoid(pred + rel) and sigmoid(pred) * sigmoid(rel) — rank pairs differently,
+and a benchmark cannot arbitrate between them: on VG150 the multiplicative one
+reads better (AUC 0.832 against 0.763) because it up-weights the relatedness
+term, which predicts whether a pair was annotated rather than whether the
+relation holds. Only adjudicated negatives invert the ordering (0.9038 against
+0.9108). So the guard is not "the numbers look right", it is that every path
+runs one function. These tests pin that down:
 
   1. the torch and numpy implementations of the contract agree to fp32
-  2. the evaluator's ranking == the deploy decoder's ranking on shared input
-  3. calibration is MONOTONE: it may not reorder anything, ever
-  4. the legacy multiplicative form actually differs — i.e. this test would
-     have failed before the fix, rather than passing vacuously
+  2. the evaluator's ranking equals the deploy decoder's on shared input
+  3. calibration is monotone: it may never reorder anything
+  4. the two fusions genuinely differ, so test 2 cannot pass vacuously
 """
 from __future__ import annotations
 
@@ -30,8 +26,15 @@ import torch
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from deploy.postprocess import ThresholdConfig, decode  # noqa: E402
-from relsgg.scoring import (ScoreContract, graph_constrained,  # noqa: E402
-                            legacy_multiplicative)
+from relsgg.scoring import ScoreContract, graph_constrained  # noqa: E402
+
+
+def multiplicative(pred_logit, pair_logit):
+    """The other plausible fusion, here only so the parity test above cannot
+    pass by the two formulas agreeing."""
+    s = 1.0 / (1.0 + np.exp(-pred_logit))
+    p = 1.0 / (1.0 + np.exp(-pair_logit))
+    return s * p[..., None]
 
 
 def _fake(K=24, V=7, seed=0):
@@ -107,12 +110,12 @@ def test_raw_probability_cannot_represent_the_ranking():
     n_tied = len(p) - len(np.unique(p))
     assert not np.array_equal(truth, raw), (
         "raw fp32 probabilities preserved the order on this fixture — pick a "
-        "harder one, or the saturation claim no longer holds")
+        "harder one, or the saturation claim does not hold")
     assert np.array_equal(truth, calr), "calibration must restore the order"
     # Concretely, on this fixture logits 11.3392 and 11.3412 both become the
     # bit-identical float 0x1.fffe700000000p-1.
     assert n_tied > 0 and p.max() > 0.9999, (n_tied, p.max())
-    assert (p > 0.9).mean() > 0.5, "fixture no longer reproduces the saturation"
+    assert (p > 0.9).mean() > 0.5, "fixture does not reproduce the saturation"
     # the tied pair really does come from DISTINCT logits
     _, first = np.unique(p, return_index=True)
     dup = np.setdiff1d(np.arange(len(p)), first)
@@ -121,7 +124,7 @@ def test_raw_probability_cannot_represent_the_ranking():
 
 def test_evaluator_ranking_matches_deploy_decoder():
     """SGClsEvaluator's top-K and deploy's decode() pick the same triplets."""
-    from relsgg.evaluator import SGClsEvaluator
+    from relsgg.eval.evaluator import SGClsEvaluator
     pred, pair, sub, obj, valid = _fake(seed=7)
     c = ScoreContract(calib_a=0.4344, calib_b=-2.4435)
     preds = [f"p{i}" for i in range(pred.shape[1])]
@@ -146,15 +149,12 @@ def test_evaluator_ranking_matches_deploy_decoder():
     assert deploy_rank == eval_rank, f"\ndeploy {deploy_rank}\neval   {eval_rank}"
 
 
-def test_the_old_bug_would_have_been_caught():
-    """Guard against a vacuous test: the two formulas must really differ.
-
-    If additive and multiplicative ever agreed on this input, the parity test
-    above would pass no matter which one each side used.
-    """
+def test_the_two_fusions_really_differ():
+    """If the two formulas agreed on this input, the parity test above would
+    pass whichever one each side ran."""
     pred, pair, *_ = _fake(seed=11)
     add = ScoreContract().scores(pred, pair).ravel()
-    mul = legacy_multiplicative(pred, pair).ravel()
+    mul = multiplicative(pred, pair).ravel()
     ra = np.argsort(-add, kind="mergesort")
     rm = np.argsort(-mul, kind="mergesort")
     assert not np.array_equal(ra, rm), "formulas agree — test proves nothing"

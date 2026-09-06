@@ -41,21 +41,17 @@ pip install git+https://github.com/Maelic/RelateAnything
 ```
 
 ```python
-from huggingface_hub import snapshot_download
-from relsgg.api import RelateAnything
+from relsgg import RelateAnything
 
-d = snapshot_download("maelic/relsgg-vits16")
-model = RelateAnything.from_checkpoint(
-    f"{d}/model.pth", predicates=["holding", "riding", "next to"], device="cuda")
-triplets = model.predict(image, boxes_xyxy, topk=20)      # image: PIL / ndarray, boxes: [N, 4] pixels
+model = RelateAnything.from_pretrained("maelic/relsgg-vits16", device="cuda")
+triplets = model.predict(image, boxes_xyxy, topk=20)   # PIL or ndarray; boxes [N, 4] in pixels
 model.set_vocabulary(["about to collide with", "reflected in"])   # any strings, no retraining
 graphs = model.predict(image, boxes_xyxy, decompose=True)          # {"spatial": [...], "semantic": [...]}
 ```
 
-`model.pth` embeds the backbone config, so nothing else is downloaded: no
-gated DINOv3 login is needed to run it. `text_student.pt` (the distilled
-predicate text encoder, with its CLIP tokenizer files) sits next to it and is
-found automatically.
+`from_pretrained` downloads `model.pth` and the text encoder beside it. The
+weights embed the backbone configuration, so no gated DINOv3 login is needed
+to run them.
 
 Files: `model.pth` (torch, EMA weights), `text_student.pt`, `relateanything.onnx` + OpenVINO fp16 IR, `predicate_bank.npz`, `thresholds.json`, `calibration.json` (the laptop bundle, see `deploy/README.md`), `README.md`.
 

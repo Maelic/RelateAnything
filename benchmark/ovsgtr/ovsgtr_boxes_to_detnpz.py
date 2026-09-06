@@ -5,7 +5,7 @@ YOLO detector and theirs used GroundingDINO, so a recall gap could always be
 blamed on the detector. Feeding OUR relation head THEIR boxes makes the two
 rows differ in the relation model alone.
 
-Input : the npz written by benchmark/ovsgtr/run_ovsgtr_pack.py --boxes det
+Input: the npz written by benchmark/ovsgtr/run_ovsgtr_pack.py --boxes det
         (their native SGDet: GroundingDINO predicts boxes, labels, scores)
 Output: runs/detect/<name>.npz with img_idx / xyxy / conf / cls / n_images,
         readable by eval_zeroshot_detbox.py and eval_ovsgtr_novel.py with

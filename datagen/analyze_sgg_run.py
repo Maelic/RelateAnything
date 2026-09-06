@@ -280,7 +280,7 @@ def main():
 
     # ── 03: per-image counts + scaling with objects ─────────────────────────
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 4.6))
-    bins = np.arange(0, max(rels_per_img) + 2) - .5
+    bins = np.arange(0, max(rels_per_img) + 2) -.5
     a1.hist(rels_per_img, bins=bins, color=C_ACC, alpha=.75, label="total")
     a1.hist(sem_per_img, bins=bins, histtype="step", lw=1.8, color=C_SEM, label="semantic")
     a1.hist(spa_per_img, bins=bins, histtype="step", lw=1.8, color=C_SPA, label="spatial")
@@ -308,7 +308,7 @@ def main():
     # ── 04: graph degree ────────────────────────────────────────────────────
     deg = np.array(degrees_all)
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 4.6))
-    a1.hist(deg, bins=np.arange(0, np.percentile(deg, 99.5) + 2) - .5,
+    a1.hist(deg, bins=np.arange(0, np.percentile(deg, 99.5) + 2) -.5,
             color=C_SEM, alpha=.8)
     a1.set_yscale("log")
     a1.set_xlabel("relations per object (degree)")
@@ -336,8 +336,8 @@ def main():
     pairs = [("in front of", "behind"), ("to the left of", "to the right of"),
              ("above", "below")]
     x = np.arange(len(pairs))
-    a2.bar(x - .18, [dirs.get(a, 0) for a, _ in pairs], .36, color=C_SEM, label="A")
-    a2.bar(x + .18, [dirs.get(b, 0) for _, b in pairs], .36, color=C_SPA, label="B")
+    a2.bar(x -.18, [dirs.get(a, 0) for a, _ in pairs],.36, color=C_SEM, label="A")
+    a2.bar(x +.18, [dirs.get(b, 0) for _, b in pairs],.36, color=C_SPA, label="B")
     a2.set_xticks(x, [f"{a}\nvs {b}" for a, b in pairs], fontsize=8)
     a2.set_ylabel("relations")
     a2.set_title("direction balance (canonical forms)")

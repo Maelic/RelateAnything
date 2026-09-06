@@ -57,13 +57,12 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data.relation_dataset import RelationDataset, collate_fn  # noqa: E402
-from relsgg.geometry import RelGeomEncoder  # noqa: E402
-from relsgg.text_student import encode_texts_student  # noqa: E402
+from relsgg.data.dataset import RelationDataset, collate_fn  # noqa: E402
+from relsgg.model.geometry import RelGeomEncoder  # noqa: E402
+from relsgg.text.student import encode_texts_student  # noqa: E402
 from relsgg.scoring import ScoreContract  # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES
+from relsgg.vocabulary import TRAIN_TEMPLATES
 from relsgg.checkpoint import build_model_from_ckpt
-from relsgg.checkpoint import pad_geo_checkpoint as _pad_geo_checkpoint
 
 
 # Frequency buckets by GT instance count in the EVALUATED split, so the
@@ -230,10 +229,10 @@ def collect(model, loader, device, eval_budget: int, amp: bool = True,
                 # signals and it matters which one carries discrimination.
                 pred_logit.extend(
                     zs.gather(1, best_p.unsqueeze(1)).squeeze(1)[pid]
-                    .float().cpu().tolist())
+.float().cpu().tolist())
                 pred_zpred.extend(
                     zpred[b][mask].gather(1, best_p.unsqueeze(1)).squeeze(1)[pid]
-                    .float().cpu().tolist())
+.float().cpu().tolist())
                 pred_zpair.extend(zpair[b][mask][pid].float().cpu().tolist())
     finally:
         raw.sampler.final_budget = orig
@@ -449,7 +448,7 @@ def main():
                         "THRESHOLD rows mean what they say.")
     p.add_argument("--dump", default="",
                    help="Write the raw per-prediction table (score, tp, cls, "
-                        "logits, image id) to this .npz. Every calibration "
+                        "logits, image id) to this.npz. Every calibration "
                         "study then runs on CPU in seconds instead of "
                         "re-running the model on a GPU.")
     p.add_argument("--out", default="")
@@ -457,7 +456,6 @@ def main():
 
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ck = torch.load(a.checkpoint, map_location="cpu", weights_only=False)
-    _pad_geo_checkpoint(ck, RelGeomEncoder.NUM_GEO)
     model = build_model_from_ckpt(ck, a.weights).to(dev).eval()
 
     ds = RelationDataset(root=a.data_root, split=a.split,
@@ -538,10 +536,10 @@ def main():
     sc, tp = flat["score"], flat["tp"]
     A = auc(sc, tp)
     print("\n=== CONFIDENCE — DISCRIMINATION ===")
-    print(f"  ROC-AUC (score separates TP from FP) : {A:.4f}")
+    print(f"  ROC-AUC (score separates TP from FP): {A:.4f}")
     print(f"  mean score  TP {sc[tp==1].mean():.4f}   FP {sc[tp==0].mean():.4f}"
           f"   gap {sc[tp==1].mean()-sc[tp==0].mean():+.4f}")
-    print(f"  TP rate overall (base precision)     : {tp.mean():.4f}")
+    print(f"  TP rate overall (base precision): {tp.mean():.4f}")
     res["auc"] = A
 
     # ---- 3. confidence: calibration -------------------------------------
@@ -653,7 +651,7 @@ def main():
         print(f"  ECE {ece:.4f} -> {ece_p:.4f}")
         print(f"  AP  {ap:.4f} -> {pr_curve(sc_p, tp, total_gt)[2]:.4f}  "
               f"(must be identical — monotone rescale)")
-        print(f"  score range {sc_p.min():.4f} .. {sc_p.max():.4f}")
+        print(f"  score range {sc_p.min():.4f}.. {sc_p.max():.4f}")
         print(f"  {'bin':>12s}  {'n':>9s}  {'mean score':>10s}  {'precision':>9s}  {'gap':>7s}")
         for lo, hi, n, conf, acc in rows_p:
             if n == 0:
@@ -679,9 +677,9 @@ def main():
     print("\n=== WHAT DOES THE CONFIDENCE NUMBER RANK? ===")
     a_pred = auc(flat["z_pred"], tp)
     a_pair = auc(flat["z_pair"], tp)
-    print(f"  AUC of the predicate term alone (z_pred) : {a_pred:.4f}")
+    print(f"  AUC of the predicate term alone (z_pred): {a_pred:.4f}")
     print(f"  AUC of the relatedness term alone (z_pair): {a_pair:.4f}")
-    print(f"  AUC of the sum (what we ship)            : {A:.4f}")
+    print(f"  AUC of the sum (what we ship): {A:.4f}")
     macro, per_cls_auc, per_cls_n = auc_macro(sc, tp, flat["cls"], min_pos=5,
                                               min_neg=5)
     print(f"\n  pooled AUC   {A:.4f}   (can be high from predicate priors alone)")
@@ -698,7 +696,7 @@ def main():
     res["auc_z_pred"], res["auc_z_pair"] = a_pred, a_pair
     res["auc_within_predicate_macro"] = macro
 
-    # ---- 4e. legacy temperature-only path (kept for the record) ----------
+    # ---- 4e. temperature scaling, an alternative to the Platt fit --------
     T = fit_temperature(flat["logit"], tp) if a.fit_temperature else a.temperature
     if T and T != 1.0:
         z = flat["logit"] / T

@@ -18,7 +18,7 @@ ground truth (fill 0.535).
 Usage
 -----
   python datagen/check_pack_masks.py --root runs/sam_masks/packs \
-      --packs vg150:train vg_raw:train ... --sample 2000
+      --packs vg150:train vg_raw:train... --sample 2000
 """
 
 from __future__ import annotations

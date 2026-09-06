@@ -90,7 +90,7 @@ def main() -> None:
     neg = neg[neg[:, 0] != neg[:, 1]]
     seen = {tuple(sorted(t)) for t in lex}
     neg = np.array([t for t in neg if tuple(sorted(t)) not in seen])[
-        :len(lex) * a.neg_per_pos]
+:len(lex) * a.neg_per_pos]
     if len(hard_neg):
         neg = np.concatenate([neg, hard_neg])
     cs = np.concatenate([(E2[lex[:, 0]] * E2[lex[:, 1]]).sum(-1),

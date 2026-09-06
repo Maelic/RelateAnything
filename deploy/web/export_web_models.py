@@ -4,14 +4,14 @@ One script, seven steps, each with a numerical check against the graph it was ma
 
   1. relation head   deploy/dist/<dist>/relateanything.onnx  -> fp16-STORED graph (weights fp16 + Cast, compute fp32)
   2. predicate text  runs/packed/text_student_v2_512/student.pt + the checkpoint's gate MLP -> predicate_encoder.onnx
-                     (ids [templates, len] -> W [512], alpha []) ; parity vs the shipped predicate bank
+                     (ids [templates, len] -> W [512], alpha []); parity vs the shipped predicate bank
   3. detectors       ultralytics weights -> ONNX with a browser-friendly head:
-                       * yolo26 n/s            : ultralytics export, [1,300,6] xyxy/conf/cls (NMS-free)
-                       * yoloe-11s prompt-free : ultralytics export + in-graph max/argmax over 4,585 classes, masks dropped
-                       * yoloe-11s text-prompt : OWN export with the class vocabulary as a graph INPUT
+                       * yolo26 n/s: ultralytics export, [1,300,6] xyxy/conf/cls (NMS-free)
+                       * yoloe-11s prompt-free: ultralytics export + in-graph max/argmax over 4,585 classes, masks dropped
+                       * yoloe-11s text-prompt: OWN export with the class vocabulary as a graph INPUT
                                                  (txt_feats [1,C,512] = raw MobileCLIP text features; reprta runs inside)
-                       * yolov8s-worldv2 MEGASG-497 : deploy/dist detector.onnx + in-graph max/argmax
-                       * FastSAM-s             : ultralytics export + surgery over its ONE class; segments
+                       * yolov8s-worldv2 MEGASG-497: deploy/dist detector.onnx + in-graph max/argmax
+                       * FastSAM-s: ultralytics export + surgery over its ONE class; segments
                                                  everything and names nothing, so the page labels each instance
                                                  by its own colour (labels="color" in the manifest)
   4. MobileCLIP-BLT text tower (TorchScript -> ONNX), so the page can encode class names that are not in the bank
@@ -30,7 +30,7 @@ Why the class vocabulary is a graph input: ultralytics' exporter fuses the text 
 (static classes). Keeping `txt_feats` as an input makes "re-parameterise to my classes" a matter of feeding different
 rows — no re-export — exactly like the relation head's W/alpha inputs (deploy/export_onnx.py --vocab-mode input).
 
-    python deploy/web/export_web_models.py --site ../RelateAnything_site --scratch /tmp/ra_web_export
+    python deploy/web/export_web_models.py --site../RelateAnything_site --scratch /tmp/ra_web_export
 
 Needs the training venv (torch, ultralytics 8.4.x, onnx, onnxruntime, clip) and internet for the ultralytics assets.
 """
@@ -124,7 +124,7 @@ def head_surgery(src: str, dst: str, n_classes: int, raw_out: str = "output0", i
     ref = ort.InferenceSession(src, providers=["CPUExecutionProvider"]).run(None, {input_name: x})
     raw = ref[0]
     got = ort.InferenceSession(dst, providers=["CPUExecutionProvider"]).run(None, {input_name: x})
-    assert np.abs(got[0] - raw[:, :4]).max() == 0 and np.abs(got[1] - raw[:, 4:4 + n_classes].max(1)).max() == 0, "surgery parity"
+    assert np.abs(got[0] - raw[:,:4]).max() == 0 and np.abs(got[1] - raw[:, 4:4 + n_classes].max(1)).max() == 0, "surgery parity"
     if masks:
         assert np.abs(got[3] - raw[:, 4 + n_classes:4 + n_classes + n_mask]).max() == 0, "mask coef parity"
         assert np.abs(got[4] - ref[1]).max() == 0, "proto parity"
@@ -226,8 +226,8 @@ def step_predicate_encoder(args, scratch):
     import onnx
     import onnxruntime as ort
     import torch
-    from relsgg.api import TRAIN_TEMPLATES
-    from relsgg.text_student import PredicateTextStudent
+    from relsgg.vocabulary import TRAIN_TEMPLATES
+    from relsgg.text.student import PredicateTextStudent
     student = PredicateTextStudent.from_checkpoint(args.student)
     sd = torch.load(args.checkpoint, map_location="cpu", weights_only=False, mmap=True)
     sd = sd.get("ema_model") or sd["model"]
@@ -294,7 +294,7 @@ def step_detectors(args, scratch):
         # i.e. NMS-free detection AND masks, with the coefficients already reduced to the kept 300 rows.
         # NOTE yoloe-26s-seg-pf is deliberately NOT here: its end-to-end export does not reduce the 4,585
         # class columns the way predict() does — every one of the 300 rows comes back with conf 0.82-0.92 and
-        # 298 of them labelled "technician", against 8 correct detections from the .pt path. The 11s variant
+        # 298 of them labelled "technician", against 8 correct detections from the.pt path. The 11s variant
         # works because head_surgery does that reduction explicitly instead of trusting the exporter.
         for wname, mid, cls in (("yolo26s-seg.pt", "yolo26s-seg", YOLO),):
             net = cls(wname)
@@ -340,8 +340,8 @@ def step_detectors(args, scratch):
                 C = txt_feats.shape[1]
                 conf, cls = y[:, 4:4 + C].max(1)
                 if proto is None:
-                    return y[:, :4], conf, cls
-                return y[:, :4], conf, cls, y[:, 4 + C:4 + C + proto.shape[1]], proto
+                    return y[:,:4], conf, cls
+                return y[:,:4], conf, cls, y[:, 4 + C:4 + C + proto.shape[1]], proto
 
         m = YOLOE("yoloe-11s-seg.pt"); net = prep(m.model.eval().float())
         probe = ["person", "chair", "cup", "laptop", "dog", "bicycle", "umbrella", "hat"]
@@ -354,7 +354,7 @@ def step_detectors(args, scratch):
         m2 = YOLOE("yoloe-11s-seg.pt"); m2.set_classes(probe, m2.get_text_pe(probe)); net2 = prep(m2.model.eval().float()); net2.model[-1].fuse(net2.pe)
         with torch.no_grad():
             ref = net2(im); ref = ref[0] if isinstance(ref, (tuple, list)) else ref
-        assert (b - ref[:, :4]).abs().max() < 1e-3 and (c - ref[:, 4:4 + len(probe)].max(1)[0]).abs().max() < 1e-4, "dyn-vocab path != fused path"
+        assert (b - ref[:,:4]).abs().max() < 1e-3 and (c - ref[:, 4:4 + len(probe)].max(1)[0]).abs().max() < 1e-4, "dyn-vocab path != fused path"
         dst = os.path.join(wdir, "yoloe-11s_dynvocab_web.onnx")
         with torch.no_grad():
             torch.onnx.export(wrapper, (im, pre), dst, input_names=["images", "txt_feats"],

@@ -185,7 +185,7 @@ def main():
 
         dep = e["deployed"]
         print(f"{name}")
-        print(f"  deployed : modal `{dep['modal']}` {dep['modal_share']:.1%} of all "
+        print(f"  deployed: modal `{dep['modal']}` {dep['modal_share']:.1%} of all "
               f"emitted relations | effective vocab {dep['effective_vocab']} | "
               f"{dep['vocab_used']} predicates used")
         print(f"             images that are >=90% one predicate: "

@@ -5,7 +5,7 @@ Replaces the GPU wearing probe for uncalibrated (proxy) checkpoints: with no
 calibration.json there is no meaningful absolute tau, so every emission
 number here is at COUNT-MATCHED VOLUME — emit exactly as many wearing edges
 as GT annotates (the same criterion that chose the shipped tau,
-[[relsgg-operating-point]]) — plus 2x and 4x that volume for robustness.
+) — plus 2x and 4x that volume for robustness.
 Volume-free readouts (z decomposition by IoU bin, GT rates) are unchanged.
 
     python training/e0_report.py runs/analysis/e0/dump_base_vg150.npz \
@@ -21,7 +21,7 @@ from collections import Counter, defaultdict
 import numpy as np
 
 sys.path.insert(0, __file__.rsplit("/", 2)[0])
-from research.probe_wearing_conditional import (  # noqa: E402
+from research.probe_wearing_conditional import (# noqa: E402
     BINS, BIN_NAMES, GARMENT, PERSON)
 
 WEAR_RX = re.compile(r"wear|dressed in|has on|clothed", re.I)
@@ -164,11 +164,9 @@ def main():
             print(f"{nm:<28}{r['zpred_gap']:>+10.3f}{r['zpair_gap']:>+10.3f}"
                   f"{100*r['disj_share']:>10.2f}%{100*r['disj_rate']:>9.2f}%"
                   f"{100*r['recall']:>8.2f}%{100*r['fanin_ge2']:>9.1f}%")
-        # The caveat here USED to be hardcoded for the original E0 twins, which
-        # differed by {newopt, scene_pe, geo_squash, pe16, bg0.05} together. It
-        # was printed unconditionally, so it also fired under later single-factor
-        # pairs (the E3 bg_agg arms) where it is simply false and invites the
-        # reader to discount a clean ablation. Derive it from the args instead.
+        # The caveat is derived from the two runs' own arguments, so it is
+        # printed for a multi-factor pair and stays quiet for a clean
+        # single-variable ablation.
         cfgs = []
         for r in rows:
             ck = r.get("ckpt_args")

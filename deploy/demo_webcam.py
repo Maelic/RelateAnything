@@ -106,7 +106,7 @@ def bench(pipe, args) -> None:
     frame = (np.random.rand(480, 640, 3) * 255).astype(np.uint8)
     if args.image and os.path.exists(args.image):
         frame = cv2.imread(args.image)
-    print("[bench] warmup x2 ...")
+    print("[bench] warmup x2...")
     for _ in range(2):
         r = pipe(frame)
     det, rel, dec = [], [], []
@@ -129,10 +129,10 @@ def main() -> None:
         os.path.abspath(__file__)), "dist"), help="directory with the ONNX artifacts")
     ap.add_argument("--backend", default="onnx", choices=["onnx", "torch"],
                     help="onnx (default, torch-free) or torch (needs torch+ultralytics)")
-    ap.add_argument("--deploy", default="",
-                    help="backend=torch: the prepare_deploy_ckpt.py .pt bundle")
+    ap.add_argument("--checkpoint", default="",
+                    help="backend=torch: a released model.pth")
     ap.add_argument("--det_weights", default="",
-                    help="backend=torch: ultralytics detector .pt")
+                    help="backend=torch: ultralytics detector.pt")
     ap.add_argument("--det_arch", default="yolo-world", choices=["yolo-world", "yoloe"])
     ap.add_argument("--device", default="cpu", help="backend=torch: cpu or cuda")
     ap.add_argument("--camera", type=int, default=0)
@@ -144,19 +144,18 @@ def main() -> None:
     ap.add_argument("--det_conf", type=float, default=0.25)
     ap.add_argument("--det_iou", type=float, default=0.5)
     ap.add_argument("--max_boxes", type=int, default=32,
-                    help="boxes handed to the relation head. 16 (the old "
-                         "default) silently deleted 16.5%% of GT relations on "
-                         "PSG test before the sampler ran; 32 recovers to "
-                         "98.3%% for ~9%% latency. See PipelineConfig.")
+                    help="boxes handed to the relation head. At 16, 16.5%% of "
+                         "the annotated relations of PSG test have an endpoint "
+                         "that never reaches the sampler; 32 keeps 98.3%% of "
+                         "them for about 9%% more latency.")
     ap.add_argument("--topk", type=int, default=10)
     ap.add_argument("--threshold", type=float, default=None,
-                    help="score floor. On a CALIBRATED head this is literally "
-                         "a TARGET PRECISION — 0.5 means 'only show relations "
-                         "I would be right about half the time' — so the "
-                         "default is 0.5 and it transfers across calibrations. "
-                         "On an uncalibrated head the score is meaningless "
-                         "(~97% of it lands in [0.9,1.0)) and the legacy 0.30 "
-                         "is kept only because it is what the demo shipped.")
+                    help="score floor. On a calibrated head it reads as a "
+                         "target precision: 0.5 shows relations the model "
+                         "would be right about half the time, and it means the "
+                         "same on any calibrated model. Uncalibrated scores "
+                         "crowd into [0.9, 1.0), where a threshold means "
+                         "little. Default: 0.5 calibrated, 0.3 otherwise.")
     ap.add_argument("--pair_weight", type=float, default=1.0)
     ap.add_argument("--preset", default="all", choices=PRESET_ORDER)
     ap.add_argument("--predicates", nargs="*", default=None,
@@ -174,11 +173,11 @@ def main() -> None:
 
     print(f"[demo] backend={args.backend}"
           + (f"  dist={args.dist}" if args.backend == "onnx"
-             else f"  deploy={args.deploy}  device={args.device}"))
+             else f"  deploy={args.checkpoint}  device={args.device}"))
     pipe = ScenePipeline(
         args.dist, threads=args.threads, providers=args.providers,
         backend=args.backend, device=args.device, det_arch=args.det_arch,
-        relation=args.deploy, detector=args.det_weights,
+        relation=args.checkpoint, detector=args.det_weights,
         det_cfg=DetectorConfig(conf=args.det_conf, iou=args.det_iou,
                                max_det=args.max_boxes),
         thr_cfg=ThresholdConfig(threshold=0.0, topk=args.topk,

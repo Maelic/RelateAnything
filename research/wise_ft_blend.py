@@ -21,7 +21,7 @@ from pathlib import Path
 
 import torch
 
-from relsgg.backbone import RelAnythingBackbone
+from relsgg.model.backbone import Backbone
 
 SKIP_SUBSTRINGS = ("layer_weights", "stage_proj", "lora_")
 
@@ -35,7 +35,7 @@ def blend_state_dict(sd: dict, init_sd: dict, alpha: float) -> tuple[dict, int, 
             and k in init_sd
             and torch.is_floating_point(v)
             and init_sd[k].shape == v.shape
-        )
+)
         if blendable:
             out[k] = alpha * v.float() + (1.0 - alpha) * init_sd[k].float()
             out[k] = out[k].to(v.dtype)
@@ -58,14 +58,14 @@ def main() -> None:
     if not isinstance(a, dict):
         a = vars(a)
 
-    backbone = RelAnythingBackbone(
+    backbone = Backbone(
         backbone_type=a["backbone_type"],
         **({"model_name": a["backbone_model"]} if a.get("backbone_model") else {}),
         **({"patch_size": a["patch_size"]} if a.get("patch_size") else {}),
         lora_rank=a["lora_rank"],
         lora_layers=a.get("lora_layers"),
         pretrained=True,
-    )
+)
     init_sd = {f"backbone.{k}": v for k, v in backbone.state_dict().items()}
 
     slim = {k: v for k, v in ck.items()

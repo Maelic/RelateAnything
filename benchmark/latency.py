@@ -50,8 +50,8 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data import RelationDataset, collate_fn                      # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES                          # noqa: E402
+from relsgg.data import RelationDataset, collate_fn                      # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES                          # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt             # noqa: E402
 
 STAGES = ["backbone", "spatial_pool", "sampler", "rel_transformer", "vocab_head"]
@@ -193,7 +193,7 @@ def main() -> None:
     print(f"{len(batches)} real images from {a.pack}/{a.split}, "
           f"{np.mean(counts):.1f} boxes/img (min {min(counts)}, max {max(counts)})")
 
-    from relsgg.text_student import encode_texts_student
+    from relsgg.text.student import encode_texts_student
     from benchmark.vocab_stub import real_vocabulary, stub_vocabulary
     results = {}
     for run in a.runs:

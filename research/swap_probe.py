@@ -1,4 +1,4 @@
-"""SwapAcc / InvConsistency probe (plan P4) — the headline direction metric.
+"""SwapAcc / InvConsistency probe — the direction metric.
 
 For every GT relation (s, o, g) in the val split, the sampler force-includes
 both the GT slot (s, o) and the swapped slot (o, s) when targets are passed
@@ -9,7 +9,7 @@ both the GT slot (s, o) and the swapped slot (o, s) when targets are passed
                  Reported overall + spatial/semantic split (rel_flags bit0),
                  for the main head and the fast bilinear head (whose only
                  direction mechanism is the P_s/P_o asymmetry — RAM's bet).
-  InvTop        for predicates with a spatial inverse (above/below, ...):
+  InvTop        for predicates with a spatial inverse (above/below,...):
                  P[ best inverse-predicate score at (o,s) > score of g at
                  (o,s) ] — on the swapped pair, does the model know the
                  relation flips rather than merely weakening?
@@ -39,9 +39,9 @@ from tqdm import tqdm
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data import RelationDataset, collate_fn                    # noqa: E402
+from relsgg.data import RelationDataset, collate_fn                    # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt       # noqa: E402
-from relsgg.loss_synonym import PredicateOntology               # noqa: E402
+from relsgg.training.losses import PredicateOntology               # noqa: E402
 
 
 def main() -> None:

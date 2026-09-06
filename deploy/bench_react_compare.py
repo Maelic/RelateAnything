@@ -6,7 +6,7 @@ the whole detector -> relation-head path (image preprocessing included on our
 side, which is conservative for us: REACT times only the model call).
 
     python deploy/bench_react_compare.py --checkpoint <ckpt> --pack runs/packed/vg150/test \
-        --det .../yolov8m_vg150.pt --num-images 200 --num-warmup 20
+        --det.../yolov8m_vg150.pt --num-images 200 --num-warmup 20
 """
 from __future__ import annotations
 import argparse

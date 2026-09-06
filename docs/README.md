@@ -26,7 +26,7 @@ makes sense on a first read.
 |---|---|
 | [Training](training.md) | reproducing the release, or running an ablation |
 | [Contributing](../CONTRIBUTING.md) | opening a PR |
-| [Design notes](design/) | [contrastive supervision](design/contrastive-supervision.md), [the A5 graph-quality metric](design/a5-graph-quality-metric.md), [OvR-SGG mean recall](design/ovr-sgg-mean-recall.md) |
+| [The objective](objective.md) | adding a dataset or a loss term: what a source knows, and what it may not be used to contradict |
 
 ## The short version
 

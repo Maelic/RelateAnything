@@ -21,14 +21,14 @@ Three steps:
   scatter  union shards + refs    -> runs/sam_masks/packs/<ds>/<split>/masks.jsonl
 
 The scatter output is byte-for-byte the same shape as `psg_gt_masks.py` emits —
-`{"idx": <pack image index>, "image_id": ..., "rles": [rle|null, ...]}` in pack
+`{"idx": <pack image index>, "image_id":..., "rles": [rle|null,...]}` in pack
 box order — so downstream code never learns which masks came from GT and which
 from SAM.
 
 Usage
 -----
   python datagen/pack_mask_manifest.py build \
-      --packs vg150:train vg150:val vg150:test vg_raw:train ... \
+      --packs vg150:train vg150:val vg150:test vg_raw:train... \
       --manifest runs/sam_masks/packs/_union
 
   python datagen/pack_mask_manifest.py scatter \
@@ -276,7 +276,7 @@ def main() -> None:
     sub = p.add_subparsers(dest="cmd", required=True)
 
     b = sub.add_parser("build")
-    b.add_argument("--packs", nargs="+", required=True, help="ds:split ...")
+    b.add_argument("--packs", nargs="+", required=True, help="ds:split...")
     b.add_argument("--manifest", required=True)
 
     r = sub.add_parser("refs", help="lookup-only refs against a frozen union")

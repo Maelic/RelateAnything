@@ -39,15 +39,14 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data.relation_dataset import RelationDataset, collate_fn  # noqa: E402
-from relsgg.geometry import RelGeomEncoder  # noqa: E402
+from relsgg.data.dataset import RelationDataset, collate_fn  # noqa: E402
+from relsgg.model.geometry import RelGeomEncoder  # noqa: E402
 from relsgg.scoring import ScoreContract  # noqa: E402
-from relsgg.text_student import encode_texts_student  # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES  # noqa: E402
+from relsgg.text.student import encode_texts_student  # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES  # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt  # noqa: E402
-from research.probe_wearing_conditional import (  # noqa: E402
+from research.probe_wearing_conditional import (# noqa: E402
     BINS, BIN_NAMES, GARMENT, PERSON, cross_geometry, cxcywh_to_xyxy)
-from relsgg.checkpoint import pad_geo_checkpoint as _pad_geo_checkpoint  # noqa: E402
 
 
 @torch.no_grad()
@@ -59,12 +58,12 @@ def collect(model, loader, ds, dev, contract, tau, wear_ids, names, amp=True,
 
     nb = len(BINS) - 1
     n_pair = np.zeros(nb, np.int64)      # candidate person-garment pairs
-    n_gt = np.zeros(nb, np.int64)        # ... annotated wearing
-    n_emit = np.zeros(nb, np.int64)      # ... model emits wearing at tau
-    n_samp = np.zeros(nb, np.int64)      # ... proposed by the sampler
+    n_gt = np.zeros(nb, np.int64)        #... annotated wearing
+    n_emit = np.zeros(nb, np.int64)      #... model emits wearing at tau
+    n_samp = np.zeros(nb, np.int64)      #... proposed by the sampler
     s_wear = np.zeros(nb, np.float64)    # sum of calibrated wearing score
     s_top = np.zeros(nb, np.float64)     # sum of calibrated top-1 score
-    n_any = np.zeros(nb, np.int64)       # ... model emits ANY predicate
+    n_any = np.zeros(nb, np.int64)       #... model emits ANY predicate
     # DECOMPOSITION: the contract is sigmoid(a*(z_pred + w*z_pair) + b), so if
     # z_pair is already strongly negative on disjoint pairs and z_pred simply
     # outvotes it, re-weighting w is a ZERO-RETRAIN fix. If z_pair is flat, the
@@ -250,7 +249,6 @@ def main():
 
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ck = torch.load(a.checkpoint, map_location="cpu", weights_only=False)
-    _pad_geo_checkpoint(ck, RelGeomEncoder.NUM_GEO)
     model = build_model_from_ckpt(ck, "ema").to(dev).eval()
     model.sampler.geo_budget = a.geo_budget
     model.sampler.final_budget = a.final_budget

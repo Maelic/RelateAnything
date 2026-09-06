@@ -22,14 +22,15 @@ import json
 import os
 from pathlib import Path
 
-# Dataset and run roots come from relsgg.paths (RA_DATASETS / RA_RUNS).
-SS = DATASETS / "SpatialSense"
-MIX = DATAMIX
-
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from training.convert_datamix import CocoSGGWriter  # noqa: E402
 from relsgg.paths import DATASETS, DATAMIX, RUNS, REPO  # noqa: E402
+
+# Dataset and run roots come from relsgg.paths (RA_DATASETS / RA_RUNS).
+SS = DATASETS / "SpatialSense"
+MIX = DATAMIX
+
 
 
 def main() -> None:

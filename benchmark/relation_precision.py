@@ -12,8 +12,8 @@ relations (OvSGTR: 1.7 distinct predicates per graph, modal share 0.85, measured
 judge-free by graph_stats.py) would score near-perfect PRECISION while saying almost
 nothing. So each relation gets:
 
-  true : yes | no | unclear   -- is the claim actually true of this photograph
-  info : 0..3                 -- how much it says BEYOND what the two object NAMES
+  true: yes | no | unclear   -- is the claim actually true of this photograph
+  info: 0..3                 -- how much it says BEYOND what the two object NAMES
                                  already imply. The "beyond the names" framing is the
                                  whole point: it prices the modal predicate at ~0,
                                  because `cup on table` is guessable from `cup` and

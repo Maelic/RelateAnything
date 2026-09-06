@@ -253,7 +253,7 @@ def overlay_mask_desaturate_bg(pil, objects, masks, alpha=0.35):
             any_mask |= (m["binary"] > 0)
 
     # Blend: inside mask = original, outside = gray
-    result = np.where(any_mask[:, :, None], arr, gray_bg)
+    result = np.where(any_mask[:,:, None], arr, gray_bg)
     pil_result = Image.fromarray(result)
 
     # Now overlay contours + IDs on top
@@ -539,7 +539,7 @@ def run_one(processor, model, sample, *, overlay_fn, prompt_template, token_budg
         n=len(objects),
         object_list="\n".join(f"  {i+1}_{obj['label']}" for i, obj in enumerate(objects)),
         min_rels=max(len(objects), 4),
-    )
+)
 
     messages = [{"role": "user", "content": [
         {"type": "image"},
@@ -547,7 +547,7 @@ def run_one(processor, model, sample, *, overlay_fn, prompt_template, token_budg
     ]}]
     text = processor.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True, enable_thinking=False,
-    )
+)
     inputs = processor(text=text, images=[ann_img], return_tensors="pt").to(model.device)
     input_len = inputs["input_ids"].shape[-1]
 
@@ -642,21 +642,21 @@ def render_html_report(
     css = """
     body { font-family: system-ui, sans-serif; margin: 20px; background: #f5f5f5; }
     h1 { color: #333; }
-    .summary-table { border-collapse: collapse; margin: 20px 0; width: 100%; }
-    .summary-table th, .summary-table td { border: 1px solid #ccc; padding: 6px 10px; text-align: center; }
-    .summary-table th { background: #444; color: white; }
-    .summary-table tr:nth-child(even) { background: #eee; }
-    .summary-table tr:hover { background: #ddf; }
-    .best { background: #cfc !important; font-weight: bold; }
-    .trial { background: white; border-radius: 8px; margin: 16px 0; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
-    .trial h2 { margin-top: 0; }
-    .image-grid { display: flex; flex-wrap: wrap; gap: 12px; }
-    .image-card { border: 1px solid #ddd; border-radius: 6px; padding: 8px; background: #fafafa; max-width: 620px; }
-    .image-card img { max-width: 100%; border-radius: 4px; }
-    .rels { font-size: 13px; margin-top: 6px; }
-    .rel { margin: 2px 0; }
-    .forbidden { color: red; font-weight: bold; }
-    .pred-list { font-size: 12px; color: #666; column-count: 3; }
+.summary-table { border-collapse: collapse; margin: 20px 0; width: 100%; }
+.summary-table th,.summary-table td { border: 1px solid #ccc; padding: 6px 10px; text-align: center; }
+.summary-table th { background: #444; color: white; }
+.summary-table tr:nth-child(even) { background: #eee; }
+.summary-table tr:hover { background: #ddf; }
+.best { background: #cfc !important; font-weight: bold; }
+.trial { background: white; border-radius: 8px; margin: 16px 0; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+.trial h2 { margin-top: 0; }
+.image-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+.image-card { border: 1px solid #ddd; border-radius: 6px; padding: 8px; background: #fafafa; max-width: 620px; }
+.image-card img { max-width: 100%; border-radius: 4px; }
+.rels { font-size: 13px; margin-top: 6px; }
+.rel { margin: 2px 0; }
+.forbidden { color: red; font-weight: bold; }
+.pred-list { font-size: 12px; color: #666; column-count: 3; }
     details { margin: 8px 0; }
     """
 
@@ -665,7 +665,7 @@ def render_html_report(
         all_trials,
         key=lambda t: t["metrics"]["entropy_nats"] * (1 - t["metrics"]["forbidden_rate"]),
         reverse=True,
-    )
+)
     best_name = ranked[0]["name"] if ranked else ""
 
     rows_html = ""
@@ -703,7 +703,7 @@ def render_html_report(
                         f'<b>→ {p} →</b> '
                         f'{rel.get("object_id","?")}_{rel.get("object_label","")}'
                         f'</div>'
-                    )
+)
                 desc = r["sg"].get("scene_description", "")
             else:
                 rels_html = "<em>Parse failed</em>"
@@ -780,13 +780,13 @@ def main():
     print("=" * W)
     print("  Creative Prompt Optimisation Agent")
     print("=" * W)
-    print(f"  Model     : {model_id}")
-    print(f"  Images    : {args.n_images}")
-    print(f"  Trials    : {len(ideas)}")
-    print(f"  Budget    : {args.token_budget} tok, greedy={args.greedy}")
+    print(f"  Model: {model_id}")
+    print(f"  Images: {args.n_images}")
+    print(f"  Trials: {len(ideas)}")
+    print(f"  Budget: {args.token_budget} tok, greedy={args.greedy}")
     est = args.n_images * len(ideas) * 5
-    print(f"  Est time  : ~{est/60:.0f} min")
-    print(f"  Output    : {outdir}")
+    print(f"  Est time: ~{est/60:.0f} min")
+    print(f"  Output: {outdir}")
     print("=" * W)
 
     # 1. Load samples
@@ -833,7 +833,7 @@ def main():
                     greedy=args.greedy,
                     temperature=args.temperature,
                     model_id=model_id,
-                )
+)
             except Exception as exc:
                 print(f"    [{si+1}] ERROR: {exc}")
                 results.append({"elapsed": 0, "sg": None, "raw": str(exc),

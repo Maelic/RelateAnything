@@ -55,9 +55,9 @@ import torch
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from training.text_space_diag import build_groups          # noqa: E402
-from relsgg.text_student import encode_texts_student        # noqa: E402
+from relsgg.text.student import encode_texts_student        # noqa: E402
 
-# Same "photo" template ensemble the v34 student W was built with.
+# The template ensemble the vocabulary matrix is built with.
 PHOTO_TEMPLATES = ["{p}", "one object is {p} another object",
                    "a photo of something {p} something"]
 
@@ -152,7 +152,7 @@ def main() -> None:
 
     # ---- student embeddings for the union order (the training W) --------------
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"[union] encoding {V} predicates with student on {device} ...")
+    print(f"[union] encoding {V} predicates with student on {device}...")
     E = encode_texts_student(union, args.student,
                              templates=PHOTO_TEMPLATES, device=device,
                              batch=args.batch).numpy().astype(np.float16)
@@ -162,7 +162,7 @@ def main() -> None:
         embeddings=E,
         predicates=np.array(union),           # plain unicode — np.load-safe
         templates=np.array(PHOTO_TEMPLATES),
-    )
+)
     print(f"[union] wrote pred_embeds_student_photo.npz  {E.shape} "
           f"({(out_dir / 'pred_embeds_student_photo.npz').stat().st_size/1e6:.1f} MB)")
 

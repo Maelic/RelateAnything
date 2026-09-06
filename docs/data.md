@@ -60,7 +60,7 @@ runs/packed/<name>/<split>/
 ```
 
 All id resolution and box normalization happen at pack time. The loader
-([`data/relation_dataset.py`](../data/relation_dataset.py)) only decodes images
+([`relsgg/data/dataset.py`](../relsgg/data/dataset.py)) only decodes images
 and slices arrays, so worker startup is instant and resident memory stays flat
 regardless of corpus size.
 
@@ -81,7 +81,7 @@ flip silently falsifies them.
 ## Mixtures
 
 Sources are packed independently, then trained jointly through one shared
-vocabulary ([`data/multipack.py`](../data/multipack.py)). Sizes differ by two
+vocabulary ([`relsgg/data/multipack.py`](../relsgg/data/multipack.py)). Sizes differ by two
 orders of magnitude, so a plain concatenation would drown the small sources; a
 `DistributedWeightedSampler` draws each epoch from a per-sample multinomial
 that realizes target per-source fractions, sharded across DDP ranks.
@@ -108,7 +108,7 @@ that realizes target per-source fractions, sharded across DDP ranks.
 5. Check for evaluation leakage — see below.
 6. Add it to `--data_roots` / `--mix_fractions`.
 
-Then read [`docs/design/contrastive-supervision.md`](design/contrastive-supervision.md)
+Then read [`docs/objective.md`](objective.md)
 **before** you train on it. A source's *label space* is a claim about what
 absence means: HICO-DET annotates 117 verbs and nothing else, so treating `on`
 as a negative for a HICO pair teaches the model something false. That is what
@@ -122,8 +122,8 @@ both `vg_raw` and `megasg` under two id conventions, and the datamix registry
 does not catch it by itself.
 
 ```bash
-python training/audit_image_overlap.py --pack runs/packed/<name> --against runs/packed/psg ...
-python train.py ... --exclude_ids runs/datamix/indoorvg_holdout.json     # shipped in maelic/OV-SGG-Bench
+python training/audit_image_overlap.py --pack runs/packed/<name> --against runs/packed/psg...
+python train.py... --exclude_ids runs/datamix/indoorvg_holdout.json     # shipped in maelic/OV-SGG-Bench
 ```
 
 Vocabulary overlap is a separate axis and equally load-bearing — see

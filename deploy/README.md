@@ -37,7 +37,7 @@ python deploy/build_release.py --only relsgg-vits16plus
 
 Models are declared in [`release_manifest.json`](release_manifest.json).
 The individual steps remain runnable by hand (`export_onnx.py`,
-`calibrate_thresholds.py`, `build_predicate_bank.py`, `merge_lora.py`) — the
+`calibrate_thresholds.py`, `build_predicate_bank.py`) — the
 driver only sequences them.
 
 Three invariants the tooling enforces rather than trusts:
@@ -98,11 +98,10 @@ frames freely.
 forward pass, using the bank's `is_spatial` vector (type-stratified graph
 constraint — each pair may contribute one edge per stream, so a pair can
 legitimately hold `on` and `holding` at once). Banks built before this
-schema simply do not offer the feature; nothing degrades silently.
+schema do not offer the feature, and say so rather than degrading silently.
 
 ## 6. Torch backend (development)
 
 ```bash
-python deploy/prepare_deploy_ckpt.py --checkpoint <snapshot>/model.pth
-python deploy/demo_webcam.py --backend torch --deploy relateanything_deploy.pt
+python deploy/demo_webcam.py --backend torch --checkpoint <snapshot>/model.pth
 ```

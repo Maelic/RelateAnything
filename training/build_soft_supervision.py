@@ -1,12 +1,11 @@
-"""Build the v42 soft-supervision artifact: every hand-set semantic constant, estimated.
+"""Build the soft-supervision artifact the relation loss reads.
 
-WHAT THIS REPLACES. The relation loss carried five cosine thresholds (tau_ignore 0.94,
-hard_lo 0.85, tau_dilate 0.94, tau_ctx 0.5/tau_ctx_floor 0.85), three hand negative
-weights (neg_weight / soft_neg_weight / rel_neg_weight = 0.3), a hand-written synonym
-table for positives, and a fragile alpha<=0.5 rule for swap-hinge eligibility. Each
-encodes a semantic claim ("these are synonyms", "this negative is probably true",
-"this predicate is directional") that this script instead ESTIMATES, with every
-estimate validated on held-out data before any GPU run.
+Every semantic constant the objective needs is estimated here rather than set
+by hand: which predicates count as synonyms of which, how much an unannotated
+column is likely to be true anyway, and how reciprocal a predicate is. Each of
+those is a claim about meaning, and a threshold on a text cosine is a poor way
+to make one — thresholds do not even survive a change of text encoder. Every
+estimate here is validated on held-out data before a GPU run uses it.
 
 The artifact (`soft_supervision.npz`) contains, all on the union vocabulary order:
 
@@ -89,8 +88,8 @@ def main() -> None:
     ap.add_argument("--union_preds", default=str(TS / "union_predicates.json"))
     ap.add_argument("--kernel_embeds",
                     default=str(TS / "pred_embeds_studentv2_photo.npz"),
-                    help="the supervision ORACLE space (student_v2) — NOT the "
-                         "training W, which stays student_v1")
+                    help="the text space the supervision is estimated in, "
+                         "which need not be the space W is trained in")
     ap.add_argument("--pred_context", default=str(TS / "pred_context_mc5.npz"))
     ap.add_argument("--neg_per_pos", type=int, default=20)
     ap.add_argument("--seed", type=int, default=0)
@@ -142,7 +141,7 @@ def main() -> None:
     neg = neg[neg[:, 0] != neg[:, 1]]
     seen_lex = {tuple(sorted(t)) for t in lex}
     neg = np.array([t for t in neg if tuple(sorted(t)) not in seen_lex])[
-        :len(lex) * a.neg_per_pos]
+:len(lex) * a.neg_per_pos]
     cs = np.concatenate([(E2[lex[:, 0]] * E2[lex[:, 1]]).sum(-1),
                          (E2[neg[:, 0]] * E2[neg[:, 1]]).sum(-1)])
     ys = np.concatenate([np.ones(len(lex)), np.zeros(len(neg))])
@@ -261,7 +260,7 @@ def main() -> None:
         ng = ng[ng[:, 0] != ng[:, 1]]
         sp = {tuple(sorted(t)) for t in pos}
         ng = np.array([t for t in ng if tuple(sorted(t)) not in sp])[
-            :len(pos) * a.neg_per_pos]
+:len(pos) * a.neg_per_pos]
         X = np.concatenate([feats(pos[:, 0], pos[:, 1]), feats(ng[:, 0], ng[:, 1])])
         y = np.concatenate([np.ones(len(pos)), np.zeros(len(ng))])
         return X, y, pos
@@ -293,11 +292,10 @@ def main() -> None:
     qs = {q: round(float(np.quantile(p_bulk, q)), 5)
           for q in (0.5, 0.9, 0.95, 0.99, 0.999)}
     print(f"[alsotrue] bulk EN-corrected p quantiles {qs}  (c={c_pre:.4f})")
-    # Gate on what the numbers MEAN, not on reflex strictness (build 4's p99 gate
-    # rejected a distribution milder than the incumbent): p95 < floor bounds
-    # storage at ~1000/class, and the bulk median must be background-level. The
-    # effectively-removed rate is REPORTED against v41's 83/class rather than
-    # asserted — that comparison is for the review table, with eyes on it.
+    # Gate on what the numbers mean: p95 below the floor bounds storage at
+    # about 1000 columns per class, and the bulk median has to sit at
+    # background level. The effectively-removed rate is reported rather than
+    # asserted, because it is a judgement call for the review table.
     assert qs[0.95] < FLOOR and qs[0.5] < FLOOR / 10, (
         f"corrected-p p95 {qs[0.95]} / median {qs[0.5]} — bulk not background, "
         "not sweeping 365M pairs with it")
@@ -341,7 +339,7 @@ def main() -> None:
         "refusing to write a matrix that down-weights everything")
     print(f"\n[alsotrue] neg_lw nnz {len(neg_i):,} per-class "
           f"{report['alsotrue']['downweighted_per_class']} "
-          f"(v41 ignored 82.8/class as a hard mask)")
+          f"(a hard cosine mask ignored 82.8 per class)")
 
     # =========================================================================
     # 3. SYMMETRY — beta-binomial 2-component EM over reverse-annotation rates
@@ -436,7 +434,7 @@ def main() -> None:
         w_cooc=np.float32(w_cooc),
         kernel_cos_floor=np.float32(lo_cos),
         oracle=str(a.kernel_embeds),
-    )
+)
     json.dump(report, open(str(a.out).replace(".npz", "_report.json"), "w"), indent=2)
     print(f"\n[out] wrote {a.out} "
           f"({Path(a.out).stat().st_size / 1e6:.1f} MB) + report json")

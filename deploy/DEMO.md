@@ -5,7 +5,7 @@ Live scene graphs from a webcam, with **both** vocabularies editable at runtime.
 ## Run it
 
 ```bash
-source .venv/bin/activate
+source.venv/bin/activate
 python deploy/gradio_app.py                 # GPU if present, else CPU
 python deploy/gradio_app.py --device cpu    # force CPU
 python deploy/gradio_app.py --share         # public link (customer demo)

@@ -9,7 +9,7 @@ evaluator reads: boxes (xyxy, ORIGINAL pixel frame — that is what their GT is 
 image_size, pred_labels/labels (their contiguous class ids, 0 = background), pred_scores,
 rel_pair_idxs [N,2], pred_rel_scores [N, 1+P] (col 0 = background), pred_rel_labels.
 
-Usage: python training/export_sgg_benchmark_preds.py --checkpoint ... --dataset_root runs/packed/vg150
+Usage: python training/export_sgg_benchmark_preds.py --checkpoint... --dataset_root runs/packed/vg150
        --dataset_name vg150 --det runs/detect/yolov8m_vg150_test.npz --det_weights <yolo.pt>
        --their runs/benchmark/react_compare/their_test_vg150.json --out <predictions.pth> [--keep_W]
 """
@@ -22,7 +22,7 @@ from tqdm import tqdm
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 import benchmark.eval_zeroshot_detbox as D                       # noqa: E402  (model loading + DetBoxDataset)
-from relsgg.train_engine import _region_kwargs          # noqa: E402
+from relsgg.training.engine import region_kwargs          # noqa: E402
 
 
 class IndexedDetBox(D.DetBoxDataset):
@@ -39,7 +39,6 @@ def main():
     p.add_argument("--split", default="test"); p.add_argument("--det", required=True)
     p.add_argument("--det_weights", required=True); p.add_argument("--their", required=True)
     p.add_argument("--out", required=True); p.add_argument("--weights", default="ema")
-    p.add_argument("--dinotxt_weights", default="checkpoints/dinov3_vitl16_dinotxt_vision_head_and_text_encoder-a442d8f5.pth")
     p.add_argument("--text_student", default=None)
     p.add_argument("--det_conf", type=float, default=0.10); p.add_argument("--img_size", type=int, default=448)
     p.add_argument("--max_objects", type=int, default=60); p.add_argument("--eval_budget", type=int, default=500)
@@ -61,11 +60,14 @@ def main():
         print(f"--keep_W: keeping the checkpoint's W ({len(pred_names)} predicates)")
         model.vocab_head.pred_names = list(pred_names)
     elif text_student:
-        from relsgg.text_student import encode_texts_student
+        from relsgg.text.student import encode_texts_student
         E = encode_texts_student(pred_names, text_student, templates=templates, device=device)
         model.vocab_head.set_vocabulary_matrix(pred_names, E)
     else:
-        model.vocab_head.encode_vocabulary_dinotxt(pred_names, dinotxt_weights=args.dinotxt_weights, templates=templates)
+        raise SystemExit(
+            "this checkpoint names no text student. The vocabulary has to be "
+            "encoded by the encoder the head was trained against; pass "
+            "--text_student, or use a released model, which ships its own.")
     model.reparameterize()
 
     their = json.load(open(args.their))
@@ -96,7 +98,7 @@ def main():
         for images, boxes, box_counts, targets in tqdm(loader, desc="export"):
             images, boxes, box_counts = images.to(device), boxes.to(device), box_counts.to(device)
             with torch.amp.autocast("cuda", enabled=device.type == "cuda", dtype=torch.bfloat16):
-                out = model(images, boxes, box_counts, targets=None, **_region_kwargs(targets, device))
+                out = model(images, boxes, box_counts, targets=None, **region_kwargs(targets, device))
             logits, sub_idx, obj_idx, valid = out["logits"], out["sub_idx"], out["obj_idx"], out["valid_mask"]
             scores = torch.softmax(logits.float(), -1)
             if out.get("pair_logits") is not None:
@@ -106,7 +108,7 @@ def main():
                 if iid not in pos_of_id: continue
                 n = int(box_counts[b]); bsc = tgt["box_scores"][:n].float()
                 n_det = int((bsc > 0).sum())            # DetBoxDataset pads an empty image to 1 zero box
-                cx = boxes[b, :n].float().cpu()
+                cx = boxes[b,:n].float().cpu()
                 xyxy = torch.stack([cx[:, 0] - cx[:, 2] / 2, cx[:, 1] - cx[:, 3] / 2, cx[:, 0] + cx[:, 2] / 2, cx[:, 1] + cx[:, 3] / 2], -1) * torch.tensor([W, H, W, H])
                 # labels: pack category idx per det box is not stored in the target -> recover from the dataset
                 s0, s1 = ds.starts[i], ds.starts[i + 1]

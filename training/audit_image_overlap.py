@@ -47,7 +47,7 @@ def dhash64(path: str) -> int:
             im.draft("L", (72, 72))          # fast JPEG DCT-domain downscale
             g = im.convert("L").resize((9, 8), Image.BILINEAR)
         a = np.asarray(g, dtype=np.int16)
-        bits = (a[:, 1:] > a[:, :-1]).flatten()
+        bits = (a[:, 1:] > a[:,:-1]).flatten()
         h = 0
         for b in bits:
             h = (h << 1) | int(b)
@@ -140,7 +140,7 @@ def compare(max_report: int = 30) -> None:
         best = np.full(len(th), 64, dtype=np.uint8)
         arg = np.zeros(len(th), dtype=np.int32)
         for i in range(0, len(th), 8192):
-            x = th[i:i + 8192, None] ^ eh[None, :]
+            x = th[i:i + 8192, None] ^ eh[None,:]
             dist = np.bitwise_count(x).astype(np.uint8)
             best[i:i + 8192] = dist.min(axis=1)
             arg[i:i + 8192] = dist.argmin(axis=1)

@@ -3,7 +3,7 @@
 YOLO-World / YOLOE carry a text-conditioned detection head. `set_classes` bakes
 a chosen vocabulary's text embeddings into the head so that, at inference, the
 detector runs with ZERO language-model overhead — the exact same trick the
-relation head uses (deploy/prepare_deploy_ckpt.py). Reparameterized weights load
+relation head uses. Reparameterized weights load
 and run offline.
 
 Run once (needs internet the first time to fetch the base detector + its CLIP /
@@ -29,7 +29,7 @@ def main() -> None:
     ap.add_argument("--arch", choices=["yolo-world", "yoloe"], default="yolo-world")
     ap.add_argument("--base", default="",
                     help="base weights (default: yolov8x-worldv2.pt / yoloe-11l-seg.pt)")
-    ap.add_argument("--out", default="", help="output .pt (default derived from arch)")
+    ap.add_argument("--out", default="", help="output.pt (default derived from arch)")
     ap.add_argument("--classes", nargs="*", default=None,
                     help="override object vocabulary (default: deploy/vocab.OBJECT_VOCAB)")
     args = ap.parse_args()

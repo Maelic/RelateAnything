@@ -10,29 +10,28 @@ Oracle: runs/packed/text_student/corpus.json ships LABELLED synonym_pairs and
 inverse_pairs (built by training/distill/build_corpus.py), so tau can be
 chosen against ground truth rather than by inspection.
 
-A THRESHOLD IS A PROPERTY OF ONE EMBEDDING SPACE. This script was first run in
-student_v1 and its answer (0.955) was carried into student_v2 unchanged, where
-it is not a strict threshold but a near-exact-string-match test. The two spaces
-are not on the same scale at all:
+A THRESHOLD IS A PROPERTY OF ONE EMBEDDING SPACE, and carrying a number
+between spaces silently changes what it tests. Two text spaces for the same
+vocabulary:
 
                  synonym cos   inverse   random    separation
-    student_v1         0.961     0.279    0.805         0.156
-    student_v2         0.755    -0.003    0.167         0.588   <- in use
+    an earlier space   0.961     0.279    0.805         0.156
+    the shipped one    0.755    -0.003    0.167         0.588
 
-student_v2 is by far the better space (3.8x the separation, inverses pushed to
-zero), but the SAME NUMBER means something completely different in it:
+The shipped space separates synonyms from random pairs 3.8 times better and
+pushes inverses to zero, but the same threshold means something else in it:
 
-      tau        syn recall in v1     syn recall in v2
-    0.955                  72.3%                 0.6%   <- what A3 ran at
-    0.720                 100.0%                64.4%   <- v2's calibrated point
+      tau     synonym recall, earlier    shipped
+    0.955                       72.3%       0.6%
+    0.720                      100.0%      64.4%   <- the calibrated point
 
-So every A3 open-vocab number from v38 on was measured with a matcher that
-rejected 99.4% of true synonyms. Hence --pred_embeds now DEFAULTS to the space
-actually in use, the grid extends down to 0.30, and the chosen tau is written
-into the json together with the space it was fitted in so eval_zeroshot.py can
+A threshold carried from one space into another therefore rejected 99.4% of
+true synonyms while looking unchanged. So --pred_embeds defaults to the space
+in use, the grid extends down to 0.30, and the chosen tau is written into the
+json together with the space it was fitted in, which lets eval_zeroshot.py
 refuse to mix them.
 
-Measured 2026-07-31 on the 19,103-predicate union vocabulary, student_v2:
+Measured on the 19,103-predicate union vocabulary in the shipped space:
 
       tau  syn recall  inv leak  rand FPR   accepted/GT
     0.700       66.7%     0.00%    0.122%          23.3
@@ -72,10 +71,8 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Spans BOTH spaces' usable ranges: student_v1's operating point sits near 0.96,
-# student_v2's near 0.72, and a grid that cannot reach the answer silently
-# returns its own lowest entry (the first v2 run "chose" 0.90 because 0.90 was
-# the floor, at 11.3% synonym recall).
+# Wide enough for any text space's operating point: a grid that cannot reach
+# the answer silently returns its own lowest entry, which reads as a choice.
 TAUS = [round(0.30 + 0.01 * i, 2) for i in range(70)]
 
 

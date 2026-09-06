@@ -227,7 +227,7 @@ def canon_pred(p: str) -> str:
         return ""
     s = str(p).strip().lower().replace("_", " ")
     s = _LEADING_COPULA.sub("", s)
-    return _WS.sub(" ", s).strip(" .,-")
+    return _WS.sub(" ", s).strip(".,-")
 
 
 def _words(s: str) -> set:
@@ -1410,15 +1410,15 @@ def main():
     print(f"\n{'='*60}")
     print(f"  vLLM GENERATE — {args.name}  shard {args.shard_index}/{args.num_shards}")
     print(f"{'='*60}")
-    print(f"  strategy/model     : {args.strategy} / {args.model} (quant={args.quant})")
-    print(f"  images             : {len(per_image_rels)}  (parse_ok {parse_ok})")
-    print(f"  sec/img            : {summary['timing']['sec_per_img']}")
-    print(f"  rels/img           : {metrics['rels_per_img']}")
-    print(f"  unique predicates  : {metrics['n_unique']}")
-    print(f"  entropy (nats)     : {metrics['entropy_nats']}")
-    print(f"  forbidden rate     : {metrics['forbidden_rate']*100:.1f}%")
+    print(f"  strategy/model: {args.strategy} / {args.model} (quant={args.quant})")
+    print(f"  images: {len(per_image_rels)}  (parse_ok {parse_ok})")
+    print(f"  sec/img: {summary['timing']['sec_per_img']}")
+    print(f"  rels/img: {metrics['rels_per_img']}")
+    print(f"  unique predicates: {metrics['n_unique']}")
+    print(f"  entropy (nats): {metrics['entropy_nats']}")
+    print(f"  forbidden rate: {metrics['forbidden_rate']*100:.1f}%")
     if drop_totals:
-        print(f"  drops              : {dict(drop_totals)}")
+        print(f"  drops: {dict(drop_totals)}")
     print(f"  → {jsonl_path}")
     if args.emit_trial_json:
         print(f"  → {out_dir/'trial.json'}  (judge with datagen/llm_judge_v2.py)")

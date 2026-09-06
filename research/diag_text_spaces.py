@@ -61,7 +61,7 @@ def abtt(X, k):
     Y = X - X.mean(0, keepdims=True)
     if k > 0:
         U, _, _ = np.linalg.svd(Y.T @ Y)
-        D = U[:, :k]
+        D = U[:,:k]
         Y = Y - (Y @ D) @ D.T
     return unit(Y)
 
@@ -73,7 +73,7 @@ def auc(pos, neg, n=200_000, rs=None):
         return float("nan")
     a = rs.choice(pos, min(n, len(pos)), replace=len(pos) < n)
     b = rs.choice(neg, min(n, len(neg)), replace=len(neg) < n)
-    return float((a[:, None] > b[None, :min(2000, len(b))]).mean())
+    return float((a[:, None] > b[None,:min(2000, len(b))]).mean())
 
 
 def score(E, names, groups, tag, rs):
@@ -136,7 +136,7 @@ def score(E, names, groups, tag, rs):
     sub = rs.choice(V, min(3000, V), replace=False)
     S = E[sub] @ E[sub].T
     np.fill_diagonal(S, -2)
-    nk = np.bincount(np.argpartition(-S, k, axis=1)[:, :k].reshape(-1),
+    nk = np.bincount(np.argpartition(-S, k, axis=1)[:,:k].reshape(-1),
                      minlength=len(sub))
     m, sd = nk.mean(), nk.std() + 1e-8
     out["hubness_skew_Nk"] = float(((nk - m) ** 3).mean() / sd ** 3)
@@ -177,7 +177,7 @@ def main():
         for r in rows:
             print(f"  {r['tag']:<16s}" + "".join(
                 (fmt.format(r[c]) if isinstance(r.get(c), float) else f"{r.get(c,''):>9}")
-                .rjust(13) for c in cols))
+.rjust(13) for c in cols))
 
     print("\n" + "=" * 92)
     show(["auc_syn_vs_inv", "inv_mean", "auc_syn_vs_rand", "nn1_same_group"],

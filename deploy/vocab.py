@@ -38,17 +38,15 @@ WEBCAM_OBJECT_VOCAB = [
 # The SELECTION below is editorial (which predicates a demo viewer cares
 # about) and stays in code. Every NUMBER — per-predicate recall, thresholds,
 # alpha — is per-checkpoint and lives in that model's generated artifacts
-# (predicate_bank.npz via build_predicate_bank.py, deploy_thresholds.json via
-# calibrate_thresholds.py). The v34-era numbers that used to be inlined here
-# were checkpoint-specific: logit_scale/logit_bias were untrained, so score
-# scales are arbitrary per checkpoint and thresholds NEVER transfer. Use
-# load_bank(); do not re-add constants here.
+# (predicate_bank.npz via build_predicate_bank.py, thresholds.json via
+# calibrate_thresholds.py). Score scales are specific to a checkpoint, so no
+# threshold belongs in this file — read them with load_bank().
 #
-# Selection provenance (v34 measurements): dropped "near"/"next to" (the two
-# chattiest, least informative spatials; "beside" covers the meaning) and
-# "under". Synonyms are deliberately NOT collapsed (e.g. "on"/"resting on"/
-# "on top of"): the model was trained on a synonym-rich space and suppressing
-# variants distorts its scores; they compete at argmax time.
+# The list drops "near", "next to" and "under": the first two are the
+# chattiest, least informative spatial relations and "beside" covers their
+# meaning. Synonyms are deliberately kept apart ("on" / "resting on" / "on top
+# of"): the model was trained on a synonym-rich vocabulary, and suppressing
+# variants distorts its scores. They compete at argmax time.
 PREDICATE_VOCAB = [
     # people doing things (the interesting half)
     "wearing", "riding", "playing", "sitting on", "sitting at", "holding",

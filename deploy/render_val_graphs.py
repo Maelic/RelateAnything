@@ -144,8 +144,8 @@ def predict_all(ra: RelateAnything, image, boxes_xyxy, box_labels, box_scores,
     valid = out["valid_mask"][0].cpu().numpy().astype(bool)
     pair_gate = None
     if out.get("pair_logits") is not None:
-        # v34 score contract: sigmoid(pred_logit + rel_logit) — matches
-        # model.predict and the training-time evaluators.
+        # The score contract: sigmoid(pred_logit + rel_logit), the same one
+        # model.predict and the evaluators use.
         logits = logits + out["pair_logits"][0].float().unsqueeze(-1)
         pair_gate = torch.sigmoid(out["pair_logits"][0].float()).cpu().numpy()
     scores = torch.sigmoid(logits)

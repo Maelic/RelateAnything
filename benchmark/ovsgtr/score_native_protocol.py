@@ -13,13 +13,13 @@ one change at a time.
 
 The two protocols differ in TWO independent ways, and this measures each:
 
-  A  ovsgtr   : triplet-EQUALITY match (sub_class, predicate, obj_class must all
+  A  ovsgtr: triplet-EQUALITY match (sub_class, predicate, obj_class must all
                 match GT exactly) + IoU>=0.5 on both endpoint boxes. Crucially
                 MANY-TO-MANY: a GT object covered by k duplicate detections gives
                 the model k independent chances to score the hit.
   B  ovsgtr_ca: same, but class-agnostic (drop the object-class equality), which
                 is what our evaluator does. Isolates the cost of class matching.
-  C  relsgg   : greedy ONE-TO-ONE IoU assignment of GT boxes to predicted boxes,
+  C  relsgg: greedy ONE-TO-ONE IoU assignment of GT boxes to predicted boxes,
                 then box-INDEX equality. This is our protocol. Isolates the cost
                 of forbidding duplicate credit.
 
@@ -57,7 +57,7 @@ def per_image_pred_to_gt(gt_trip, gt_boxes8, pred_trip, pred_boxes8, iou_thr,
     pred_to_gt = [[] for _ in range(n_pred)]
     if n_pred == 0 or len(gt_trip) == 0:
         return pred_to_gt
-    keeps = (gt_trip[:, None, :] == pred_trip[None, :, :]).all(-1)
+    keeps = (gt_trip[:, None,:] == pred_trip[None,:,:]).all(-1)
     gt_has_match = keeps.any(1)
     for gt_ind in np.where(gt_has_match)[0]:
         keep_inds = keeps[gt_ind]
@@ -67,10 +67,10 @@ def per_image_pred_to_gt(gt_trip, gt_boxes8, pred_trip, pred_boxes8, iou_thr,
             gu = gt_box.reshape(2, 4)
             gu = np.concatenate((gu.min(0)[:2], gu.max(0)[2:]), 0)
             bu = boxes.reshape(-1, 2, 4)
-            bu = np.concatenate((bu.min(1)[:, :2], bu.max(1)[:, 2:]), 1)
+            bu = np.concatenate((bu.min(1)[:,:2], bu.max(1)[:, 2:]), 1)
             inds = pairwise_iou(gu[None], bu)[0] >= iou_thr
         else:
-            sub_iou = pairwise_iou(gt_box[None, :4], boxes[:, :4])[0]
+            sub_iou = pairwise_iou(gt_box[None,:4], boxes[:,:4])[0]
             obj_iou = pairwise_iou(gt_box[None, 4:], boxes[:, 4:])[0]
             inds = (sub_iou >= iou_thr) & (obj_iou >= iou_thr)
         for i in np.where(keep_inds)[0][inds]:
@@ -148,7 +148,7 @@ def main():
             n_skip += 1
             continue
         _iid, W, H, b0, nb, r0, nr = (int(x) for x in img_meta[int(idxs[i])])
-        gt = np.asarray(rels_all[r0:r0 + nr, :3], dtype=np.int64)
+        gt = np.asarray(rels_all[r0:r0 + nr,:3], dtype=np.int64)
         gt = gt[(gt[:, 0] < nb) & (gt[:, 1] < nb)]
         if gt.size == 0:
             n_skip += 1
@@ -206,7 +206,7 @@ def main():
                 # duplicate credit alone, not to an unlucky greedy choice.
                 if len(pboxes):
                     iou_gd = pairwise_iou(gxyxy, pboxes)
-                    iou_gd = np.where(gcls[:, None] == pcls[None, :], iou_gd, 0.0)
+                    iou_gd = np.where(gcls[:, None] == pcls[None,:], iou_gd, 0.0)
                     m = greedy_match(iou_gd, args.iou_thr)
                 else:
                     m = np.full(nb, -1, np.int64)

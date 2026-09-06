@@ -23,7 +23,7 @@ categories, while the model never sees a category label at inference
 from pixels.
 
 Usage:
-    python training/report_attribution.py [--towers ...] [--split test]
+    python training/report_attribution.py [--towers...] [--split test]
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # training/ is not a package (no __init__.py), so this is a flat import off the
-# path insert above, not `from training.bias_baselines import ...`.
+# path insert above, not `from training.bias_baselines import...`.
 from research.bias_baselines import FreqBaseline, load_split  # noqa: E402
 
 B = "full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"

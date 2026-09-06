@@ -9,13 +9,13 @@ this script builds the canonical "protected" id sets and reports, per source,
 exactly how many candidate images are dropped and why.
 
 Identity bridges:
-  * VG id  <-> COCO id : VG image_data.json (`coco_id` field, 51,498 mapped)
-  * PSG id <-> COCO id : OpenPSG psg.json (`coco_image_id`, all 48,749 mapped)
+  * VG id  <-> COCO id: VG image_data.json (`coco_id` field, 51,498 mapped)
+  * PSG id <-> COCO id: OpenPSG psg.json (`coco_image_id`, all 48,749 mapped)
 
 Protected sets (dropped from ALL train sources):
   * PSG   val + test  (user's primary zero-shot benchmark)  as COCO ids
   * VG150 val + test  (secondary diagnostic)                 as VG ids
-  ... each bridged into the OTHER id space too, so a VG-named photo that is
+... each bridged into the OTHER id space too, so a VG-named photo that is
   physically a PSG-val COCO photo is caught (and vice versa).
 MEGASG val is Objects365 — no id bridge to VG/COCO exists; treated as disjoint
 (different crawl), flagged as residual risk in PLAN.md.
@@ -120,7 +120,7 @@ def main() -> None:
     print(f"[svg_psg]      {len(svg_psg_ids)} imgs, drop {len(hit)} protected "
           f"-> usable {len(usable)} (on-disk PSG train imgs)")
 
-    # 4. ASv2 (image paths: coco/train2017/000000xxx.jpg, vg/VG_100K*/id.jpg, ...)
+    # 4. ASv2 (image paths: coco/train2017/000000xxx.jpg, vg/VG_100K*/id.jpg,...)
     coco2psg = {}
     for p, c in psg2coco.items():
         coco2psg.setdefault(c, p)

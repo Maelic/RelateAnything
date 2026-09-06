@@ -1,7 +1,7 @@
 """probe_attribution.py — WHERE DOES THE PREDICATE SCORE ACTUALLY COME FROM?
 
 The motivating puzzle: a 17.25M-parameter head (3 of whose 4 attention stacks
-are deletable for <=0.7% F1, [[relsgg-head-depth]]) appears to "know" 19,103
+are deletable for <=0.7% F1,) appears to "know" 19,103
 predicates. Either the task is easier than it looks, or most of the answer is
 arriving from somewhere other than the pixels. This script measures which.
 
@@ -26,10 +26,10 @@ TWO THINGS ARE MEASURED, IN ONE PASS EACH.
                the "does it need to see anything" test. Its complement is
      nogeo     geo_encoder forced to zeros -> the relation head loses explicit
                box geometry (both the pair fusion at model.py:1110 and the
-               spatial expert at :1178) while the pair SAMPLER keeps its own
+               spatial expert at:1178) while the pair SAMPLER keeps its own
                geometry, so the candidate set is unchanged and only the head is
                blinded.
-     compose0  compose_gate := 0 -> removes the explicit "object appearance
+     compose0  compose_gate:= 0 -> removes the explicit "object appearance
                projected into text space" channel (model.py:1169). Ships at
                0.044/0.020 already, so this is expected to be small; it is here
                because it is the channel a text-shortcut story would predict.
@@ -57,7 +57,7 @@ residual is asserted < 1e-3 rather than assumed.
 
 CAVEAT THAT LIMITS EVERY NUMBER HERE. Closed-vocab, GT-box, GT-pair. That is
 the regime the FREQ baseline lives in, which is the point, but it is the most
-prior-friendly regime this project has: see [[relsgg-detbox-tower-ladder]] for
+prior-friendly regime this project has: see  for
 what detector boxes do.
 
 Usage:
@@ -80,9 +80,9 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data import RelationDataset, collate_fn                      # noqa: E402
-from relsgg.train_engine import _region_kwargs                    # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES  # noqa: E402
+from relsgg.data import RelationDataset, collate_fn                      # noqa: E402
+from relsgg.training.engine import region_kwargs                    # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES  # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt  # noqa: E402
 
 LESIONS = ("full", "imgshuf", "nogeo", "compose0", "prior")
@@ -259,14 +259,14 @@ def run_pass(model, loader, device, W, lesion, mean_q=None, attrib=False,
                 # which needs modules this config never built (zone_proj). The
                 # inference path is what we want to characterize anyway, and
                 # sampler recall on positives is 99.79%
-                # ([[relsgg-pair-sampler-recall]]), so coverage is near-total —
+                #, so coverage is near-total —
                 # it is reported per cell rather than assumed.
                 with torch.amp.autocast("cuda",
                                         enabled=device.type == "cuda"
                                         and not fp32,
                                         dtype=torch.bfloat16):
                     out = model(images, boxes, box_counts, targets=None,
-                                **_region_kwargs(targets, device))
+                                **region_kwargs(targets, device))
                 logits = out["logits"].float()             # [B,K,V]
                 sub_i, obj_i = out["sub_idx"], out["obj_idx"]
                 valid = out["valid_mask"]
@@ -372,7 +372,7 @@ def main() -> None:
                     else ck_args.get("text_student") or "")
     if not text_student:
         raise SystemExit("probe requires the student text encoder")
-    from relsgg.text_student import encode_texts_student
+    from relsgg.text.student import encode_texts_student
 
     out_dir = args.out_dir or os.path.dirname(args.checkpoint)
     os.makedirs(out_dir, exist_ok=True)

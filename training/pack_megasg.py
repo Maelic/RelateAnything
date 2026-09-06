@@ -311,7 +311,7 @@ def main() -> None:
     exclude = set()
     if args.exclude_registry:
         exclude = set(json.load(open(args.exclude_registry))
-                      .get("megasg_train_exclude", []))
+.get("megasg_train_exclude", []))
         print(f"exclusion registry: {len(exclude)} file names")
 
     if args.preset:

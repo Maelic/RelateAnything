@@ -12,7 +12,7 @@ Usage:
     python training/detector_recall_ceiling.py \
         --dataset_root runs/packed/vg150 \
         --det runs/detect/yolo12m_vg150_val.npz \
-        --det_weights .../yolo12m_vg150.pt
+        --det_weights.../yolo12m_vg150.pt
 """
 
 from __future__ import annotations

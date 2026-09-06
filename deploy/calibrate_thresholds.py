@@ -10,8 +10,8 @@ a release bank without its own calibration ships NaN thresholds on purpose
 rather than someone else's numbers. (Project rule: thresholds are measured
 from data, never hand-set.)
 
-REGIME (must match deploy/vocab.py's historical definition so numbers stay
-interpretable): GT boxes, megasg val sample, predicate sigmoid score ALONE —
+REGIME (fixed, so numbers stay comparable between checkpoints): ground-truth
+boxes, a megasg val sample, the predicate sigmoid score alone —
 no pair-existence term, no detector confidence. The demo's displayed score is
 pred * pair^w, a smaller number; postprocess applies these thresholds with
 pair_weight folded out or documented.
@@ -97,7 +97,7 @@ def main() -> None:
     os.chdir(REPO)
 
     from relsgg.checkpoint import build_model_from_ckpt  # noqa: E402
-    from data.relation_dataset import RelationDataset, collate_fn  # noqa: E402
+    from relsgg.data.dataset import RelationDataset, collate_fn  # noqa: E402
 
     run_name = os.path.basename(os.path.dirname(os.path.abspath(a.checkpoint)))
     out_path = a.out or os.path.join("runs/analysis", run_name,
@@ -136,8 +136,8 @@ def main() -> None:
                              resolution=a.img_size, max_objects=a.max_objects,
                              cat_to_idx=train_ds.cat_to_idx,
                              rel_cat_to_idx=train_ds.rel_cat_to_idx)
-    # v43+ checkpoints train on the UNION vocabulary (19,103), the pack on its
-    # own (megasg: 10,102) — the two are NOT equal and must not be asserted so.
+    # The head trains on the union vocabulary (19,103 predicates) and the pack
+    # carries its own (megasg: 10,102); the two are not the same list.
     # GT predicate ids in `targets` index the PACK vocabulary; map them to
     # calibration columns via the NAME, which is shared.
     pack_name_to_id = {n: i for i, n in enumerate(val_ds.predicate_names)}

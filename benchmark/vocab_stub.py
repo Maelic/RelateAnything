@@ -32,7 +32,7 @@ def real_vocabulary(names, text_student: str, pred_embeds: str, device, template
         z = np.load(pred_embeds)
         return [str(q) for q in z["predicates"]], z["embeddings"]
     if text_student and os.path.exists(text_student):
-        from relsgg.text_student import encode_texts_student
+        from relsgg.text.student import encode_texts_student
         return list(names), encode_texts_student(list(names), text_student,
                                                  templates=templates, device=device)
     return None

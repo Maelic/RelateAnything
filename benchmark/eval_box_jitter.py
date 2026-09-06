@@ -52,10 +52,10 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data import RelationDataset, collate_fn                    # noqa: E402
-from relsgg.evaluator import SGClsEvaluator                     # noqa: E402
-from relsgg.train_engine import evaluate                        # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES  # noqa: E402
+from relsgg.data import RelationDataset, collate_fn                    # noqa: E402
+from relsgg.eval.evaluator import SGClsEvaluator                     # noqa: E402
+from relsgg.training.engine import evaluate                        # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES  # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt  # noqa: E402
 
 
@@ -126,7 +126,7 @@ def make_jitter_collate(mag, seed):
 
         # Only perturb real boxes — padding must stay exactly zero.
         N = boxes.shape[1]
-        valid = (torch.arange(N)[None, :] < box_counts[:, None]).unsqueeze(-1)
+        valid = (torch.arange(N)[None,:] < box_counts[:, None]).unsqueeze(-1)
         return images, torch.where(valid, jit, boxes), box_counts, targets
 
     return _collate
@@ -143,7 +143,6 @@ def main() -> None:
     p.add_argument("--weights", default="ema", choices=["ema", "raw"])
     p.add_argument("--score_mode", default="sigmoid")
     p.add_argument("--text_student", default=None)
-    p.add_argument("--dinotxt_weights", default="")
     p.add_argument("--img_size", type=int, default=448)
     p.add_argument("--batch_size", type=int, default=32)
     p.add_argument("--num_workers", type=int, default=8)
@@ -180,14 +179,15 @@ def main() -> None:
 
         # Vocabulary does not depend on jitter — reparameterize once per root.
         if text_student:
-            from relsgg.text_student import encode_texts_student
+            from relsgg.text.student import encode_texts_student
             E = encode_texts_student(pred_names, text_student,
                                      templates=TRAIN_TEMPLATES, device=device)
             model.vocab_head.set_vocabulary_matrix(pred_names, E)
         else:
-            model.vocab_head.encode_vocabulary_dinotxt(
-                pred_names, dinotxt_weights=args.dinotxt_weights,
-                templates=TRAIN_TEMPLATES)
+            raise SystemExit(
+                "this checkpoint names no text student. The vocabulary has to be "
+                "encoded by the encoder the head was trained against; pass "
+                "--text_student, or use a released model, which ships its own.")
         model.reparameterize()
 
         print(f"\n=== [{name}] {len(ds)} images, {len(pred_names)} predicates ===")

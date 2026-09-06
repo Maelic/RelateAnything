@@ -3,7 +3,7 @@
 This is the half of the comparison that makes it fair: `run_ovsgtr_pack.py` produces a
 model-agnostic record, and this scores it with the SAME `SGClsEvaluator` and the SAME
 graph-constraint / bucket / IDF settings used for our own checkpoints
-([[relsgg-eval-protocol-graph-constraint]], [[relsgg-eval-metrics-suite]]). No metric
+. No metric
 is reimplemented here.
 
 Runs in the RELSGG venv (it imports relsgg.evaluator), NOT OvSGTR's.
@@ -27,7 +27,7 @@ import torch
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from relsgg.evaluator import SGClsEvaluator  # noqa: E402
+from relsgg.eval.evaluator import SGClsEvaluator  # noqa: E402
 from benchmark.eval_detboxes import cxcywh_to_xyxy, pairwise_iou, greedy_match  # noqa: E402
 
 EPS = 1e-6
@@ -147,7 +147,7 @@ def main():
             if gt.size == 0:
                 n_skipped_nogt += 1
                 continue
-            gt = gt[(gt[:, 0] < nb) & (gt[:, 1] < nb)][:, :3]
+            gt = gt[(gt[:, 0] < nb) & (gt[:, 1] < nb)][:,:3]
             if gt.size == 0:
                 n_skipped_nogt += 1
                 continue
@@ -157,7 +157,7 @@ def main():
                                        w, h, args.iou_thr)
             prob = d["rel_scores"][a:b].astype(np.float32)
             prob = np.delete(prob, bg, axis=1)  # drop OvSGTR's background column
-            # Standard SGDet triplet score is pred . conf(sub) . conf(obj), and that is
+            # Standard SGDet triplet score is pred. conf(sub). conf(obj), and that is
             # what OvSGTR's own ranking uses (graph_infer.py:103). Our detector-box path
             # already passes box_scores (DetBoxDataset weight_by_conf=True); omitting it
             # HERE ranked their predictions by predicate score alone, which handicapped
@@ -182,10 +182,10 @@ def main():
         for j, (pairs, prob, gt, bs) in enumerate(items):
             k = len(pairs)
             pr = torch.from_numpy(np.clip(prob, EPS, 1 - EPS))
-            logits[j, :k] = torch.log(pr / (1 - pr)) if mode == "sigmoid" else torch.log(pr)
-            sub[j, :k] = torch.from_numpy(pairs[:, 0].astype(np.int64))
-            obj[j, :k] = torch.from_numpy(pairs[:, 1].astype(np.int64))
-            valid[j, :k] = True
+            logits[j,:k] = torch.log(pr / (1 - pr)) if mode == "sigmoid" else torch.log(pr)
+            sub[j,:k] = torch.from_numpy(pairs[:, 0].astype(np.int64))
+            obj[j,:k] = torch.from_numpy(pairs[:, 1].astype(np.int64))
+            valid[j,:k] = True
             t = {"relations": torch.from_numpy(gt)}
             if bs is not None and len(bs):
                 t["box_scores"] = torch.from_numpy(bs)

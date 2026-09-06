@@ -20,19 +20,19 @@ Mapping:
       verb the 600-list defines for that object class.
   Cells that coincide with a positive or an ambiguous caption are dropped.
 - AMBIGUOUS captions are excluded from both sides (LVIS-style unlabelled).
-- Boxes come as [x1, x2, y1, y2] (original .mat convention) -> COCO xywh.
+- Boxes come as [x1, x2, y1, y2] (original.mat convention) -> COCO xywh.
 - invis entries skipped; per-image cap 40 boxes = packer max_objects.
 - V2 (2026-08-26, --iou_merge, default 0.5): HICO-DET stores one human box and one
   object box PER HOI INSTANCE, so the same bicycle appears 2-4x with slightly
   different coordinates. v1 deduped on exact coordinates only -> 37 % of test
   boxes / 34 % of train boxes were IoU>=0.7 same-class duplicates, which
-  depressed HICO precision (.32 -> .47 when identities are merged) and made the
+  depressed HICO precision (.32 ->.47 when identities are merged) and made the
   same-class distractor test read as chance. Now same-category boxes with
   IoU >= --iou_merge are merged (union-find, mean box); the threshold comes from
   PSG, where genuinely distinct same-class instances exceed IoU 0.5 in 0.2 % of
   pairs, and equals HICO-DET's own matching criterion. Pairs whose two ends
   merge into one box (self-loops) are dropped and counted. --iou_merge 0
-  reproduces v1. See [[relsgg-crowd-assignment]].
+  reproduces v1.
 
     python training/convert_hicodet.py
     python training/pack_megasg.py --train_ann /dev/null \

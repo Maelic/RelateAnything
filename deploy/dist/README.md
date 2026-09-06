@@ -20,10 +20,10 @@ from AGPL ultralytics and is rebuilt locally, never redistributed.
 pip install -r requirements.txt
 
 # --dist is a DIRECTORY, not a model name.
-python ../demo_webcam.py --dist relsgg-vits16plus                    # webcam
-python ../demo_webcam.py --dist relsgg-vits16plus --image photo.jpg  # one image
-python ../demo_webcam.py --dist relsgg-vits16plus --decompose        # two graphs
-python ../demo_webcam.py --dist relsgg-vits16plus --bench            # latency
+python../demo_webcam.py --dist relsgg-vits16plus                    # webcam
+python../demo_webcam.py --dist relsgg-vits16plus --image photo.jpg  # one image
+python../demo_webcam.py --dist relsgg-vits16plus --decompose        # two graphs
+python../demo_webcam.py --dist relsgg-vits16plus --bench            # latency
 ```
 
 If you moved this directory somewhere else, point the demo at it explicitly:

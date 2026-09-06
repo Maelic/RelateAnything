@@ -130,7 +130,7 @@ def _clean(pred: str) -> str:
     lowercase, strip copula, peel scaffolding + adverbs (possibly several layers)."""
     s = str(pred).strip().lower().replace("_", " ")
     s = _LEADING_COPULA.sub("", s)
-    s = _WS.sub(" ", s).strip(" .,-")
+    s = _WS.sub(" ", s).strip(".,-")
     for _ in range(3):
         new = _SCAFFOLD.sub("", s)
         new = _ADVERB.sub("", new)

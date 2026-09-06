@@ -67,28 +67,15 @@ import torch.nn.functional as F
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
-from data.relation_dataset import RelationDataset          # noqa: E402
-from relsgg.geometry import RelGeomEncoder                  # noqa: E402
-from relsgg.text_student import encode_texts_student        # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES                    # noqa: E402
+from relsgg.data.dataset import RelationDataset          # noqa: E402
+from relsgg.model.geometry import RelGeomEncoder                  # noqa: E402
+from relsgg.text.student import encode_texts_student        # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES                    # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt       # noqa: E402
 from benchmark.eval_zeroshot import spatial_predicate_names  # noqa: E402
 
 EPS = 1e-8
 _GEO_WEIGHT_KEYS = ("geo_encoder.mlp.0.weight", "sampler.geo_scorer.0.weight")
-
-
-def _pad_geo_checkpoint(ckpt: dict, target_dim: int) -> None:
-    """See training/analyze_relation_attention.py — same migration shim."""
-    for sd_key in ("model", "ema_model"):
-        sd = ckpt.get(sd_key)
-        if not sd:
-            continue
-        for wkey in _GEO_WEIGHT_KEYS:
-            w = sd.get(wkey)
-            if w is not None and w.shape[1] < target_dim:
-                pad = torch.zeros(w.shape[0], target_dim - w.shape[1], dtype=w.dtype)
-                sd[wkey] = torch.cat([w, pad], dim=1)
 
 
 def _kl(p: torch.Tensor, q: torch.Tensor) -> torch.Tensor:
@@ -110,7 +97,6 @@ def probe_checkpoint(
     weights: str,
 ) -> dict:
     ckpt = torch.load(checkpoint, map_location="cpu", weights_only=False)
-    _pad_geo_checkpoint(ckpt, RelGeomEncoder.NUM_GEO)
     model = build_model_from_ckpt(ckpt, weights).to(device).eval()
 
     ck_args = ckpt.get("args") or {}
@@ -122,10 +108,10 @@ def probe_checkpoint(
                                  templates=TRAIN_TEMPLATES, device=device)
         model.vocab_head.set_vocabulary_matrix(pred_names, E)
     else:
-        dinotxt_weights = ck_args.get("dinotxt_weights") or \
-            "checkpoints/dinov3_vitl16_dinotxt_vision_head_and_text_encoder-a442d8f5.pth"
-        model.vocab_head.encode_vocabulary_dinotxt(
-            pred_names, dinotxt_weights=dinotxt_weights, templates=TRAIN_TEMPLATES)
+        raise SystemExit(
+            "this checkpoint names no text student. The vocabulary has to be "
+            "encoded by the encoder the head was trained against; pass "
+            "--text_student, or use a released model, which ships its own.")
     model.reparameterize()
 
     is_spatial = torch.tensor([n in spatial_names for n in pred_names], device=device)

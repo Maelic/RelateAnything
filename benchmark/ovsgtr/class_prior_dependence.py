@@ -72,7 +72,7 @@ def freq_table_from_pack(pack: Path):
         r = rels[r0:r0 + nr]
         r = r[(r[:, 0] < nb) & (r[:, 1] < nb)]
         c = cats[b0:b0 + nb]
-        for s, o, p in r[:, :3]:
+        for s, o, p in r[:,:3]:
             cnt[(int(c[s]), int(c[o]))][int(p)] += 1
     return {k: v.most_common(1)[0][0] for k, v in cnt.items()}
 
@@ -148,7 +148,7 @@ def main():
     p.add_argument("--out", default=None)
     args = p.parse_args()
 
-    print(f"building FREQ table from {args.train_pack} ...", flush=True)
+    print(f"building FREQ table from {args.train_pack}...", flush=True)
     freq = freq_table_from_pack(Path(args.train_pack))
     print(f"  {len(freq)} category pairs seen in train")
 

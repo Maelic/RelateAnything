@@ -1,14 +1,12 @@
 """Release driver: manifest entry -> deploy/dist/<model_id>/ artifact set.
 
 Per model (deploy/release_manifest.json):
-    1. merge   — only if the checkpoint is LoRA (merge_lora.py, parity-gated);
-                 full-FT checkpoints skip this entirely.
-    2. export  — export_onnx.py --vocab-mode input --check
-    3. calibrate — calibrate_thresholds.py (GPU; --skip_calibrate emits the
-                 sbatch line instead, so the driver stays runnable on CPU)
-    4. bank    — build_predicate_bank.py (space-verified, thresholds folded in)
-    5. assemble deploy/dist/<model_id>/{relateanything.onnx, relateanything.json,
-                 predicate_bank.npz, thresholds.json}
+    1. export    — export_onnx.py --vocab-mode input --check
+    2. calibrate — calibrate_thresholds.py (needs a GPU; --skip_calibrate
+                   prints the command instead so the driver runs on a CPU)
+    3. bank      — build_predicate_bank.py (thresholds folded in)
+    4. assemble  deploy/dist/<model_id>/{relateanything.onnx,
+                 relateanything.json, predicate_bank.npz, thresholds.json}
 
 Idempotent: steps whose outputs exist are skipped unless --force. Everything
 is a subprocess of the same scripts a human would run — the driver adds
@@ -46,7 +44,7 @@ def build_one(m: dict, a) -> None:
         print("  no run_dir yet — skipping (train it first)")
         return
     # FINAL epoch ships: dev-FINAL predicts OOD better than dev-best and
-    # calibration.json is fitted on it ([[relsgg-final-not-best-epoch]]).
+    # calibration.json is fitted on it.
     ckpt = os.path.join(run_dir, a.checkpoint_name)
     if not os.path.exists(ckpt):
         print(f"  {ckpt} missing — skipping")
@@ -55,20 +53,7 @@ def build_one(m: dict, a) -> None:
     dist = os.path.join("deploy/dist", mid)
     os.makedirs(dist, exist_ok=True)
 
-    # 1. LoRA merge (decided from the checkpoint itself, not the manifest)
-    args_ck = torch.load(ckpt, map_location="cpu",
-                         weights_only=False).get("args") or {}
-    args_ck = dict(args_ck if isinstance(args_ck, dict) else vars(args_ck))
-    if int(args_ck.get("lora_rank", 0) or 0) > 0:
-        merged = ckpt.replace(".pth", "_merged.pth")
-        if a.force or not os.path.exists(merged):
-            sh([PY, "deploy/merge_lora.py", "--checkpoint", ckpt,
-                "--out", merged])
-        else:
-            print(f"  merge: {merged} exists, skipping")
-        ckpt = merged
-
-    # 2. ONNX export (+ parity check, recorded into the metadata json)
+    # 1. ONNX export (+ parity check, recorded into the metadata json)
     onnx_path = os.path.join(dist, "relateanything.onnx")
     if a.force or not os.path.exists(onnx_path):
         sh([PY, "deploy/export_onnx.py", "--checkpoint", ckpt,
@@ -76,7 +61,7 @@ def build_one(m: dict, a) -> None:
     else:
         print(f"  export: {onnx_path} exists, skipping")
 
-    # 3. Threshold calibration (GPU)
+    # 2. Threshold calibration (GPU)
     thr = os.path.join("runs/analysis", run_name, "deploy_thresholds.json")
     if os.path.exists(thr) and not a.force:
         print(f"  calibrate: {thr} exists, skipping")
@@ -88,7 +73,7 @@ def build_one(m: dict, a) -> None:
     else:
         sh([PY, "deploy/calibrate_thresholds.py", "--checkpoint", ckpt])
 
-    # 4. Predicate bank (thresholds folded in when present; loud NaN warning
+    # 3. Predicate bank (thresholds folded in when present; loud NaN warning
     #    otherwise — a release bank without calibration is not shippable)
     bank = os.path.join(dist, "predicate_bank.npz")
     if a.force or not os.path.exists(bank) or os.path.exists(thr):

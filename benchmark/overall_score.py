@@ -35,14 +35,14 @@ on it at all -- its predicate vocabulary is a caption capped at 512 word pieces
 -- so a composite containing A3 exists for one of the two models being compared
 and the head-to-head cell is a dash.
 
-A5 costs one judge run per arm and has been run for the released tower only, so
-the ladder in release_gate.py is scored WITHOUT it and prints its axis set. Do
-not compare an OVS over four axes with an OVS over five.
+A5 costs one judge run per model, so a run without one is scored on the
+remaining axes and prints its axis set. Do not compare an OVS over four axes
+with an OVS over five.
 Reported beside it: OVS_arith (arithmetic mean of axes), the WEAKEST axis, and
 `balance` = OVS / OVS_arith in (0, 1] — 1.0 exactly when all axes are equal, so
 it reads directly as "how specialised is this model".
 
-CHANCE LEVELS (derived, never hand-set — cf. [[no-handset-cosine-thresholds]])
+CHANCE LEVELS (derived, never hand-set — cf.)
   A1 recall     1/V, V = the benchmark's own vocabulary size (a uniform-random
                 predicate under the graph constraint)
   A2 fAP        the dataset's positive prevalence (AP of a random scorer)
@@ -68,250 +68,6 @@ import re
 import sys
 from pathlib import Path
 
-ARMS = [
-    ("proxy50k_v41cfg", "P v41"),
-    ("proxy50k_v42cfg", "P v42"),
-    ("proxy50k_v42cfg_wv2", "P wv2"),
-    ("proxy50k_v42cfg_wv2_sw", "P wv2+sw"),
-    ("proxy50k_v42cfg_singlehead_wv2", "P wv2+1head"),
-    ("proxy50k_v42cfg_wv2_lora12", "P wv2+lora12"),
-    ("proxy50k_v42cfg_singlehead_wv2_lora12", "P wv2+1h+l12"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg", "P wv2+l12+mix"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig0.25", "P +sig0.25"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig1.0", "P +sig1.0"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_beta", "P +beta"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_lr4e-4_ep12", "P 4e-4/12ep"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_r0_lr4e-4_ep12", "P ft5e-5 12ep"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig0.25_btd0.3_r0_lr4e-4_ep12",
-     "P ALLFIXES"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_btd0.3_r0_lr4e-4_ep12", "P btd-only"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig0.1_btd0.3_r0_lr4e-4_ep12",
-     "P sig0.1+btd"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig0.25_btd0.3_llrd0.7_bwd0.0_dp0.1"
-     "_dsi_lsi10.6_lbi-0.7_r0_lr4e-4_ep12", "P ARM-A init"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig0.25_btd0.3_def4_r0_lr4e-4_ep12",
-     "P +deform4"),
-    ("sched_lr4e-4_ep8_r0_sig0.25_btd0.3_def4", "FULL RECIPE v1"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvgoi_sig0.25_btd0.3_def4_r0_lr4e-4_ep12",
-     "P +OI 25%"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig0.25_btd0.3_def4h8v2_r0_lr4e-4_ep12",
-     "P deform v2"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig0.25_btd0.3_r0_lr4e-4_ep12_wise0.9",
-     "P ALLFX w0.90"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig0.25_btd0.3_r0_lr4e-4_ep12_wise0.8",
-     "P ALLFX w0.80"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig0.25_btd0.3_r0_lr4e-4_ep12_wise0.65",
-     "P ALLFX w0.65"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig0.25_btd0.3_r0_lr4e-4_ep12_wise0.5",
-     "P ALLFX w0.50"),
-    ("sched_lr4e-4_ep8", "FULL 4e-4/8ep"),
-    ("sched_lr2e-4_ep5_r0_blr1e-5", "FULL ft blr1e-5"),
-    ("sched_lr2e-4_ep8_r0_blr1e-5", "FULL ft 8ep b1e-5"),
-    ("sched_lr2e-4_ep8_r0_blr5e-5", "FULL ft 8ep b5e-5"),
-    ("sched_lr2e-4_ep8", "FULL LoRA 8ep"),
-    ("v41_lout_lora_5ep", "FULL v41"),
-    ("v42_softsup_lora_5ep", "FULL v42"),
-    ("v43_full_5ep", "FULL v43"),
-    ("v44_full_5ep", "FULL v44"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_r0_lr4e-4_ep12", "P v3 def4h8"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_d768_r0_lr4e-4_ep12", "P v3 h8 d768"),
-    ("proxy50k_v42cfg_wv2_lora12_mixvg_sig0.25_btd0.3_def8h8v3n2_r0_lr4e-4_ep12", "P v3 def8h8"),
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_r0_lr4e-4_ep12", "P W512"),
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05", "P W512+FIX"),
-    # ntaps lineage, proxy pack, 12 epochs — the multi-scale confirmation pair.
-    # Hardware-matched to each other (both A100:2); this is the pair the
-    # multi-scale decision rests on.
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_r0_lr4e-4"
-     "_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_full12", "P ntaps ctl12"),
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_r0_lr4e-4"
-     "_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5_full12", "P ntaps+ms12"),
-    # E3 bg_agg pair — the ONLY difference between these two rows is the
-    # background-penalty aggregate (top-5 vs logsumexp over the 19K columns).
-    # 6 epochs, so they are comparable to EACH OTHER and to nothing else in this
-    # table: every other proxy row is 12 epochs.
-    ("e3_bgagg_topk_ep6", "E3 bg topk6"),
-    ("e3_bgagg_lse_ep6", "E3 bg lse6"),
-    # FULL pack (503,754 img/ep), 12 epochs, current recipe + multi-scale, on the
-    # two small DINOv3 towers. These differ from each other in backbone_model and
-    # NOTHING else. They are NOT recipe-matched to any ViT-B row above: the only
-    # full-pack ViT-B point is "FULL RECIPE v1" (8 epochs, pre-W512 recipe), so
-    # every S-vs-B read here is confounded by recipe AND schedule, not just width.
-    ("full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_vits16_r0"
-     "_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5", "F ViT-S/16"),
-    ("full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_vits16plus_r0"
-     "_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5", "F ViT-S/16+"),
-    # The ViT-B arm of the SAME three-way. vitb16 is the lineage default and so
-    # takes no directory suffix, which is why this name is the bare recipe.
-    # Recipe-, data- and schedule-matched to the two rows above; the only
-    # unavoidable difference is A100fat vs A100 (the 0.5-1.5 ladder peaks
-    # ~39.7 GB and OOMs a 40 GB card), same compute die.
-    ("full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_r0"
-     "_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5", "F ViT-B/16"),
-    # ConvNeXt-T fusion 3-way, PROXY pack, blr 1e-5, 12 ep, A40:2 (jobs
-    # 6927332/34/36). RANKING ONLY — proxy levels are not reportable, and these
-    # are A40 while every ViT proxy arm above is A100, so do NOT read them
-    # against the ViT rows. Compare the three to EACH OTHER.
-    # CAVEAT: in these runs layer_weights and stage_norm were starved at
-    # backbone_lr, so the LEVEL AXIS is unmeasured; the normalization itself was
-    # active (LayerNorm affine inits to identity) so the recall contrast stands
-    # ([[relsgg-convnext-fusion-flaw]]).
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-     "_convnext_tiny_r0_blr1e-5_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05"
-     "_ms0.5-1.5", "CNX ctl"),
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-     "_convnext_tiny_r0_blr1e-5_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05"
-     "_ntaps_ms0.5-1.5", "CNX norm"),
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-     "_convnext_tiny_r0_blr1e-5_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05"
-     "_ntaps_s2d_ms0.5-1.5", "CNX norm+s2d"),
-    # ---- The FAMILY COMPARISON bracket: 3 towers x 3 backbone_lr, PROXY pack,
-    # 12 ep, A40:2 x bs32 x ACCUM=2 = global batch 128. All nine are recipe-,
-    # data-, schedule- AND hardware-matched to each other, which is what makes
-    # this the first legitimate ConvNeXt-vs-ViT read: every earlier ConvNeXt row
-    # above sat at an inherited LR with a starved fusion combiner.
-    # These are the first ConvNeXt arms where layer_weights / stage_norm /
-    # stage_proj get args.lr instead of backbone_lr, so the LEVEL AXIS is
-    # measured here and nowhere above ([[relsgg-convnext-fusion-flaw]]).
-    # PROXY LEVELS ARE NOT REPORTABLE — ranking only.
-    # NOTE the 5e-5 ViT arms carry NO blr suffix: 5e-5 is the runner default.
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-     "_convnext_tiny_r0_blr3e-6_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05"
-     "_ntaps_s2d_ms0.5-1.5_flr", "CNX-T blr3e-6"),
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-     "_convnext_tiny_r0_blr1e-5_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05"
-     "_ntaps_s2d_ms0.5-1.5_flr", "CNX-T blr1e-5"),
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-     "_convnext_tiny_r0_blr3e-5_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05"
-     "_ntaps_s2d_ms0.5-1.5_flr", "CNX-T blr3e-5"),
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-     "_vits16_r0_blr1e-5_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05"
-     "_ntaps_ms0.5-1.5", "ViT-S blr1e-5"),
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-     "_vits16_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05"
-     "_ntaps_ms0.5-1.5", "ViT-S blr5e-5"),
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-     "_vits16_r0_blr1e-4_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05"
-     "_ntaps_ms0.5-1.5", "ViT-S blr1e-4"),
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-     "_vits16plus_r0_blr1e-5_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05"
-     "_ntaps_ms0.5-1.5", "ViT-S+ blr1e-5"),
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-     "_vits16plus_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05"
-     "_ntaps_ms0.5-1.5", "ViT-S+ blr5e-5"),
-    ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-     "_vits16plus_r0_blr1e-4_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05"
-     "_ntaps_ms0.5-1.5", "ViT-S+ blr1e-4"),
-]
-
-# ---- EVAL-RESOLUTION SWEEP over the three full-scale towers, and the
-# EARLY-STOPPING cells. Each is a SUBDIRECTORY of its tower's run dir written by
-# job_res_sweep.sh, which is why these arm strings contain a slash — the arm is
-# joined onto runs/train/ verbatim, so a subdirectory needs no support code.
-# The 448px rows are the canonical "F ViT-*" arms above (same checkpoint, same
-# resolution) and are NOT duplicated here.
-# Resolution is a ZERO-TRAINING lever and 672 is IN-DISTRIBUTION: these towers
-# trained on MULTISCALE 0.5-1.5 N=7 = rungs [224 304 368 448 528 592 672].
-# 560 is NOT itself a rung (528 and 592 are), so it interpolates between two
-# seen scales rather than extrapolating.
-_FULL = ("full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-         "{tower}_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5")
-for _tw, _lab in (("_vits16", "ViT-S"), ("_vits16plus", "ViT-S+"), ("", "ViT-B")):
-    for _r in (560, 672):
-        ARMS.append((f"{_FULL.format(tower=_tw)}/res{_r}", f"{_lab} @{_r}"))
-# checkpoint_best = the peak dev(PSG-val) mR@50 epoch: ViT-B ep6, ViT-S+ ep7
-# (ViT-S never peaked — its best IS its last, i.e. it is undertrained at 12 ep).
-# Scored at 448 so the ONLY difference from the canonical row is the epoch. This
-# is the direct test of whether early stopping recovers ViT-B's lost OOD
-# transfer, which the in-training dev curve cannot answer
-# ([[relsgg-final-not-best-epoch]]).
-ARMS.append((f"{_FULL.format(tower='')}/ep6", "ViT-B @ep6"))
-ARMS.append((f"{_FULL.format(tower='_vits16plus')}/ep7", "ViT-S+ @ep7"))
-
-# ---- SHIP RUN 2026-08-24 (train 6959720 / eval 6959721): ViT-S+ full recipe +
-# HICO-DET TRAIN at relation share 0.10 (MIX=vgraw_hico, per-image
-# 0.590/0.051/0.359, ~5.75 HICO passes/epoch) + TUCKER 96x48. TWO variables vs
-# the canonical ViT-S+ row, by user decision; the proxy ladder has each alone
-# (HICO-sup 0.10 / TUCKER 96x48). HICO cells are HOI-SUPERVISED for this arm —
-# read A1/A2 with them excluded ([[relsgg-hoi-tail-and-loop-pilot]]).
-ARMS.append(("full_v42cfg_wv2-512_lora12_mixvghico0.10_sig0.25_btd0.3_def4h8v3n2"
-             "_tqk96x48_vits16plus_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps"
-             "_ms0.5-1.5", "SHIP S+ hico+tqk"))
-# Low-share single-variable arm (train 6959924 / eval 6959925): HICO share 0.05,
-# NO Tucker -> 21% HICO images, ~3.4 passes/epoch (vs 36% / 5.75 in the SHIP
-# run). Asks whether the A6 tax + HICO memorisation are the image-fraction /
-# recycling and how much of the HICO gain survives below the proxy's 0.10.
-ARMS.append(("full_v42cfg_wv2-512_lora12_mixvghico0.05_sig0.25_btd0.3_def4h8v3n2"
-             "_vits16plus_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps"
-             "_ms0.5-1.5", "HICO0.05 S+"))
-# Ship candidate v2 (2026-08-26): HICO 0.05 + source-aware negative masking.
-# Proxy read: negmask refunded ~60% of HICO's projective-spatial tax (A6 0.374
-# -> 0.398 vs ctl 0.414-0.433) with HICO F1 intact (0.326 -> 0.323).
-ARMS.append(("full_v42cfg_wv2-512_lora12_mixvghico0.05_sig0.25_btd0.3_negmask_def4h8v3n2_vits16plus_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5", "HICO0.05 negmask S+"))
-# ---- RELEASE FAMILY (2026-08-26): the negmask recipe on all three towers, HICO
-# train pack V2 (duplicate boxes merged). S+ has a backbone_lr 1e-4 hedge arm.
-_REL = ("full_v42cfg_wv2-512_lora12_mixvghico0.05_sig0.25_btd0.3_negmask_def4h8v3n2"
-        "{tower}_r0{blr}_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5_hicov2")
-ARMS.append((_REL.format(tower="_vits16", blr=""), "REL ViT-S negmask V2"))
-ARMS.append((_REL.format(tower="_vits16plus", blr=""), "REL ViT-S+ negmask V2"))
-ARMS.append((_REL.format(tower="_vits16plus", blr="_blr1e-4"), "REL ViT-S+ negmask V2 blr1e-4"))
-ARMS.append((_REL.format(tower="", blr=""), "REL ViT-B negmask V2"))
-# Source-aware negative masking on the HICO-0.10 proxy (control = "HICO-sup
-# 0.10"): HICO anchors contrast only against HICO's own 116 verbs. If the
-# projective-spatial tax is the silent-negative pressure, A6 returns to the
-# REG ctl band (0.41-0.43) with the HICO gain intact.
-ARMS.append(("proxy50k_v42cfg_wv2-512_lora12_mixvghico0.10_sig0.25_btd0.3_negmask"
-             "_def4h8v3n2_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5_hico",
-             "HICO0.10 negmask"))
-# Shared-init soups of the SHIP run (weight w) with the canonical ViT-S+ (1-w):
-# same seed init, same recipe except mix + Tucker; Tucker P scaled by w. The
-# untested variant in [[relsgg-model-soup-negative]]. Asks whether the HICO gain
-# and the A6/vg150 tax interpolate (one basin) or the soup collapses.
-for _w in ("0.25", "0.5", "0.75"):
-    ARMS.append(("full_v42cfg_wv2-512_lora12_mixvghico0.10_sig0.25_btd0.3_def4h8v3n2"
-                 "_tqk96x48_vits16plus_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps"
-                 f"_ms0.5-1.5_soup{_w}", f"SOUP w={_w}"))
-
-# ---- BACKBONE-REGULARIZATION sweep, single-variable on ViT-B, proxy, A40:2.
-# The backbone was the one component with NO regularization (drop_path 0.0,
-# LLRD off, WD 1e-4); dropout 0.2 only ever touched the head. Control is run on
-# the SAME hardware rather than reusing `P ntaps+ms12` (that arm is A100).
-# PROXY OVERSTATES REGULARIZATION: ctl's train-val gap here is +0.52 against
-# full-scale ViT-B's +0.16, so read direction and ranking, not magnitude.
-_REG = ("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2{knob}"
-        "_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5_reg")
-for _k, _l in (("", "REG ctl"), ("_dp0.1", "REG dp0.1"), ("_dp0.2", "REG dp0.2"),
-               ("_llrd0.8", "REG llrd0.8"), ("_bwd0.01", "REG bwd0.01")):
-    ARMS.append((_REG.format(knob=_k), _l))
-
-# ---- TUCKER multiplicative query (job 6947602): MUTAN-style pair term added
-# to the composed query, mode-3 factor = the frozen text bank (open vocab kept
-# parameter-free), r3=48 ~ the bank's measured effective rank 43.7. Same
-# recipe/hardware as REG ctl, which is its control. Motivation and kill
-# criterion: [[relsgg-score-attribution]] — the ADDITIVE version of this
-# channel carries a 0.0% variance share, so this arm asks whether the model
-# declined the signal or only its additive form.
-ARMS.append(("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-             "_tqk96x48_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps"
-             "_ms0.5-1.5_tqk", "TUCKER 96x48"))
-# Seed-43 replicas of BOTH arms (jobs 6952174/6952176) — the 2-seed protocol
-# that settled CFA. tucker-vs-ctl must hold at BOTH seeds to be a win; the
-# ctl@s43-vs-ctl@s42 delta is the direct read of composite seed noise.
-ARMS.append(("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-             "_r0_lr4e-4_ep12_s43_newopt_spe_gsq_pe16_bg0.05_ntaps"
-             "_ms0.5-1.5_reg", "REG ctl s43"))
-ARMS.append(("proxy50k_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2"
-             "_tqk96x48_r0_lr4e-4_ep12_s43_newopt_spe_gsq_pe16_bg0.05_ntaps"
-             "_ms0.5-1.5_tqk", "TUCKER s43"))
-# ---- HICO-DET TRAIN as a verb-supervision source (jobs 6958854 / 6958856):
-# the CEILING for long-tail human actions — what perfect verb supervision buys
-# on HICO and costs on every other axis. HICO cells are NOT zero-shot for these
-# two arms (report as HOI-supervised). Control = REG ctl. Two relation shares
-# give the dose-response; hico passes/epoch 1.12 and 1.46.
-for _hs in ("0.10", "0.15"):
-    ARMS.append(("proxy50k_v42cfg_wv2-512_lora12_mixvghico" + _hs +
-                 "_sig0.25_btd0.3_def4h8v3n2_r0_lr4e-4_ep12_newopt_spe_gsq_pe16"
-                 "_bg0.05_ntaps_ms0.5-1.5_hico", "HICO-sup " + _hs))
-
 # A1 sources -> vocabulary size (chance = 1/V under the graph constraint)
 A1 = {"vg150": 50, "psg": 56, "indoorvg": 37, "hicodet": 116}
 A3 = ["vg150", "psg", "indoorvg"]
@@ -335,13 +91,9 @@ CEILING = _CEILING[("A4", "psg/test")]
 # accepted -- divided by the same quantity on the images' own annotations, at
 # matched graph depth. Written by a5b_annotation_reference.py.
 #
-# This axis was OUT of the composite while it was a pairwise win rate, for a
-# reason that no longer holds: a win rate needs an opponent, so the two models'
-# values summed to 1 and the cell described the pair rather than either model,
-# and a model losing the head-to-head scored 0 and collapsed the harmonic mean.
-# The share of the annotation's information is a property of one model, has a
-# floor of 0 (a system whose claims the judge rejects earns no bits) and so
-# needs no further chance correction, and is computable without a baseline.
+# The share of the annotation's information is a property of one model on its
+# own: it has a floor of 0 (a system whose claims the judge rejects earns no
+# bits), needs no chance correction, and is computable without a baseline.
 A5_FILE = os.path.join("runs", "benchmark", "a5b",
                        "annotation_reference_top10_matched.json")
 A5_KEY = {"ours": "RelateAnything-pack", "base": "OvSGTR"}
@@ -355,10 +107,10 @@ COMPOSITE_AXES = ("A1 transfer", "A2 precision", "A4 detector",
 # A2 prevalence: positives / labelled cells, from the packs' own annotations.
 A2_PREVALENCE = {"haystack": 1.0 / (1.0 + 8.1),   # 8.1:1 neg:pos, SPEC.md sec.3
                  "hicodet": 18954.0 / 309895.0}     # pack v1 (fallback)
-# HICO pack V2 (2026-08-26, duplicate boxes merged) has 18,846 positives over
-# 100,449 labelled cells; v1 had 18,954 over 309,895. The chance level therefore
-# depends on WHICH pack a run was evaluated on, and the fAP json records
-# n_cells — so prevalence is resolved per run from that, never from a constant.
+# The HICO pack exists in two shapes (18,846 positives over 100,449 labelled
+# cells, and 18,954 over 309,895 before duplicate boxes were merged), so the
+# chance level depends on which one a run was scored against. The fAP json
+# records n_cells, and prevalence is resolved per run from it.
 HICO_PREVALENCE_BY_CELLS = {309895: 18954.0 / 309895.0, 100449: 18846.0 / 100449.0}
 
 
@@ -370,7 +122,7 @@ def f1_or(metrics, mr_key, r_key, use_f1):
 
     WHY F1 IS AN OPTION HERE. A1 and A3 are the two recall axes, and each is
     gameable in one direction on mR alone: A1 rewards tail-boosting that
-    collapses the head (v42 took PSG mR +19% while `on` fell 81%), and A3
+    collapses the head (a change that took PSG mean recall +19% cost `on` 81%), and A3
     rewards head collapse, because generic predicates sit inside nearly every
     accepted synonym set (SPEC.md §2). F1 weights the SMALLER of R and mR, so
     neither trick pays. A2 (fAP) and A6 (AUC) are NOT recall pairs and are
@@ -426,12 +178,6 @@ def harmonic(vals):
 
 
 def main() -> None:
-    # fAP is read from the job LOGS, not the run dirs: the two eval_haystack
-    # invocations shared an output basename before job_spec_cells.sh split them,
-    # so some arms' A2 json on disk is actually their HICO fAP. Globbed and
-    # sorted so every new spec_cells run is picked up without editing this list;
-    # sorted == job-id order == chronological, and parse_fap lets later files
-    # win, so a re-run of an arm supersedes its earlier entry.
     p = argparse.ArgumentParser()
     p.add_argument("--spec_log", nargs="*", default=[],
                    help="optional stdout logs of benchmark/eval_haystack.py; the "
@@ -442,6 +188,9 @@ def main() -> None:
     p.add_argument("--latency", default="runs/benchmark/latency.json",
                    help="from benchmark/latency.py. Reported BESIDE "
                         "OVS, never inside it — see the LATENCY note below.")
+    p.add_argument("--runs", nargs="*", default=None,
+                   help="run directories to score (default: every directory under "
+                        "runs/train that carries the evaluation artifacts)")
     p.add_argument("--out", default="runs/benchmark/ovs.json")
     p.add_argument("--head_to_head", default=None,
                    help="also score the released tower against the baseline on "
@@ -473,9 +222,11 @@ def main() -> None:
     vg_fap = parse_fap(a.spec_log, r"A2 Haystack fAP")
     hi_fap = parse_fap(a.hico_log, r"HICO A2")
 
+    runs = ([Path(r) for r in a.runs] if a.runs
+            else sorted(q for q in Path("runs/train").glob("*") if q.is_dir()))
     rows = []
-    for arm, label in ARMS:
-        d = Path("runs/train") / arm
+    for d in runs:
+        label = d.name
         if not d.exists():
             continue
         cells, axes = {}, {}
@@ -526,17 +277,12 @@ def main() -> None:
         if a2:
             axes["A2 precision"] = sum(a2) / len(a2)
 
-        # A3 PROVENANCE GUARD. --tau_eval defaulted to 0.955, a threshold
-        # calibrated in student_v1. Every arm from v38 on evaluates in
-        # student_v2, where 0.955 accepts 0.6% of true synonyms instead of
-        # ~64% — so the A3 cell measured near-exact string match for the v2
-        # arms while the v1 arms kept a working matcher, and the two were
-        # being ranked against each other. An A3 number is admitted only if it
-        # was produced AFTER its space's calibration was fitted; anything older
-        # is dropped, which makes that arm INCOMPLETE rather than silently
-        # comparable. The eight deleted-checkpoint proxy arms can never be
-        # re-measured, so they lose A3 permanently — correct, since the metric
-        # they were scored under no longer exists.
+        # A3 provenance guard. The open-vocabulary matcher's threshold is
+        # only meaningful in the text space it was calibrated in, and a
+        # threshold carried across spaces can silently reduce A3 to exact
+        # string matching. An A3 number is admitted only if it was produced
+        # after its space's calibration was fitted; an older one is dropped,
+        # which leaves the run incomplete rather than silently comparable.
         cal_mtime = max((os.path.getmtime(p) for p in
                          Path("runs/benchmark").glob("tau_calibration_*.json")),
                         default=0.0)
@@ -578,12 +324,10 @@ def main() -> None:
         if f.exists():
             # MACRO (mean of per-predicate AUC), not the pooled AUC over all
             # 2,758 cells. SpatialSense's predicate mix is dominated by `on`
-            # (807) and `behind` (406), which are the two we already handle, so
-            # the pooled figure is largely a re-measurement of them: it read the
-            # v43->v44 gain as +0.018 where the macro is +0.064, a 3.5x
-            # understatement, and it RANKS wv2_lora12 above v43 (.684 vs .659)
-            # where the macro puts them the other way (.655 vs .667). Every
-            # other axis here is already macro; this makes A6 consistent.
+            # (807) and `behind` (406), the two the model already handles, so
+            # the pooled figure largely re-measures them and can rank two
+            # models the opposite way round from the macro. Every other axis
+            # here is macro; this makes A6 consistent.
             ss = json.load(open(f))
             pp = ss.get("per_predicate") or {}
             x = (sum(v["AUC"] for v in pp.values()) / len(pp)) if pp else ss["AUC"]
@@ -714,9 +458,11 @@ def main() -> None:
 #     the A1 rows of the same table; the per-arm loop above scores each arm on
 #     its own HICO number, which is the right thing for arm selection and the
 #     wrong thing for a head-to-head.
-OURS_RUN = "runs/train/full_v42cfg_wv2-512_lora12_mixvghico0.05_sig0.25_btd0.3_negmask_def4h8v3n2_vits16plus_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5_hicov2"
-OURS_ZS_RUN = "runs/train/full_v42cfg_wv2-512_lora12_mixvg_sig0.25_btd0.3_def4h8v3n2_vits16plus_r0_lr4e-4_ep12_newopt_spe_gsq_pe16_bg0.05_ntaps_ms0.5-1.5"
-BASE_DIR = "runs/ovsgtr"
+# The head-to-head compares one released model against the baseline. The
+# HICO cells come from the zero-shot sibling, which never saw HICO-DET.
+OURS_RUN = os.environ.get("OVS_RUN", "runs/train/relsgg-vits16plus")
+OURS_ZS_RUN = os.environ.get("OVS_RUN_ZEROSHOT", "runs/train/relsgg-vits16plus-zeroshot")
+BASE_DIR = os.environ.get("OVS_BASELINE", "runs/ovsgtr")
 
 
 def _metrics(path, block="metrics"):

@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 pytest.importorskip("sklearn")
-from relsgg.spatialsense_metrics import best_threshold, summarise  # noqa: E402
+from relsgg.eval.spatialsense import best_threshold, summarise  # noqa: E402
 
 
 def test_best_threshold_separable():

@@ -38,8 +38,8 @@ import torch
 import torch.nn.functional as F
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from data.relation_dataset import RelationDataset  # noqa: E402
-from relsgg.backbone import RelAnythingBackbone  # noqa: E402
+from relsgg.data.dataset import RelationDataset  # noqa: E402
+from relsgg.model.backbone import Backbone  # noqa: E402
 from research.analyze_backbone_shift import hidden_stack  # noqa: E402
 
 import matplotlib  # noqa: E402
@@ -57,13 +57,13 @@ def load_models(ckpts, labels, weights, device):
     a0 = ck0["args"] if isinstance(ck0["args"], dict) else vars(ck0["args"])
     kw = dict(backbone_type=a0.get("backbone_type", "dinov3"), model_name=a0.get("backbone_model") or None,
               lora_rank=-1, pretrained=True)
-    models = {"pretrained": RelAnythingBackbone(**kw, norm_taps=False).to(device).eval()}
+    models = {"pretrained": Backbone(**kw, norm_taps=False).to(device).eval()}
     for p, lab in zip(ckpts, labels):
         ck = torch.load(p, map_location="cpu", weights_only=False)
         key = "ema_model" if weights == "ema" and "ema_model" in ck else "model"
         sd = {k[len("backbone."):]: v for k, v in ck[key].items() if k.startswith("backbone.")}
         a = ck["args"] if isinstance(ck["args"], dict) else vars(ck["args"])
-        bb = RelAnythingBackbone(**kw, norm_taps=bool(a.get("norm_taps", False))).to(device).eval()
+        bb = Backbone(**kw, norm_taps=bool(a.get("norm_taps", False))).to(device).eval()
         _, unexpected = bb.load_state_dict(sd, strict=False)
         assert not unexpected, unexpected[:5]
         models[lab] = bb
@@ -114,9 +114,9 @@ def image_stats(feats, boxes, cats, rels, hp, acc):
     masks = box_patch_masks(boxes, hp); any_box = masks.any(0)
     N = len(boxes)
     related = np.zeros((N, N), bool)
-    for s, o in rels[:, :2]:
+    for s, o in rels[:,:2]:
         related[s, o] = related[o, s] = True
-    for s, o, p, fl in rels[:, :4]:
+    for s, o, p, fl in rels[:,:4]:
         if s == o:
             continue
         q = masks[s] & ~masks[o]

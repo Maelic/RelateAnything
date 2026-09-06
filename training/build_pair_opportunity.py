@@ -105,8 +105,8 @@ def main():
 
     trusted = opp_flat >= a.min_support
     print(f"\nscanned {seen} images in {time.time()-t0:.0f}s")
-    print(f"category pairs with any opportunity : {int(ok.sum()):,}")
-    print(f"  ...with >= {a.min_support} opportunities : {int(trusted.sum()):,}")
+    print(f"category pairs with any opportunity: {int(ok.sum()):,}")
+    print(f"...with >= {a.min_support} opportunities: {int(trusted.sum()):,}")
     r = rate[trusted]
     if len(r):
         for q in (0.10, 0.25, 0.50, 0.75, 0.90, 0.99):

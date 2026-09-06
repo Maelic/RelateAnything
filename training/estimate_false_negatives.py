@@ -8,12 +8,13 @@ each is a patch for a weak synonym table (build_pair_cooc.py's own docstring: it
 by cosine "because canonical groups are near-identity, 10,086 groups for 10,102
 predicates").
 
-They are also NOT PORTABLE, which is what forces the issue. Between student_v1 and
-student_v2 the cosine scale moves (mean off-diagonal 0.80 -> 0.17), so tau_ignore 0.94
-goes from 82.8 ignored columns per class to 1.2 — deleting 98.5% of the false-negative
-protection, which is the v40 configuration that cost 33-68% of rare recall. And the
-size-matched equivalent (0.569) selects 80% DIFFERENT pairs (Jaccard 0.109), so
-per-space recalibration does not even preserve the semantics.
+They are also not portable, which is what forces the issue. Between two text
+spaces the cosine scale moves (mean off-diagonal 0.80 against 0.17), so a
+threshold of 0.94 goes from ignoring 82.8 columns per class to 1.2 — removing
+98.5% of the false-negative protection, a configuration that costs 33-68% of
+rare-class recall. The size-matched equivalent in the second space (0.569)
+selects 80% different pairs, so recalibrating per space does not preserve the
+meaning either.
 
 THE OBSERVATION THAT REPLACES THEM. Annotators sometimes wrote two different strings for
 the SAME (image, subject box, object box). On megasg train: 706,454 box pairs (20.3%)

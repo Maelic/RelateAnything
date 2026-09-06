@@ -11,31 +11,24 @@ torchrun --nproc_per_node 4 train.py \
   --data_roots runs/packed/megasg_clean runs/packed/vg_raw runs/packed/hicodet \
   --mix_fractions 0.7274 0.063 0.2096 \
   --restrict_neg_sources hicodet \
-  --backbone_type dinov3 \
   --backbone_model facebook/dinov3-vits16plus-pretrain-lvd1689m \
-  --lora_rank 0 --lora_layers 12 --backbone_lr 5e-5 \
-  --lr 4e-4 --epochs 12 --batch_size 32 --weight_decay 1e-4 \
-  --warmup_epochs 1 --warmup_steps 500 --clip_grad 1.0 \
-  --img_size 448 --multi_scale 0.5,1.5 --multi_scale_n 7 \
-  --sampler_type relatedness --geo_budget 400 --final_budget 128 \
-  --text_student runs/packed/text_student_v2_512/student.pt --text_dim 512 \
-  --dual_spatial_head --gate_mlp --proj_layers 2 \
-  --deformable_points 4 --deformable_heads 8 --deformable_nulls 2 \
-  --deformable_ring --deformable_clamp \
-  --norm_taps --scene_pe --geo_squash --pe_num_freqs 16 --pe_max_octave 7 \
-  --lambda_sigmoid 0.25 --box_token_dropout 0.3 --lambda_bg 0.05 \
-  --lambda_swap 0.5 --dropout 0.2 --augment 0.3 \
-  --cfa_mode entity --cfa_prob 0.5 \
+  --val_root runs/packed/megasg \
+  --dev_root runs/packed/psg --dev_metric mR@50 \
+  --pred_embeds runs/packed/datamix_v22/text_space/pred_embeds_studentv2_512_photo.npz \
+  --ontology_meta runs/packed/datamix_v22/text_space/union_meta.json \
   --soft_supervision runs/packed/datamix_v22/text_space/soft_supervision.npz \
   --neg_rate_table runs/packed/datamix_v22/pair_opportunity.npz \
+  --text_student runs/packed/text_student_v2_512/student.pt \
   --exclude_ids runs/datamix/indoorvg_holdout.json \
-  --dev_root runs/packed/psg --dev_split val --dev_metric mR@50 --dev_select \
   --output_dir runs/train/<name>
 ```
 
-[`train.sh`](../train.sh) is this command with the backbone as a variable.
-The exact resolved arguments of every released run are in
-[`training/configs/`](../training/configs/), one JSON per model.
+Every architecture and optimisation flag defaults to the released recipe
+([`relsgg/config.py`](../relsgg/config.py)), so the command above sets only the
+data, the backbone and the artifacts. [`train.sh`](../train.sh) is the same
+command with the backbone as a variable, and the resolved arguments of every
+released run are in [`training/configs/`](../training/configs/), one JSON per
+model.
 
 Inputs, and where they come from (see [installation](installation.md#get-the-data)):
 
@@ -55,8 +48,8 @@ Ranked by measured effect, not by how interesting they sound.
 
 | ingredient | flag | why |
 |---|---|---|
-| Backbone adaptation | `--lora_rank 0 --lora_layers 12` | adapting the backbone is *the* lever; a frozen backbone is far behind |
-| Distilled text student | `--text_student ... --text_dim 512` | the predicate space; a 512-d student beat 768-d on all four bars |
+| Backbone adaptation | full fine-tune at `--backbone_lr 5e-5` | adapting the backbone is *the* lever; a frozen backbone is far behind |
+| Distilled text student | `--text_student ...` | the predicate space; a 512-d student beat 768-d on all four bars |
 | Source-aware negatives | `--restrict_neg_sources hicodet` | best OVS of any arm. Stops InfoNCE pushing `on`/`above` down for verb-only HICO pairs |
 | Deformable read | `--deformable_points 4 --deformable_heads 8 --deformable_nulls 2` | wins on every axis and refunds the sigmoid-aux tax |
 | Sigmoid aux | `--lambda_sigmoid 0.25` | the first training change to move spatial reasoning (+0.041 AUC) |
@@ -85,7 +78,7 @@ scoring *lost* when re-scored on final.
 ## Multi-GPU
 
 ```bash
-torchrun --nproc_per_node 4 train.py ...
+torchrun --nproc_per_node 4 train.py...
 ```
 
 Standard DDP, single node. Two constraints:
@@ -100,9 +93,9 @@ Standard DDP, single node. Two constraints:
 
 ## Running an ablation
 
-Use the 50K proxy pack. It is validated: 4/4 of the pre-registered signatures
-from the full-scale v41→v42 comparison reproduce on it, at ~2.5 GPU-hours per
-arm instead of ~24.
+Use the 50K proxy pack: about 2.5 GPU-hours per arm instead of 24. Validate it
+for your question first — a proxy is only trustworthy for effects that show up
+on it at full scale too.
 
 ```bash
 python training/build_proxy_pack.py --out runs/packed/megasg_proxy50k

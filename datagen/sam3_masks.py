@@ -15,7 +15,7 @@ Two backends, identical call surface:
                                    submit time or the job 401s despite access.
   sam2  facebook/sam2.1-hiera-large — ungated fallback
 
-Measured on one A40 (job 6922056, 100 val images): 6.44 img/s, 601/601 masks
+Measured on one A40 (100 val images): 6.44 img/s, 601/601 masks
 non-empty, 99.1% of mask area inside the prompt box, mean SAM score 0.906.
 Full MegaSG (499K images) is therefore ~21.5 GPU-h — ~1.4 h wall on a 16-way
 array. Output costs ~1,367 B/mask: 3.7 GB train + 0.2 GB val.
@@ -28,10 +28,10 @@ Usage
 -----
   # benchmark throughput on 200 images before committing to the full run
   python datagen/sam3_masks.py --coco runs/vllm_generate/coco_format/megasg_sgg_val_coco.json \
-      --images ../DATASETS/MEGASG/val --out runs/sam_masks/val --limit 200
+      --images../DATASETS/MEGASG/val --out runs/sam_masks/val --limit 200
 
   # one shard of a 16-way array
-  python datagen/sam3_masks.py --coco ... --images ... --out ... \
+  python datagen/sam3_masks.py --coco... --images... --out... \
       --shard $SLURM_ARRAY_TASK_ID --num_shards 16
 
   # fold shards into a COCO json with `segmentation` populated
@@ -72,7 +72,7 @@ SAM3_FALLBACK_IDS = ["facebook/sam3"]
 
 def load_backend(backend: str, model_id: str, device: str, dtype: torch.dtype):
     """Return (model, processor). Both backends expose the same SAM interface:
-    processor(images=..., input_boxes=...) → model(**inputs) → .pred_masks.
+    processor(images=..., input_boxes=...) → model(**inputs) →.pred_masks.
 
     For sam3 we try the requested id first, then the ids in SAM3_FALLBACK_IDS:
     `facebook/sam3.1` publishes only `sam3.1_multiplex.pt` (no safetensors), so
@@ -104,7 +104,7 @@ def load_backend(backend: str, model_id: str, device: str, dtype: torch.dtype):
         "If these are 401/403: the repo is gated — request access on the hub AND\n"
         "authenticate locally with `hf auth login` (or export HF_TOKEN=...).\n"
         "To start work immediately, use --backend sam2 (ungated)."
-    )
+)
 
 
 # ---------------------------------------------------------------------------
@@ -155,7 +155,7 @@ def segment_image(model, processor, image: Image.Image, boxes_xyxy, device, dtyp
 
     masks = processor.post_process_masks(
         outputs.pred_masks.float().cpu(), inputs["original_sizes"]
-    )[0]                                    # [n_boxes, n_masks, H, W] or [n_boxes, H, W]
+)[0]                                    # [n_boxes, n_masks, H, W] or [n_boxes, H, W]
     scores = outputs.iou_scores.float().cpu()
 
     if masks.ndim == 3:                     # no mask dimension → add one
@@ -211,7 +211,7 @@ def check(args) -> None:
     res = segment_image(model, processor, img, [[100.0, 80.0, 300.0, 400.0]],
                         device, dtype, args.multimask)
     rle, score = res[0]
-    area = int(mask_util.area(  # type: ignore[arg-type]
+    area = int(mask_util.area(# type: ignore[arg-type]
         {"size": rle["size"], "counts": rle["counts"].encode()})) if rle else 0
     print(f"OK — 1 box → rle size={rle['size'] if rle else None} "
           f"area={area}px score={score:.3f}")
@@ -226,7 +226,7 @@ def run(args) -> None:
 
     images = sorted(coco["images"], key=lambda im: im["id"])
     images = [im for im in images if by_image.get(im["id"])]
-    images = images[args.shard :: args.num_shards]      # deterministic, disjoint
+    images = images[args.shard:: args.num_shards]      # deterministic, disjoint
     if args.limit:
         images = images[: args.limit]
 
@@ -335,7 +335,7 @@ def run_union(args) -> None:
     with union_path.open() as f:
         for line in f:
             records.append(json.loads(line))
-    records = records[args.shard :: args.num_shards]    # deterministic, disjoint
+    records = records[args.shard:: args.num_shards]    # deterministic, disjoint
     if args.limit:
         records = records[: args.limit]
 

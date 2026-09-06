@@ -31,9 +31,9 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from relsgg.train_engine import evaluate                          # noqa: E402
+from relsgg.training.engine import evaluate                          # noqa: E402
 from relsgg.scoring import ScoreContract                          # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES  # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES  # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt  # noqa: E402
 from benchmark.eval_zeroshot_detbox import DetBoxDataset, collate, det_class_names  # noqa: E402
 
@@ -109,8 +109,6 @@ def main():
     p.add_argument("--weights", default="ema", choices=["ema", "raw"])
     p.add_argument("--score_mode", default="sigmoid", choices=["sigmoid", "softmax"])
     p.add_argument("--text_student", default=None)
-    p.add_argument("--dinotxt_weights",
-                   default="checkpoints/dinov3_vitl16_dinotxt_vision_head_and_text_encoder-a442d8f5.pth")
     p.add_argument("--img_size", type=int, default=448)
     p.add_argument("--batch_size", type=int, default=16)
     p.add_argument("--num_workers", type=int, default=8)
@@ -145,15 +143,16 @@ def main():
     print(f"reparameterizing vocab head to {len(pred_names)} predicates")
     if text_student:
         print(f"  vocabulary encoder: STUDENT ({text_student})")
-        from relsgg.text_student import encode_texts_student
+        from relsgg.text.student import encode_texts_student
         E = encode_texts_student(pred_names, text_student,
                                  templates=TRAIN_TEMPLATES, device=device)
         model.vocab_head.set_vocabulary_matrix(pred_names, E)
     else:
         print("  vocabulary encoder: dino.txt TEACHER")
-        model.vocab_head.encode_vocabulary_dinotxt(
-            pred_names, dinotxt_weights=args.dinotxt_weights,
-            templates=TRAIN_TEMPLATES)
+        raise SystemExit(
+            "this checkpoint names no text student. The vocabulary has to be "
+            "encoded by the encoder the head was trained against; pass "
+            "--text_student, or use a released model, which ships its own.")
     model.reparameterize()
 
     raw = model.module if hasattr(model, "module") else model

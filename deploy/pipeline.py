@@ -13,7 +13,6 @@ WHY THIS EXISTS (all numbers measured on the full-recipe checkpoint, A40, bf16):
     tie-breaking measurement bug (see relsgg-inference-launch-bound). Either
     mode perturbs eval metrics ~40x the noise floor: demo/product only, never
     for reported numbers.
-    See [[relsgg-inference-launch-bound]].
 
 THE THREE OPTIMISATIONS IMPLEMENTED
 
@@ -80,7 +79,7 @@ class PipelineConfig:
                  "checkpoint_best.pth")
     img_size: int = 448
     # MEASURED, and the old values were the single largest recall loss in the
-    # product ([[relsgg-pair-sampler-recall]], jobs 6923839/6923841).
+    # product.
     #
     # max_objects=16 DELETED 16.5% of PSG-test GT relations before the sampler
     # ever ran, and no eval could see it: data/relation_dataset.py drops
@@ -93,7 +92,7 @@ class PipelineConfig:
     # there are 32*31 = 992 ordered pairs, so a budget of 992 is EXHAUSTIVE —
     # the sampler stops being a filter at all and its recall is exactly 1.0.
     # Affordable because bs1 is CPU-dispatch bound: a larger K grows kernel
-    # SIZE, not kernel COUNT ([[relsgg-inference-launch-bound]]).
+    # SIZE, not kernel COUNT.
     #
     #   config                   latency         box    sampler   product
     #   old  mo=16 K=64          21.17 ms        0.835   0.948     0.792
@@ -118,14 +117,14 @@ class PipelineConfig:
     amp: bool = True
     # torch.compile mode for the relation model ("" = eager).
     #
-    # MEASURED (job 6923298, 120 real frames, 32 distinct object counts):
+    # MEASURED (120 real frames, 32 distinct object counts):
     # p50 22.50 -> 9.43 ms, p99 23.02 -> 9.83 ms, 44 -> 106 FPS, and ZERO
     # stalls — the worst frame is 1.1x the median, same as eager, so dynamo
     # does not re-guard on a varying detection count. Costs ~66 s once at
     # startup, which `warmup()` pays up front instead of on frame 1.
     #
     # NOT FREE, and not for benchmarks: inductor changes reduction order, which
-    # moves eval metrics by ~40x the measured noise floor (job 6923206) — in
+    # moves eval metrics by ~40x the measured noise floor — in
     # BOTH directions, largest on low-support tail buckets. Ship it for a live
     # demo; never use it to produce a reported number.
     compile: str = ""
@@ -157,7 +156,7 @@ class SceneResult:
     # Two-graph decode (dual_spatial_head checkpoints): the SAME forward pass
     # ranked twice, once inside the spatial predicate columns and once inside
     # the semantic ones. Measured to beat a single merged graph of twice the
-    # budget on 6/6 benchmark cells ([[relsgg-decomposed-two-graph]]).
+    # budget on 6/6 benchmark cells.
     triplets_spatial: List[tuple] = field(default_factory=list)
     triplets_semantic: List[tuple] = field(default_factory=list)
     timing: Timing = field(default_factory=Timing)
@@ -271,9 +270,9 @@ class ParallelScenePipeline:
         t0 = time.perf_counter()
         x = self._prep_image(np.zeros((480, 640, 3), dtype=np.uint8))
         bt = torch.zeros(1, self.cfg.max_objects, 4, device=self.device)
-        bt[0, :n_boxes, 0] = torch.linspace(0.2, 0.8, n_boxes, device=self.device)
-        bt[0, :n_boxes, 1] = 0.5
-        bt[0, :n_boxes, 2:] = 0.2
+        bt[0,:n_boxes, 0] = torch.linspace(0.2, 0.8, n_boxes, device=self.device)
+        bt[0,:n_boxes, 1] = 0.5
+        bt[0,:n_boxes, 2:] = 0.2
         cnt = torch.tensor([n_boxes], device=self.device)
         m = self._compiled if self._compiled is not None else self.model
         with torch.amp.autocast(self.device.type, dtype=torch.bfloat16,
@@ -354,7 +353,7 @@ class ParallelScenePipeline:
         import cv2
         s = self.cfg.img_size
         img = cv2.resize(frame_bgr, (s, s), interpolation=cv2.INTER_LINEAR)
-        x = img[:, :, ::-1].transpose(2, 0, 1)[None].astype(np.float32) / 255.0
+        x = img[:,:,::-1].transpose(2, 0, 1)[None].astype(np.float32) / 255.0
         return torch.from_numpy(np.ascontiguousarray(x)).to(self.device)
 
     @torch.no_grad()
@@ -424,13 +423,9 @@ class ParallelScenePipeline:
         cx = (b[:, 0] + b[:, 2]) / 2
         cy = (b[:, 1] + b[:, 3]) / 2
         boxes = np.stack([cx, cy, b[:, 2] - b[:, 0], b[:, 3] - b[:, 1]], -1)
-        # PAD to max_objects. The box tensor used to be [1, n, 4] with n = the
-        # detection count, so its SHAPE changed every frame — the pipeline was
-        # advertising "static shapes" while feeding a dynamic one. Output is
-        # unchanged (box_counts drives the validity mask, and the model was
-        # trained and evaluated on padded batches), but the shape is now
-        # genuinely fixed, which is what torch.compile needs: without this,
-        # dynamic=False recompiles once per distinct detection count.
+        # Pad to max_objects so the box tensor's shape is the same on every
+        # frame; box_counts drives the validity mask, so padding changes no
+        # output, and a fixed shape is what torch.compile and CUDA graphs need.
         padded = np.zeros((self.cfg.max_objects, 4), dtype=np.float32)
         padded[:n] = boxes.astype(np.float32)
         bt = torch.from_numpy(padded[None]).to(self.device)
@@ -443,17 +438,10 @@ class ParallelScenePipeline:
                             precomputed_features=F_map)
         logits = out["logits"][0].float()
         pair = out.get("pair_logits")
-        # ADDITIVE fusion — sigmoid(pred + rel), the v34 contract that
-        # relsgg/evaluator.py scores. This shipped the multiplicative form,
-        # so the product never used the formula we reported. Multiplicative
-        # wins on PSG/VG150 and LOSES on Haystack's explicit negatives
-        # (AUC .9038 vs .9108), because its gain is up-weighting the
-        # relatedness term = an annotation-propensity prior. See
-        # [[relsgg-confidence-knob]].
-        # Calibrated deployment probability, via THE shared contract. The head
-        # was fit by a mass-balanced BCE (relsgg/model.py sig_loss) to a 50/50
-        # prior while deployment sees 0.2-4%, so raw scores pile into
-        # [0.9, 1.0) and the threshold is a knob connected to nothing. The
+        # One score contract for evaluation and deployment (relsgg/scoring.py).
+        # The head's affine is trained against balanced positives and negatives
+        # while a frame carries few true pairs, so raw scores crowd into
+        # [0.9, 1.0) and a threshold means little there. The
         # calibration is the missing fit; it is monotone, so ranking is
         # bit-identical.
         score = self._contract.scores(
@@ -485,7 +473,7 @@ class ParallelScenePipeline:
             # spatial stream. Relatedness is an annotation-propensity ~ contact
             # signal: dropping it HELPS spatial truth-judgment (+0.068 macro
             # AUC on SpatialSense, projective predicates +0.11..0.14 —
-            # [[relsgg-relatedness-contact-prior]]) but HURTS recall, and on
+            #) but HURTS recall, and on
             # raw detector output it is also what suppresses duplicate boxes.
             # Measured on a live frame: with it kept, `person -on-> motorcycle
             # 0.57`; dropped, scores saturate at 1.00 and junk pairs surface

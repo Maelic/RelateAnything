@@ -25,7 +25,7 @@ corpora. So the benchmark is FOUR AXES, each answering a question no other axis 
 
 There is deliberately NO single headline scalar. Aggregating across sources with
 different vocabularies and different matcher breadth is not meaningful (see
-[[relsgg-eval-metrics-suite]]); LVIS itself reports a vector (AP/APr/APc/APf) and so do
+); LVIS itself reports a vector (AP/APr/APc/APf) and so do
 we. The headline is wR@50 + the bucket split; micro R@50 is reported only for
 comparability with the literature and is the metric most inflated by corpus match.
 
@@ -40,7 +40,7 @@ from pathlib import Path
 
 # Which of our runs is "ours" in the table. Overridable with --ours so a new arm can be
 # aggregated without editing this file (the SGDet path is derived from it too).
-OURS = os.environ.get("AGG_OURS", "v35_lora_clean_6ep")
+OURS = os.environ.get("AGG_OURS", "relsgg-vits16plus")
 OV = "runs/ovsgtr"
 
 # axis, source, protocol label, ours path, ovsgtr path, [subkey]
@@ -55,7 +55,7 @@ CELLS = [
      f"runs/train/{OURS}/zeroshot_indoorvg_test_gc.json",
      f"{OV}/ovdr_mega_indoorvg_test_gtbox_gc.json", None),
     ("A4", "psg/test", "SGDet, shared YOLO-World",
-     f"runs/sgdet/{'ours' if OURS == 'v35_lora_clean_6ep' else OURS}_psg_test_yoloworld.json",
+     f"runs/sgdet/{OURS}_psg_test_yoloworld.json",
      "runs/sgdet/ovdr_mega_psg_test_yoloworld_gc.json", "lenient"),
 ]
 HAYSTACK = [
@@ -67,8 +67,8 @@ HAYSTACK = [
 RECALL_KEYS = ["R@50", "mR@50", "R@50_rare", "wR@50"]
 FED_KEYS = ["mfAP_sup5", "mfAP", "fAP_rare", "mPAUC", "coverage"]
 
-# Measured by benchmark/annotation_overlap.py. Rows are the corpus each model
-# was trained on: ours = megasg_clean (+vg_raw for v37), OvSGTR = vg150/train.
+# Measured by benchmark/annotation_overlap.py, per corpus each model was
+# trained on: ours = RA-4M, OvSGTR = vg150/train.
 OVERLAP = {
     "vg150/test": {"ours": 0.491, "ovsgtr": 1.000},
     "psg/test": {"ours": 0.353, "ovsgtr": 0.573},
@@ -157,19 +157,18 @@ def delta(a, b):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--ours", default="",
-                    help="training run to report as ours (default v35_lora_clean_6ep). "
-                         "Set AGG_OURS in the environment for the same effect.")
+                    help="training run to report as ours (default: relsgg-vits16plus, "
+                         "or AGG_OURS in the environment)")
     ap.add_argument("--out_json", default="runs/benchmark/ovsgg_benchmark.json")
     ap.add_argument("--out_md", default="runs/benchmark/ovsgg_benchmark.md")
     args = ap.parse_args()
     if args.ours:
         # Re-derive the cell paths for the requested run.
         global OURS, CELLS, HAYSTACK
-        OURS = args.ours
-        CELLS = [(ax, src, pr, po.replace("v35_lora_clean_6ep", OURS)
-                  .replace("runs/sgdet/ours_", f"runs/sgdet/{OURS}_"), pv, sub)
+        _prev, OURS = OURS, args.ours
+        CELLS = [(ax, src, pr, po.replace(_prev, OURS), pv, sub)
                  for ax, src, pr, po, pv, sub in CELLS]
-        HAYSTACK = [(ax, src, pr, po.replace("v35_lora_clean_6ep", OURS), pv, sub)
+        HAYSTACK = [(ax, src, pr, po.replace(_prev, OURS), pv, sub)
                     for ax, src, pr, po, pv, sub in HAYSTACK]
 
     lines, blob = [], {}
@@ -192,7 +191,7 @@ def main():
         lines.append(f"\noverlap: ours **{ov_ours:.1%}** vs OvSGTR **{ov_ovs:.1%}**"
                      f"  → gap {(ov_ovs - ov_ours) * 100:.0f} pts in OvSGTR's favour\n"
                      if ov_ours is not None else "")
-        lines.append(f"\n| metric | OvSGTR | ours v35 | delta |")
+        lines.append(f"\n| metric | OvSGTR | ours | delta |")
         lines.append("|---|---|---|---|")
         for k in RECALL_KEYS:
             a = (mv or {}).get(k)
@@ -207,7 +206,7 @@ def main():
                      "symmetric: OvSGTR enumerates every pair (~100%), our sampler "
                      "prunes (~88%), and unsampled cells score 0 — this favours "
                      "OvSGTR.\n")
-        lines.append(f"\n| metric | OvSGTR | ours v35 | delta |")
+        lines.append(f"\n| metric | OvSGTR | ours | delta |")
         lines.append("|---|---|---|---|")
         for k in FED_KEYS:
             a = (mv or {}).get(k)

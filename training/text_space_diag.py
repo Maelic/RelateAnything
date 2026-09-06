@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """text_space_diag.py — measure whether candidate text spaces separate the
 10K MEGASG predicates the way training needs them separated. Runs BEFORE any
-GPU training is spent (plan P0.5 / risk #3).
+GPU training is spent.
 
 For each text encoder (dino.txt, SigLIP2, CLIP-B/32) and template set:
 
@@ -23,7 +23,7 @@ Also writes canonical_groups.json (predicate → canonical key) used everywhere
 downstream (synonym-aware loss masking, soft evaluator). Canonical forms are
 LOGIC ONLY — the emitted per-relation labels are never rewritten.
 
-Usage (login node, .venv — downloads SigLIP2/CLIP into HF_HOME on first run):
+Usage (login node,.venv — downloads SigLIP2/CLIP into HF_HOME on first run):
     python training/text_space_diag.py --root runs/packed/megasg \
         --encoders dinotxt siglip2 clip
 """
@@ -115,14 +115,14 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def encode_dinotxt(texts: list[str], batch: int = 256) -> np.ndarray:
     from transformers import CLIPTokenizer
-    from relsgg.vocab import _DinoTxtEncoder
+    from training.distill.teacher import DinoTxtEncoder
 
-    enc = _DinoTxtEncoder.from_checkpoint(str(DINOTXT_CKPT), DEVICE)
+    enc = DinoTxtEncoder.from_checkpoint(str(DINOTXT_CKPT), DEVICE)
     tok = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
     out = []
     for i in range(0, len(texts), batch):
         ids = tok(texts[i:i + batch], return_tensors="pt", padding="max_length",
-                  truncation=True, max_length=_DinoTxtEncoder.CTX_LEN)["input_ids"]
+                  truncation=True, max_length=DinoTxtEncoder.CTX_LEN)["input_ids"]
         out.append(enc.encode(ids.to(DEVICE)).cpu().numpy())
         print(f"  dinotxt {i + len(ids)}/{len(texts)}", end="\r", flush=True)
     print()
@@ -275,7 +275,7 @@ def main() -> None:
                 out_dir / f"pred_embeds_{enc_name}_{tset_name}.npz",
                 embeddings=E.astype(np.float16), predicates=predicates,
                 templates=templates,
-            )
+)
         json.dump(report[enc_name],
                   open(out_dir / f"diag_{enc_name}.json", "w"), indent=2)
 

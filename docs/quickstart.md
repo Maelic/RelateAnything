@@ -2,40 +2,29 @@
 
 ## Loading a model
 
-There are two constructors, and the difference matters.
-
-### `from_deploy` — a self-contained bundle
-
 ```python
-from relsgg.api import RelateAnything
+from relsgg import RelateAnything
 
-model = RelateAnything.from_deploy("relateanything_deploy.pt", device="cuda")
+model = RelateAnything.from_pretrained("maelic/relsgg-vits16plus", device="cuda")
 ```
 
-The predicate vocabulary is already baked into the head and the calibration is
-already installed, so **no text encoder is needed** and inference is pure
-vision. This is what you ship. Produced by
-[`deploy/prepare_deploy_ckpt.py`](../deploy/prepare_deploy_ckpt.py).
-
-### `from_checkpoint` — a training checkpoint
+That downloads the model and loads it. `from_checkpoint` does the same for a
+file you already have:
 
 ```python
-from huggingface_hub import snapshot_download
-
-d = snapshot_download("maelic/relsgg-vits16plus")      # model.pth + text_student.pt
 model = RelateAnything.from_checkpoint(
-    f"{d}/model.pth",
-    predicates=["holding", "looking at", "leaning against"],
+    "model.pth",
+    predicates=["holding", "looking at", "leaning against"],   # optional
     device="cuda",
-    weights="ema",          # "ema" (default, what ships) or "model"
 )
 ```
 
-Re-parameterizes on the fly, so it needs the text encoder the checkpoint was
-trained with. It is read from the checkpoint's own `args` and found next to
-`model.pth` as `text_student.pt` — you normally pass nothing. Released
-checkpoints embed the backbone configuration, so no gated download happens. See [text space](#the-text-space-trap) if you are loading an old
-checkpoint.
+Both encode the predicate vocabulary once with the text student that ships
+beside `model.pth`, then run vision only. A released model also embeds its
+backbone's configuration, so nothing is downloaded from the gated DINOv3
+repositories, and its calibration is installed when `calibration.json` sits
+next to the weights. Without `predicates` the vocabulary is the one in
+[`relsgg/vocabulary.py`](../relsgg/vocabulary.py).
 
 ## Predicting
 
@@ -72,8 +61,8 @@ the knob that keeps a crowded frame bounded.
 
 ```python
 graphs = model.predict(image, boxes_xyxy, decompose=True)
-graphs["spatial"]     # layout: on, behind, to the left of, ...
-graphs["semantic"]    # interaction: holding, riding, looking at, ...
+graphs["spatial"]     # layout: on, behind, to the left of,...
+graphs["semantic"]    # interaction: holding, riding, looking at,...
 ```
 
 One forward pass. The vocabulary columns are partitioned by predicate type; the
@@ -95,10 +84,9 @@ reads 0.001) and the gate under-routes predicates it has never seen.
 model.set_vocabulary(["about to collide with", "reflected in", "queuing behind"])
 ```
 
-Any string the CLIP BPE tokenizer can encode. This costs one text-encoder pass
-and re-fuses the head; inference afterwards is unchanged in cost. It needs the
-text encoder, so it works on a `from_checkpoint` model and on a
-`from_deploy` bundle only if one was packed with it.
+Any string at all: the text student's token table is the full CLIP byte-pair
+vocabulary, so every subword has a row. This costs one pass of the text encoder
+and re-fuses the head; inference afterwards costs the same as before.
 
 Two consequences that are easy to forget:
 
@@ -138,16 +126,28 @@ meaning of a threshold changes. Release bundles ship with the fit installed.
 
 Fit one yourself with `benchmark/eval_deploy_metrics.py --fit_platt`.
 
-## The text space trap
+## Masks instead of boxes
 
-The head's predicate matrix `W` lives in the space of the text encoder the
-checkpoint was trained with. Current checkpoints use a distilled 512-d student;
-pre-v34 checkpoints used raw dino.txt at 2048-d. Mixing them does not raise an
-error — it silently produces meaningless cosines. `from_checkpoint` reads the
-right one out of the checkpoint's args, so let it.
+```python
+triplets = model.predict(image, boxes_xyxy, masks=masks)   # masks: [N, H, W] bool
+```
+
+A mask is rasterised to the same coverage grid a box is, so the two are one
+code path: the geometry features read region overlap instead of box overlap,
+and a mask that fills its box reproduces the box result exactly. The model is
+trained on boxes and accepts masks at inference — training on masks measured
+worse under the box contract, while masks given at evaluation help.
+
+## The text space
+
+The head's predicate matrix lives in the space of the text encoder that trained
+it. Encoding a vocabulary with a different encoder raises no error and produces
+meaningless cosines, so the loaders read the right one out of the checkpoint
+and find it next to `model.pth`. Pass `text_student=` only to override that
+deliberately.
 
 ## Where to go next
 
-- Boxes from a real detector, and what that costs: [evaluation](evaluation.md#detector-boxes)
+- Boxes from a real detector, and what that costs: [evaluation](evaluation.md)
 - Shipping this to a laptop: [deployment](deployment.md)
 - Numbers that look right and are not: [pitfalls](pitfalls.md)

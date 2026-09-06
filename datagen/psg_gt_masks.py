@@ -15,7 +15,7 @@ corresponds to pack box `i` — 19,038 boxes compared, max coordinate error
 PNGs are streamed straight out of the COCO zips, so no image files are ever
 written to disk. Output is one JSONL per pack split, keyed by pack image index:
 
-    {"idx": 0, "image_id": "107899", "rles": [{...} | null, ...]}
+    {"idx": 0, "image_id": "107899", "rles": [{...} | null,...]}
 
 Usage
 -----
@@ -80,7 +80,7 @@ def _encode(m: np.ndarray) -> dict:
 
 
 def _job(task):
-    """task = (idx, image_id, pan_name, [segment_id, ...], n_boxes)"""
+    """task = (idx, image_id, pan_name, [segment_id,...], n_boxes)"""
     idx, image_id, pan_name, seg_ids, n_boxes = task
     ids = _read_png(pan_name)
     if ids is None:
@@ -127,7 +127,7 @@ def main() -> None:
     p.add_argument("--workers", type=int, default=16)
     args = p.parse_args()
 
-    print("loading psg.json ...", flush=True)
+    print("loading psg.json...", flush=True)
     psg = {r["image_id"]: r for r in json.load(open(args.psg_json))["data"]}
     print(f"  {len(psg)} PSG records", flush=True)
 

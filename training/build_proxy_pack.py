@@ -1,11 +1,11 @@
 """Build the 50K tail-preserving PROXY pack for cheap experiment iteration.
 
-Motivation (2026-07-29): full runs cost ~12 GPU-h and the last two findings
-(v37 head inflation, v42 head dilution) were visible at a fraction of the data.
-The proxy lets loss/architecture ablations run at ~2-3 GPU-h — but ONLY after it
-is validated: the v41-config -> v42-config signature (PSG mR up, micro R@50 and
-per-class `on` collapse, IndoorVG behind/above recovery) must reproduce in
-DIRECTION on the proxy before any decision is made on it.
+A full run costs about 12 GPU-hours, and the effects worth ablating are
+visible at a fraction of the data. The proxy brings a loss or architecture arm
+down to 2-3 GPU-hours — but only once it is validated: a known configuration
+change whose signature is understood at full scale (mean recall up on PSG while
+micro recall and the `on` class collapse, spatial classes recovering on
+IndoorVG) has to reproduce in direction on the proxy first.
 
 Selection: rank images by tail value = sum over the image's relations of
 1/global_count(predicate), take the top K. An image carrying a count-1 predicate

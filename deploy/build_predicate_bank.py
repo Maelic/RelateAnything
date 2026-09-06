@@ -17,9 +17,8 @@ checkpoint and silently corrupt inference if mixed across models:
   * alpha   — recomputed through THIS checkpoint's gate MLP for these rows
               (the checkpoint's stored alpha indexes the training vocabulary).
   * thr     — per-predicate operating points measured on THIS checkpoint's
-              scores (deploy/calibrate_thresholds.py). logit_scale/logit_bias
-              were untrained in v43-era configs, so score scales are
-              checkpoint-arbitrary and thresholds NEVER transfer.
+              scores (deploy/calibrate_thresholds.py). Score scales are
+              specific to a checkpoint, so thresholds never transfer.
 
 Also bakes the two-graph type vector (is_spatial/type_source): corpus flag when
 the string is known, gate alpha>=0.5 for novel strings — and caches the corpus
@@ -108,7 +107,7 @@ def main() -> None:
 
     # Template ensemble must match training — import the single source of
     # truth rather than keeping a copy that can drift.
-    from relsgg.api import TRAIN_TEMPLATES as PHOTO_TEMPLATES
+    from relsgg.vocabulary import TRAIN_TEMPLATES as PHOTO_TEMPLATES
 
     # --- which predicates -----------------------------------------------------
     recall_path = args.recall or os.path.join(run_dir, "per_class_recall.json")
@@ -131,7 +130,7 @@ def main() -> None:
           f"({len(PREDICATE_VOCAB)} curated + trained with gt>={args.min_gt})")
 
     # --- encode with the student ---------------------------------------------
-    from relsgg.text_student import encode_texts_student
+    from relsgg.text.student import encode_texts_student
     W = encode_texts_student(ordered, student, templates=PHOTO_TEMPLATES,
                              device="cpu").float()
     W = torch.nn.functional.normalize(W, dim=-1)
@@ -225,7 +224,7 @@ def main() -> None:
         # provenance
         checkpoint=np.array(run_name),
         student=np.array(student),
-    )
+)
     print(f"[bank] wrote {args.out} ({os.path.getsize(args.out)/1e6:.2f} MB)")
 
 

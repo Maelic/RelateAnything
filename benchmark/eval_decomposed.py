@@ -5,7 +5,7 @@ But `laptop on desk` and `laptop to the left of lamp`-style facts are not
 alternatives — a pair can carry a layout relation AND an interaction at the same
 time, and forcing one argmax makes them compete. Measured here, that competition
 is not neutral: the relatedness term is a CONTACT prior
-([[relsgg-relatedness-contact-prior]]), so the contact predicate wins the slot
+, so the contact predicate wins the slot
 and the projective one is never emitted, whatever the model believes.
 
 PROTOCOL (type-stratified graph constraint). Each ordered pair may emit at most
@@ -45,12 +45,12 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data import RelationDataset, collate_fn                      # noqa: E402
+from relsgg.data import RelationDataset, collate_fn                      # noqa: E402
 # Shared with deploy-time bank building — one definition of the type map
 # ([[relsgg/decompose.py]]); this file keeps the evaluation semantics only.
 from relsgg.decompose import corpus_spatial_map                   # noqa: E402
-from relsgg.train_engine import evaluate                          # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES                          # noqa: E402
+from relsgg.training.engine import evaluate                          # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES                          # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt             # noqa: E402
 
 
@@ -152,7 +152,7 @@ def main() -> None:
     ck_args = ckpt.get("args") or {}
     ck_args = ck_args if isinstance(ck_args, dict) else vars(ck_args)
     ts = ck_args.get("text_student") or ""
-    from relsgg.text_student import encode_texts_student
+    from relsgg.text.student import encode_texts_student
 
     smap = corpus_spatial_map(a.corpus_pack, a.corpus_split)
     print(f"type map: {sum(smap.values())} spatial / {len(smap)} corpus predicates")

@@ -1,12 +1,10 @@
 """Which parameters actually trained?
 
-MOTIVATION. `vocab_head.logit_scale` and `logit_bias` are nn.Parameters that
-sit on the DEPLOYED score path, and in v43 they came out bit-identical to their
-initialisation after 5 epochs — the ranking loss computes its own
-`cos / infonce_temp` internally and never touches the output head, so they had
-never received a gradient ([[relsgg-untrained-output-head]]). Rank-based
-metrics are invariant to a monotone rescale, which is why that hid for eleven
-versions.
+MOTIVATION. `vocab_head.logit_scale` and `logit_bias` are parameters on the
+deployed score path, and a contrastive loss that computes its own
+`cos / infonce_temp` never touches them: they can come out of a full training
+run bit-identical to their initialisation. Rank-based metrics are invariant to
+a monotone rescale, so nothing in the benchmark notices.
 
 If one dead parameter can hide that long, the right response is to check all of
 them rather than to fix the one we tripped over. This rebuilds the model from

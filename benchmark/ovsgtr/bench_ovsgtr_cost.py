@@ -157,11 +157,11 @@ def main():
         n_pairs.append(0 if pr is None else len(pr))
         n_boxes.append(0 if bx is None else len(bx))
 
-    print(f"warmup {args.n_warmup} ...", flush=True)
+    print(f"warmup {args.n_warmup}...", flush=True)
     for t, W, H in imgs[:args.n_warmup]:
         one(t, W, H, timed=False)
     torch.cuda.synchronize()
-    print(f"timing {args.n_images} ...", flush=True)
+    print(f"timing {args.n_images}...", flush=True)
     t0 = time.time()
     for t, W, H in imgs[args.n_warmup:]:
         one(t, W, H, timed=True)

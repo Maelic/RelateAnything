@@ -8,7 +8,7 @@ on disk (the ViT-B full-recipe model's) was assembled by hand from an
 reproduced, audited, or made for a second checkpoint. This is that producer.
 
 WHY IT MUST BE REFIT PER CHECKPOINT. `vocab_head.logit_scale/logit_bias` got no
-gradient under the ranking loss for eleven versions ([[relsgg-untrained-output-head]]),
+gradient under the ranking loss for eleven versions,
 so the absolute score scale is an accident of initialisation and training
 dynamics. Rank metrics never see it; a deployment THRESHOLD is nothing but it.
 Carrying one model's (a, b) — or one model's tau — to another is therefore a
@@ -23,7 +23,7 @@ from the negatives sidecar. That makes the output mean
 which is the deployment question. Fitting on PSG val emissions instead answers
 "P(this triplet appears in a PSG annotation)", which bakes annotation
 incompleteness into the number and reads 0.0255 where the truth-calibrated map
-reads 0.3810 and the true rate is 0.1102 ([[relsgg-haystack-federated-precision]]).
+reads 0.3810 and the true rate is 0.1102.
 Both are recorded; only the adjudicated one is installed.
 
 TWO-FOLD CV IS REPORTED, NOT SHIPPED. The shipped (a, b) is the single fit over
@@ -71,7 +71,7 @@ def main() -> int:
     # 992 = PipelineConfig.final_budget = max_objects*(max_objects-1), i.e. the
     # EXHAUSTIVE setting the product actually ships, not the eval default of
     # 100. Calibration must be fitted under the emission regime it will be
-    # applied in, and exhaustive costs 1.02x ([[relsgg-pair-sampler-recall]]).
+    # applied in, and exhaustive costs 1.02x.
     p.add_argument("--eval_budget", type=int, default=992)
     p.add_argument("--folds", type=int, default=2)
     p.add_argument("--force", action="store_true",
@@ -87,20 +87,18 @@ def main() -> int:
     from torch.utils.data import DataLoader
 
     from benchmark import eval_deploy_metrics as EDM  # noqa: PLC0415
-    from data.relation_dataset import RelationDataset, collate_fn  # noqa: PLC0415
-    from relsgg.geometry import RelGeomEncoder  # noqa: PLC0415
-    from relsgg.text_student import encode_texts_student  # noqa: PLC0415
-    from relsgg.api import TRAIN_TEMPLATES  # noqa: PLC0415
+    from relsgg.data.dataset import RelationDataset, collate_fn  # noqa: PLC0415
+    from relsgg.model.geometry import RelGeomEncoder  # noqa: PLC0415
+    from relsgg.text.student import encode_texts_student  # noqa: PLC0415
+    from relsgg.vocabulary import TRAIN_TEMPLATES  # noqa: PLC0415
     from relsgg.checkpoint import build_model_from_ckpt  # noqa: PLC0415
-    from relsgg.checkpoint import pad_geo_checkpoint as _pad_geo_checkpoint  # noqa: PLC0415
 
     # Identical load path to eval_deploy_metrics.py / eval_zeroshot.py, on
     # purpose: the vocabulary matrix must be encoded with the checkpoint's OWN
     # text student, or the logits being calibrated are not the logits deployed
-    # ([[relsgg-v34-deploy-path-fixes]]).
+    #.
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ck = torch.load(a.checkpoint, map_location="cpu", weights_only=False)
-    _pad_geo_checkpoint(ck, RelGeomEncoder.NUM_GEO)
     model = build_model_from_ckpt(ck, a.weights).to(dev).eval()
 
     ds = RelationDataset(root=a.pack, split=a.split, resolution=448,
@@ -147,7 +145,7 @@ def main() -> int:
     #   so they are out of scope by construction, not by convenience.
     # The score contract is sigmoid(a*(z_pred + z_pair) + b), so the quantity
     # being calibrated is the SUM — matching relsgg/scoring.py exactly rather
-    # than re-deriving it here ([[relsgg-score-contract]]).
+    # than re-deriving it here.
     seen = cells["seen"].astype(bool)
     logit = (cells["z_pred"][seen] + cells["z_pair"][seen]).astype(np.float64)
     tp = cells["tp"][seen].astype(np.int32)

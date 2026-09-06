@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """MegaSG COCO masks -> pack sidecars.
 
-The MegaSG SAM run (jobs 6922060/6922061) wrote its masks back into the COCO
+The MegaSG SAM run wrote its masks back into the COCO
 json, because MegaSG *has* a COCO json. The `.npy` packs do not, so training
 needs the same sidecar shape the pack-based and PSG paths emit:
 
-    {"idx": <pack image index>, "image_id": ..., "rles": [rle|null, ...]}
+    {"idx": <pack image index>, "image_id":..., "rles": [rle|null,...]}
 
 VERIFIED before writing this: `annotations` grouped by image_id keep pack box
 order. On megasg_50k/val, 4,029 sampled boxes gave max unclipped coordinate
@@ -38,13 +38,13 @@ from pack_mask_manifest import pack_dir            # noqa: E402
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--coco", required=True, help="COCO json WITH segmentation filled")
-    p.add_argument("--packs", nargs="+", required=True, help="ds:split ...")
+    p.add_argument("--packs", nargs="+", required=True, help="ds:split...")
     p.add_argument("--out", required=True)
     p.add_argument("--check_px", type=float, default=1.0,
                    help="fail if any pack box disagrees with its COCO box by more")
     args = p.parse_args()
 
-    print(f"loading {args.coco} ...", flush=True)
+    print(f"loading {args.coco}...", flush=True)
     coco = json.load(open(args.coco))
     by_img: dict[int, list] = defaultdict(list)
     for a in coco["annotations"]:

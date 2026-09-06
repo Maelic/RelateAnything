@@ -86,10 +86,10 @@ def _get_fonts(size_big=32, size_small=14):
     try:
         big = ImageFont.truetype(
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", size_big
-        )
+)
         small = ImageFont.truetype(
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", size_small
-        )
+)
     except OSError:
         big = small = ImageFont.load_default()
     return big, small
@@ -109,11 +109,11 @@ def load_masks_for_image(
     rows = conn.execute(
         "SELECT id, pos, lbl, rle, iou FROM masks WHERE img = ? ORDER BY pos",
         (db_img_id,),
-    ).fetchall()
+).fetchall()
 
     cat_names = dict(
         conn.execute("SELECT id, name FROM categories").fetchall()
-    )
+)
 
     masks = []
     for r in rows:
@@ -223,7 +223,7 @@ def annotate_image_som_mask(
             # Draw contour for crisp boundary
             contours, _ = cv2.findContours(
                 binary.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
+)
             # Convert contours to polygon points for PIL
             draw_overlay = ImageDraw.Draw(overlay)
             for cnt in contours:
@@ -250,7 +250,7 @@ def annotate_image_som_mask(
             fill=(255, 255, 255, 255),
             stroke_width=3,
             stroke_fill=(0, 0, 0, 255),
-        )
+)
 
     result = Image.alpha_composite(img, overlay).convert("RGB")
     return result
@@ -278,7 +278,7 @@ def build_matched_samples(
         anno_path=anno_path,
         img_dir=img_dir,
         filter_to_rel_objects=filter_to_rel_objects,
-    )
+)
     for s in samples:
         s["matched_masks"] = [None] * len(s["objects"])
         s["n_masks_matched"] = 0
@@ -314,7 +314,7 @@ def run_one_mask(
             for o in objects
         ]
         indices = sorted(range(len(objects)), key=lambda i: areas[i], reverse=True)[
-            :max_objects
+:max_objects
         ]
         objects = [objects[i] for i in indices]
         matched_masks = [matched_masks[i] for i in indices]
@@ -339,10 +339,10 @@ def run_one_mask(
         tokenize=False,
         add_generation_prompt=True,
         enable_thinking=False,
-    )
+)
     inputs = processor(text=text, images=[ann_img], return_tensors="pt").to(
         model.device
-    )
+)
     input_len = inputs["input_ids"].shape[-1]
 
     if torch.cuda.is_available():
@@ -373,7 +373,7 @@ def draw_mask_viz_panel(
 
     ann_img = annotate_image_som_mask(
         sample["pil_image"], sample["objects"], sample["matched_masks"]
-    )
+)
 
     fig, axes = plt.subplots(1, 2, figsize=(18, 9))
     n_matched = sample["n_masks_matched"]
@@ -381,7 +381,7 @@ def draw_mask_viz_panel(
     fig.suptitle(
         f"{sample['file_name']}  ({n_total} objects, {n_matched} masks matched) — SoM mask mode",
         fontsize=10,
-    )
+)
     axes[0].imshow(ann_img)
     axes[0].axis("off")
 
@@ -417,7 +417,7 @@ def draw_mask_viz_panel(
         verticalalignment="top",
         fontfamily="monospace",
         bbox=dict(boxstyle="round", facecolor="white", alpha=0.9),
-    )
+)
     axes[1].axis("off")
 
     plt.tight_layout()
@@ -432,7 +432,7 @@ def draw_mask_viz_panel(
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="SoM mask-prompting evaluation on MEGASG"
-    )
+)
     parser.add_argument("--prompt_file", type=str, default=DEFAULT_PROMPT_FILE)
     parser.add_argument("--token_budget", type=int, default=140)
     parser.add_argument("--max_new_tokens", type=int, default=512)
@@ -451,23 +451,23 @@ def main() -> None:
         type=str,
         default="e2b",
         choices=list(MODEL_CHOICES.keys()),
-    )
+)
     parser.add_argument("--max_rels", type=int, default=None)
     parser.add_argument("--max_objects", type=int, default=None)
     parser.add_argument(
         "--also_bbox",
         action="store_true",
         help="Also run bbox baseline on the same images for direct comparison",
-    )
+)
     parser.add_argument(
         "--mask_alpha", type=float, default=0.45,
         help="Mask overlay opacity (0–1). Default 0.45.",
-    )
+)
     parser.add_argument(
         "--mode", type=str, default="mask_som",
         choices=["mask_som", "point", "bbox"],
         help="Visual grounding mode. mask_som=SoM mask overlay, point=centroid circles+IDs, bbox=bbox overlay.",
-    )
+)
     args = parser.parse_args()
 
     outdir = Path(args.outdir)
@@ -505,14 +505,14 @@ def main() -> None:
     print("=" * W)
     print("  SoM Mask Prompting — Gemma 4 SGG Annotation Eval")
     print("=" * W)
-    print(f"  Model       : {model_id}{'  [4-bit NF4]' if args.quant4 else ''}")
-    print(f"  Prompt      : {prompt_label}")
-    print(f"  Budget      : {args.token_budget} tok  greedy={args.greedy}")
-    print(f"  Mode        : {args.mode}")
-    print(f"  Mask alpha  : {args.mask_alpha}")
-    print(f"  N eval      : {args.n_eval}  N viz: {args.n_viz}")
-    print(f"  Also bbox   : {args.also_bbox}")
-    print(f"  Out         : {outdir}")
+    print(f"  Model: {model_id}{'  [4-bit NF4]' if args.quant4 else ''}")
+    print(f"  Prompt: {prompt_label}")
+    print(f"  Budget: {args.token_budget} tok  greedy={args.greedy}")
+    print(f"  Mode: {args.mode}")
+    print(f"  Mask alpha: {args.mask_alpha}")
+    print(f"  N eval: {args.n_eval}  N viz: {args.n_viz}")
+    print(f"  Also bbox: {args.also_bbox}")
+    print(f"  Out: {outdir}")
 
     # ── 1. Load samples ─────────────────────────────────────────────────────
     n_load = max(args.n_eval, args.n_viz)
@@ -522,18 +522,18 @@ def main() -> None:
         print(
             f"  WARNING: only {len(samples)} matched images found "
             f"(requested {args.n_eval})"
-        )
+)
     print(f"  Got {len(samples)} images.")
 
     # Mask match stats
     n_full_match = sum(1 for s in samples if s["n_masks_matched"] == len(s["objects"]))
     avg_match = np.mean(
         [s["n_masks_matched"] / max(len(s["objects"]), 1) for s in samples]
-    )
+)
     print(
         f"  Mask coverage: {avg_match:.0%} avg, "
         f"{n_full_match}/{len(samples)} fully matched"
-    )
+)
 
     # ── 2. Load model ────────────────────────────────────────────────────────
     print(f"\n[2] Loading model …")
@@ -545,7 +545,7 @@ def main() -> None:
         use_flash=not args.no_flash,
         model_id=model_id,
         quant4=args.quant4,
-    )
+)
 
     # Save image list early so we can reuse the same set for other modes
     img_list_path = outdir / "image_list.json"
@@ -553,7 +553,7 @@ def main() -> None:
         json.dump(
             [{"img_id": s["img_id"], "file_name": s["file_name"]} for s in samples],
             f, indent=2,
-        )
+)
     print(f"  Image list    → {img_list_path}")
 
     # ── 3. Warm-up ───────────────────────────────────────────────────────────
@@ -571,7 +571,7 @@ def main() -> None:
             max_rels=args.max_rels,
             max_objects=args.max_objects,
             model_id=model_id,
-        )
+)
     else:
         from prompt_eval import run_one
         run_one(
@@ -586,7 +586,7 @@ def main() -> None:
             image_mode=args.mode,
             max_rels=args.max_rels,
             max_objects=args.max_objects,
-        )
+)
 
     # ── 4. Inference ─────────────────────────────────────────────────────────
     eval_samples = samples[: args.n_eval]
@@ -609,7 +609,7 @@ def main() -> None:
                     max_rels=args.max_rels,
                     max_objects=args.max_objects,
                     model_id=model_id,
-                )
+)
             else:
                 from prompt_eval import run_one
                 elapsed, sg, raw = run_one(
@@ -624,13 +624,13 @@ def main() -> None:
                     image_mode=args.mode,
                     max_rels=args.max_rels,
                     max_objects=args.max_objects,
-                )
+)
         except Exception as exc:
             print(
                 f"  [{i+1:3d}/{len(eval_samples)}] {sample['file_name']:<40}"
                 f"  ERROR: {exc}",
                 flush=True,
-            )
+)
             n_errors += 1
             mask_results.append({
                 "elapsed": 0.0,
@@ -650,7 +650,7 @@ def main() -> None:
             f"  [{i+1:3d}/{len(eval_samples)}] {sample['file_name']:<40}"
             f"  {elapsed:.1f}s  {n_rel} rels{extra}",
             flush=True,
-        )
+)
         mask_results.append({
             "elapsed": elapsed,
             "sg": sg,
@@ -683,7 +683,7 @@ def main() -> None:
                 p = draw_viz_panel(
                     r["sample"], r["sg"], r["elapsed"], i + 1, viz_dir,
                     image_mode=args.mode,
-                )
+)
             print(f"  → {p}")
         except Exception as exc:
             print(f"  ⚠ viz {i+1} failed: {exc}")
@@ -708,13 +708,13 @@ def main() -> None:
                     image_mode="bbox",
                     max_rels=args.max_rels,
                     max_objects=args.max_objects,
-                )
+)
             except Exception as exc:
                 print(
                     f"  [{i+1:3d}/{len(eval_samples)}] {sample['file_name']:<40}"
                     f"  ERROR: {exc}",
                     flush=True,
-                )
+)
                 bbox_results.append({"elapsed": 0.0, "sg": None, "raw": f"ERROR: {exc}", "sample": sample})
                 continue
             n_rel = len(sg["relations"]) if sg else -1
@@ -722,7 +722,7 @@ def main() -> None:
                 f"  [{i+1:3d}/{len(eval_samples)}] {sample['file_name']:<40}"
                 f"  {elapsed:.1f}s  {n_rel} rels  (bbox)",
                 flush=True,
-            )
+)
             bbox_results.append({
                 "elapsed": elapsed,
                 "sg": sg,
@@ -759,7 +759,7 @@ def main() -> None:
                 },
                 f,
                 indent=2,
-            )
+)
 
         # Print comparison
         print("\n" + "=" * W)
@@ -770,15 +770,15 @@ def main() -> None:
             q = m["quality"]
             c = m["clip"]
             print(f"\n  [{label}]")
-            print(f"    Fitness      : {m['fitness']:.4f}")
-            print(f"    Entropy      : {pd['entropy_nats']:.3f} nats ({pd['n_unique_predicates']} unique)")
-            print(f"    Top-5 cov    : {pd['top5_coverage']*100:.1f}%")
-            print(f"    Forbidden    : {q['forbidden_rate']*100:.1f}%")
-            print(f"    Parse OK     : {q['parse_ok_rate']*100:.1f}%")
-            print(f"    Rels/img     : {pd['rels_per_img_mean']:.1f}")
-            print(f"    Speed        : {m['speed']['median_s']:.2f}s")
+            print(f"    Fitness: {m['fitness']:.4f}")
+            print(f"    Entropy: {pd['entropy_nats']:.3f} nats ({pd['n_unique_predicates']} unique)")
+            print(f"    Top-5 cov: {pd['top5_coverage']*100:.1f}%")
+            print(f"    Forbidden: {q['forbidden_rate']*100:.1f}%")
+            print(f"    Parse OK: {q['parse_ok_rate']*100:.1f}%")
+            print(f"    Rels/img: {pd['rels_per_img_mean']:.1f}")
+            print(f"    Speed: {m['speed']['median_s']:.2f}s")
             if not c["skipped"]:
-                print(f"    CLIP score   : {c['mean']:.4f}")
+                print(f"    CLIP score: {c['mean']:.4f}")
         print("=" * W)
 
     # ── 8. Save outputs ──────────────────────────────────────────────────────

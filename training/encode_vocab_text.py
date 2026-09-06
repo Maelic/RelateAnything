@@ -69,11 +69,11 @@ def main() -> None:
           f"templates on {device}")
 
     if a.encoder == "dinotxt":
-        from relsgg.vocab import encode_texts_dinotxt
+        from training.distill.teacher import encode_texts_dinotxt
         E = encode_texts_dinotxt(preds, a.ckpt or str(DINOTXT_CKPT),
                                  templates=templates, device=device, batch=a.batch)
     else:
-        from relsgg.text_student import encode_texts_student
+        from relsgg.text.student import encode_texts_student
         assert a.ckpt, "--encoder student needs --ckpt"
         E = encode_texts_student(preds, a.ckpt, templates=templates,
                                  device=device, batch=a.batch)

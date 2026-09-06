@@ -67,10 +67,11 @@ annotators were shown an image and asked to write relations a model would get **
 producing verified NEGATIVE triples. Its test split is exactly balanced (1,379 true /
 1,379 false), so chance is 50% and knowing that `on` is common buys nothing.
 
-This axis exists because measured: **every recipe change from v41 to v43 moved A1 by
-+40–47% and A6 by nothing** (all arms AUC 0.65–0.68, CIs overlapping). Recall-style
-gains are vocabulary and ranking gains; without A6 the suite cannot tell those apart
-from spatial understanding, and the paper would have claimed the latter.
+This axis exists because it was measured to be independent of the others: over a
+sequence of recipe changes A1 moved by +40–47% while A6 moved by nothing (every
+arm between AUC 0.65 and 0.68, confidence intervals overlapping). Recall-style
+gains are vocabulary and ranking gains; without A6 the suite cannot tell them
+apart from spatial understanding.
 
 The upstream warning applies to us too: their own **boxes-only baseline (no image at
 all) scores 68.8**, within 2.5 points of the best trained model, so a good A6 is not by
@@ -252,7 +253,7 @@ directly as how specialised the model is.
 - **Pair coverage.** OvSGTR enumerates every N·(N−1) pair; our sampler prunes to
   `geo_budget=400`. On A2 this is visible as `coverage` (~100% vs 88.3%), and
   unsampled cells score 0. *Measured negative result: uncapping our budget to 3600
-  makes results slightly **worse** (R@50 .1551→.1529), so the pruning is not what
+  makes results slightly **worse** (R@50.1551→.1529), so the pruning is not what
   costs us head recall — do not re-investigate.*
 - **NMS.** OvSGTR's postprocessor applies NMS at IoU 0.5 even when handed GT boxes with
   tied scores, silently suppressing them (measured: 23→21 on one PSG image). We disable
@@ -271,7 +272,7 @@ python benchmark/annotation_overlap.py
 python benchmark/eval_zeroshot.py --checkpoint <snapshot>/model.pth \
     --data_roots runs/packed/vg150 runs/packed/psg runs/packed/indoorvg runs/packed/hicodet \
     --split test --graph_constraint --out_dir runs/eval/<name>
-python benchmark/eval_zeroshot.py ... --open_vocab --tau_eval <tau from calibrate_match_tau.py>
+python benchmark/eval_zeroshot.py... --open_vocab --tau_eval <tau from calibrate_match_tau.py>
 
 # A2: explicit negatives
 python benchmark/eval_haystack.py --checkpoint <snapshot>/model.pth --pack runs/packed/haystack
@@ -283,8 +284,8 @@ python benchmark/detector_recall_ceiling.py --dataset_root runs/packed/psg --spl
 python benchmark/eval_zeroshot_detbox.py --checkpoint <snapshot>/model.pth --dataset_root runs/packed/psg \
     --dataset_name psg --split test --det runs/det/psg_test.npz
 
-# A5: the oracle (needs a VLM; see docs/design/a5-graph-quality-metric.md)
-python benchmark/dump_relsgg_interchange.py ...      # our predictions in the interchange format
+# A5: the oracle (needs a VLM)
+python benchmark/dump_relsgg_interchange.py...      # our predictions in the interchange format
 python benchmark/relation_precision.py --system ours=<ours.npz> --system baseline=<baseline.npz> --pack runs/packed/psg/test --highlight
 
 # A6: adversarial spatial

@@ -50,12 +50,11 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data.relation_dataset import RelationDataset, collate_fn  # noqa: E402
-from relsgg.geometry import GeoEncoder, RelGeomEncoder  # noqa: E402
-from relsgg.text_student import encode_texts_student  # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES  # noqa: E402
+from relsgg.data.dataset import RelationDataset, collate_fn  # noqa: E402
+from relsgg.model.geometry import RelGeomEncoder  # noqa: E402
+from relsgg.text.student import encode_texts_student  # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES  # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt  # noqa: E402
-from relsgg.checkpoint import pad_geo_checkpoint as _pad_geo_checkpoint  # noqa: E402
 
 KS = [64, 128, 200, 300, 400, 600, 800, 1200, 1600, 2400, 3200, 6400, 10000]
 
@@ -70,10 +69,10 @@ def all_pair_scores(sampler, boxes, obj_feats, box_counts):
     pair_valid = (valid_box.unsqueeze(2) & valid_box.unsqueeze(1)
                   & (ar.unsqueeze(0) != ar.unsqueeze(1))).reshape(B, N * N)
 
-    geo_feats = GeoEncoder.features(
+    geo_feats = RelGeomEncoder.features(
         boxes.unsqueeze(2).expand(B, N, N, 4),
         boxes.unsqueeze(1).expand(B, N, N, 4),
-    ).reshape(B, N * N, GeoEncoder.NUM_GEO)
+).reshape(B, N * N, RelGeomEncoder.NUM_GEO)
     geo = sampler.geo_scorer(geo_feats).squeeze(-1)
 
     # The whole point: this is ONE matmul for all N^2 pairs, not a gather on
@@ -120,7 +119,6 @@ def main():
 
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ck = torch.load(a.checkpoint, map_location="cpu", weights_only=False)
-    _pad_geo_checkpoint(ck, RelGeomEncoder.NUM_GEO)
     model = build_model_from_ckpt(ck, "ema").to(dev).eval()
     ds = RelationDataset(root=a.data_root, split=a.split, resolution=a.img_size,
                          max_objects=a.max_objects)

@@ -2,7 +2,7 @@
 
 Two environment variables relocate everything:
 
-    RA_DATASETS   raw benchmark downloads (VG150, PSG, HICO-DET, ...); default ``datasets/``
+    RA_DATASETS   raw benchmark downloads (VG150, PSG, HICO-DET,...); default ``datasets/``
     RA_RUNS       packs, checkpoints and evaluation outputs;               default ``runs/``
 
 Both default to directories under the current working directory, which is the

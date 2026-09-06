@@ -4,12 +4,12 @@ prompt_eval.py — Evaluate a Gemma 4 annotation prompt + generation config.
 
 Metrics
 -------
-  speed          : median s/image  (hard constraint: pass if < --max_time_s)
-  pred_entropy   : Shannon H of predicate distribution          (↑ better)
-  top5_coverage  : fraction covered by top-5 predicates         (↓ better)
-  forbidden_rate : fraction of rels using forbidden predicates  (↓ better)
-  parse_ok_rate  : fraction of images with valid JSON output     (↑ better)
-  clip_score     : mean CLIP cosine-sim(triplet_text, image)    (↑ better)
+  speed: median s/image  (hard constraint: pass if < --max_time_s)
+  pred_entropy: Shannon H of predicate distribution          (↑ better)
+  top5_coverage: fraction covered by top-5 predicates         (↓ better)
+  forbidden_rate: fraction of rels using forbidden predicates  (↓ better)
+  parse_ok_rate: fraction of images with valid JSON output     (↑ better)
+  clip_score: mean CLIP cosine-sim(triplet_text, image)    (↑ better)
 
 Fitness (composite, [0..1])
 ---------------------------
@@ -77,11 +77,11 @@ FORBIDDEN_PREDS = frozenset({
 })
 
 # Image marking modes (search axis for the optimizer agent)
-# bbox         : current default — coloured border + light fill + centred number + label tag
-# som          : Set-of-Mark style — solid 55% opacity fill + large centred number; no outline
-# point        : centroid dot + number only; zero visual clutter
+# bbox: current default — coloured border + light fill + centred number + label tag
+# som: Set-of-Mark style — solid 55% opacity fill + large centred number; no outline
+# point: centroid dot + number only; zero visual clutter
 # bbox_no_label: bbox + number but no text label tag
-# raw          : pass raw unmodified image; rely on text-only object list
+# raw: pass raw unmodified image; rely on text-only object list
 IMAGE_MODES = ("bbox", "som", "point", "point_fixed", "bbox_no_label", "raw")
 
 MAX_TIME_S    = 10.0   # hard speed constraint
@@ -109,10 +109,10 @@ Strict rules:
 1. ONLY use object IDs 1–{n}. Never invent objects outside this list.
 2. Be EXHAUSTIVE — examine every directed pair. Aim to describe the image fully.
 3. Predicate priority (most specific that clearly applies):
-   Actions  : riding, holding, wearing, sitting on, carrying, eating, pulling,
+   Actions: riding, holding, wearing, sitting on, carrying, eating, pulling,
                pushing, climbing, playing with, driving, using, touching, kicking,
                throwing, catching, looking at, walking toward, standing on, lying on
-   Spatial  : above, below, in front of, behind, to the left of, to the right of,
+   Spatial: above, below, in front of, behind, to the left of, to the right of,
                inside, on top of, hanging from, attached to, leaning against, overlapping
    FORBIDDEN: near, next to, with, has, beside, and, same scene  (too vague)
 4. Only output a single JSON code block — no other text.
@@ -175,7 +175,7 @@ def _load_coco_samples(
         rel_ann_ids = (
             {r["subject_id"] for r in img_rels} | {r["object_id"] for r in img_rels}
             if filter_to_rel_objects else None
-        )
+)
 
         objects = []
         for a in ann_by_img.get(img_id, []):
@@ -197,7 +197,7 @@ def _load_coco_samples(
                     cat_id2name[s["category_id"]],
                     pred_id2name[r["predicate_id"]],
                     cat_id2name[o["category_id"]],
-                ))
+))
 
         results.append({
             "img_id":       img_id,
@@ -344,7 +344,7 @@ def _extract_json(text: str) -> dict | None:
     rel_pat = re.compile(
         r'\{\s*"subject_id"\s*:\s*(\d+).*?"predicate"\s*:\s*"([^"]+)".*?"object_id"\s*:\s*(\d+).*?\}',
         re.S,
-    )
+)
     rels = []
     for rm in rel_pat.finditer(candidate):
         try:
@@ -415,7 +415,7 @@ def load_model(
             bnb_4bit_compute_dtype=torch.bfloat16,
             bnb_4bit_use_double_quant=True,
             bnb_4bit_quant_type="nf4",
-        )
+)
         # dtype is inferred from BitsAndBytesConfig; don't pass torch_dtype
         # Prevent accelerate from offloading layers to CPU/disk, which bitsandbytes
         # 4-bit does not support.  Use all available GPU memory (minus 2 GiB headroom)
@@ -454,7 +454,7 @@ def load_model(
         drafter_id,
         torch_dtype=torch.bfloat16,
         device_map="auto",
-    )
+)
     drafter.eval()
     # Dynamic draft-token schedule: starts at 4, adjusts based on acceptance rate
     drafter.generation_config.num_assistant_tokens = 4
@@ -514,7 +514,7 @@ def run_one(
             objects,
             key=lambda o: (o["bbox"][2] - o["bbox"][0]) * (o["bbox"][3] - o["bbox"][1]),
             reverse=True,
-        )[:max_objects]
+)[:max_objects]
     processor.image_processor.max_soft_tokens = token_budget
     gen_cfg  = _gen_cfg(max_new_tokens, greedy, temperature, model_id=_ACTIVE_MODEL_ID)
     ann_img  = annotate_image(sample["pil_image"], objects, mode=image_mode)
@@ -526,7 +526,7 @@ def run_one(
     ]}]
     text   = processor.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True, enable_thinking=False,
-    )
+)
     inputs    = processor(text=text, images=[ann_img], return_tensors="pt").to(model.device)
     input_len = inputs["input_ids"].shape[-1]
 
@@ -624,7 +624,7 @@ def compute_metrics(
     rels_per_img_mean   = total_rels / n
     rels_per_img_median = statistics.median(
         [len(r["sg"].get("relations", [])) if r["sg"] else 0 for r in results]
-    )
+)
 
     if total_rels > 0:
         probs        = [c / total_rels for c in pred_count.values()]
@@ -654,7 +654,7 @@ def compute_metrics(
             if r["sg"] and r["sg"].get("relations"):
                 clip_scores.append(
                     clip_score_image(r["sample"]["pil_image"], r["sg"]["relations"])
-                )
+)
         n_scored  = len(clip_scores)
         clip_mean = statistics.mean(clip_scores) if clip_scores else 0.0
         clip_std  = statistics.stdev(clip_scores) if len(clip_scores) > 1 else 0.0
@@ -732,7 +732,7 @@ def draw_viz_panel(
     fig.suptitle(
         f"{sample['file_name']}  ({len(sample['objects'])} objects) — mode={image_mode}",
         fontsize=10,
-    )
+)
     axes[0].imshow(ann_img)
     axes[0].axis("off")
 
@@ -764,7 +764,7 @@ def draw_viz_panel(
         transform=axes[1].transAxes,
         fontsize=8, verticalalignment="top", fontfamily="monospace",
         bbox=dict(boxstyle="round", facecolor="white", alpha=0.9),
-    )
+)
     axes[1].axis("off")
 
     plt.tight_layout()
@@ -782,58 +782,58 @@ def print_summary(metrics: dict, config: dict) -> None:
     print("  EVAL SUMMARY")
     print("=" * W)
     lbl = config.get("prompt_label", "(default)")
-    print(f"  Prompt : {lbl}")
+    print(f"  Prompt: {lbl}")
     print(
-        f"  Budget : {config['token_budget']} tok  "
+        f"  Budget: {config['token_budget']} tok  "
         f"greedy={config['greedy']}  "
         f"max_new={config['max_new_tokens']}"
-    )
+)
     print("-" * W)
     s  = metrics["speed"]
     ok = "✓" if s["passes_constraint"] else "✗ FAIL"
     print(
-        f"  Speed      : {s['median_s']:.2f}s median  "
+        f"  Speed: {s['median_s']:.2f}s median  "
         f"{s['p90_s']:.2f}s p90   "
         f"[{ok} < {config['max_time_s']}s]"
-    )
+)
     pd = metrics["predicate_distribution"]
     print(
-        f"  Entropy    : {pd['entropy_nats']:.3f} nats  "
+        f"  Entropy: {pd['entropy_nats']:.3f} nats  "
         f"(score={pd['entropy_score']:.2f})  "
         f"{pd['n_unique_predicates']} unique"
-    )
+)
     print(
-        f"  Top-5 cov  : {pd['top5_coverage']*100:.1f}%   "
+        f"  Top-5 cov: {pd['top5_coverage']*100:.1f}%   "
         f"top-10: {pd['top10_coverage']*100:.1f}%"
-    )
+)
     print(
-        f"  Rels/img   : {pd['rels_per_img_mean']:.1f} mean  "
+        f"  Rels/img: {pd['rels_per_img_mean']:.1f} mean  "
         f"{pd['rels_per_img_median']:.0f} median"
-    )
+)
     c = metrics["clip"]
     if c["skipped"]:
-        print("  CLIP score : skipped (--skip_clip)")
+        print("  CLIP score: skipped (--skip_clip)")
     else:
         print(
-            f"  CLIP score : {c['mean']:.4f} ± {c['std']:.4f}  "
+            f"  CLIP score: {c['mean']:.4f} ± {c['std']:.4f}  "
             f"(norm={c['normalized']:.2f}, n={c['n_scored']})"
-        )
+)
     q = metrics["quality"]
     print(
-        f"  Parse OK   : {q['parse_ok_rate']*100:.1f}%   "
+        f"  Parse OK: {q['parse_ok_rate']*100:.1f}%   "
         f"forbidden: {q['forbidden_rate']*100:.1f}%   "
         f"truncated: {q['truncated_rate']*100:.1f}%"
-    )
+)
     print(f"  Top-5 preds: {pd['top5_list']}")
     print("-" * W)
     fb = metrics["fitness_breakdown"]
     print(
-        f"  Fitness    : \033[1m{metrics['fitness']:.4f}\033[0m"
+        f"  Fitness: \033[1m{metrics['fitness']:.4f}\033[0m"
         f"  (H={fb['entropy_term']:.3f}  "
         f"CLIP={fb['clip_term']:.3f}  "
         f"Div={fb['diversity_term']:.3f}  "
         f"Clean={fb['clean_term']:.3f})"
-    )
+)
     if fb["speed_penalty"]:
         print("  ⚠  Speed constraint violated — fitness zeroed out")
     print("=" * W)
@@ -926,16 +926,16 @@ def main() -> None:
     print("=" * 60)
     print("  SGG Annotation Quality Eval — Gemma 4")
     print("=" * 60)
-    print(f"  Model      : {model_id}{'  [4-bit NF4]' if args.quant4 else ''}")
-    print(f"  Prompt     : {prompt_label}")
-    print(f"  Budget     : {args.token_budget} tok  greedy={args.greedy}"
+    print(f"  Model: {model_id}{'  [4-bit NF4]' if args.quant4 else ''}")
+    print(f"  Prompt: {prompt_label}")
+    print(f"  Budget: {args.token_budget} tok  greedy={args.greedy}"
           f"  max_new={args.max_new_tokens}")
-    print(f"  Image mode : {args.image_mode}  max_rels={args.max_rels}  max_objects={args.max_objects}  filter_objects={args.filter_objects}")
-    print(f"  N eval     : {args.n_eval}  N viz: {args.n_viz}")
-    print(f"  Max time   : {args.max_time_s}s / image")
-    print(f"  CLIP       : {'skipped' if args.skip_clip else 'enabled'}")
-    print(f"  Compile    : {args.compile}")
-    print(f"  Out        : {outdir}")
+    print(f"  Image mode: {args.image_mode}  max_rels={args.max_rels}  max_objects={args.max_objects}  filter_objects={args.filter_objects}")
+    print(f"  N eval: {args.n_eval}  N viz: {args.n_viz}")
+    print(f"  Max time: {args.max_time_s}s / image")
+    print(f"  CLIP: {'skipped' if args.skip_clip else 'enabled'}")
+    print(f"  Compile: {args.compile}")
+    print(f"  Out: {outdir}")
 
     global _ACTIVE_MODEL_ID
     _ACTIVE_MODEL_ID = model_id
@@ -946,7 +946,7 @@ def main() -> None:
         use_compile=args.compile,
         model_id=model_id,
         quant4=args.quant4,
-    )
+)
 
     n_load = max(args.n_eval, args.n_viz)
     print(f"\n[2] Loading {n_load} images from {args.dataset} val …")
@@ -982,13 +982,13 @@ def main() -> None:
             image_mode=args.image_mode,
             max_rels=args.max_rels,
             max_objects=args.max_objects,
-        )
+)
         n_rel = len(sg["relations"]) if sg else -1
         print(
             f"  [{i+1:3d}/{len(eval_samples)}] {sample['file_name']:<40}"
             f"  {elapsed:.1f}s  {n_rel} rels",
             flush=True,
-        )
+)
         results.append({"elapsed": elapsed, "sg": sg, "raw": raw, "sample": sample})
 
     print("\n[5] Computing metrics …")

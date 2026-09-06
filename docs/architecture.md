@@ -52,21 +52,25 @@ forward pass is a matmul, with zero language-model cost at runtime.
 
 | module | file | what it does |
 |---|---|---|
-| Backbone | [`backbone.py`](../relsgg/backbone.py) | DINOv3 ViT or ConvNeXt, LoRA or full fine-tune. Reads **three taps** (`[-6, -3, -1]`) and fuses them with softmax weights |
-| Region pooling | [`roi.py`](../relsgg/roi.py) | `SoftSpatialPool` — pools patch features under a box (or a mask) into subject / object / union / contact-zone features |
-| Geometry | [`geometry.py`](../relsgg/geometry.py) | 19 pairwise box features, Fourier box-corner tokens, scene positional encoding |
-| Pair sampler | [`sampler.py`](../relsgg/sampler.py) | prunes N² pairs to a bounded budget in two stages |
-| Relation transformer | [`transformer.py`](../relsgg/transformer.py) | self-attention across pairs (inter-pair dependency) + cross-attention to the scene |
-| Deformable read | [`deformable.py`](../relsgg/deformable.py) | box-anchored sparse sampling of the feature map, additive behind a zero-init gate |
-| Vocab head | [`vocab.py`](../relsgg/vocab.py) | the open-vocabulary scoring layer and re-parameterization |
-| Losses | [`loss.py`](../relsgg/loss.py), [`loss_synonym.py`](../relsgg/loss_synonym.py) | InfoNCE with synonym groups, relatedness BCE, direction hinge, background suppression |
-| Score contract | [`scoring.py`](../relsgg/scoring.py) | the one definition of a relation score, shared by eval and deploy |
-| Decomposition | [`decompose.py`](../relsgg/decompose.py) | splits one forward pass into spatial and semantic graphs |
+| Backbone | [`model/backbone.py`](../relsgg/model/backbone.py) | the DINOv3 tower, fully fine-tuned. Reads **three taps** (`[-6, -3, -1]`) and fuses them with softmax weights, plus the interaction block |
+| Region pooling | [`model/pooling.py`](../relsgg/model/pooling.py) | `SoftSpatialPool` — pools patch features under a box (or a mask) into subject, object, union and contact-zone features |
+| Geometry | [`model/geometry.py`](../relsgg/model/geometry.py) | 19 pairwise region features, Fourier box-corner tokens, scene positional encoding |
+| Pair sampler | [`model/sampler.py`](../relsgg/model/sampler.py) | prunes N² pairs to a bounded budget in two stages |
+| Relation transformer | [`model/transformer.py`](../relsgg/model/transformer.py) | self-attention across pairs, then cross-attention to the scene and the box tokens |
+| Deformable read | [`model/deformable.py`](../relsgg/model/deformable.py) | box-anchored sparse sampling of the feature map, additive behind a zero-initialised gate |
+| Vocabulary head | [`model/vocab_head.py`](../relsgg/model/vocab_head.py) | the open-vocabulary scoring layer and its two query experts |
+| The network | [`model/relsgg.py`](../relsgg/model/relsgg.py) | composes all of the above, and carries the training objective |
+| Configuration | [`config.py`](../relsgg/config.py) | every hyperparameter, defaulting to the released recipe |
+| Objective | [`training/losses.py`](../relsgg/training/losses.py) | batch-local contrastive loss with estimated synonym weights, relatedness BCE, direction hinge, background suppression |
+| Score contract | [`scoring.py`](../relsgg/scoring.py) | the one definition of a relation score, shared by evaluation and deployment |
+| Decomposition | [`decompose.py`](../relsgg/decompose.py) | splits one forward pass into a spatial and a semantic graph |
+| Text student | [`text/student.py`](../relsgg/text/student.py) | the encoder that turns predicate strings into the head's vocabulary |
 | Public API | [`api.py`](../relsgg/api.py) | `RelateAnything` — load, set vocabulary, predict |
 
-Every knob is a field on `RelSGGConfig` in
-[`model.py`](../relsgg/model.py), each documented inline with why it exists and
-what it measured. That dataclass is the real reference; this page is the map.
+Every hyperparameter is a field on `RelSGGConfig` in
+[`config.py`](../relsgg/config.py), and its defaults are the released recipe:
+`RelSGGConfig()` builds the model that ships, and a checkpoint's own arguments
+round-trip through `config_from_args`.
 
 ## Two scores, multiplied — and why
 
@@ -112,20 +116,17 @@ export possible.
 The backbone is read at three depths, not just the last layer, and the taps are
 fused by learned softmax weights. Without normalization those weights are
 confounded by activation scale: the combiner *looks* uniform (.358/.330/.312)
-while the tap norms are 52.9 / 192.4 / 668.0, so the fusion is really ~72 %
-last-layer. `norm_taps=True` puts a LayerNorm on each tap first, which decouples
-importance from scale and is in the shipped recipe.
+while the tap norms are 52.9 / 192.4 / 668.0, so an unnormalised fusion is
+really about 72 % last layer. Each tap is therefore LayerNorm-ed before the
+weighted sum, which separates "how important is this depth" from "how large are
+its activations".
 
 ## Backbone families
 
-| family | LoRA | notes |
-|---|---|---|
-| DINOv3 ViT-S/16, S/16+, B/16 | yes | the released family |
-| DINOv3 ConvNeXt T/S/B/L | no | supported and runs; full fine-tune only, since LoRA has no attention projections to attach to |
-
-A tuned ConvNeXt-T is ViT-S-class in accuracy and the fastest at batch size 1,
-but the ViT family ships: the level axis on ConvNeXt measured flat, with all
-arms at the noise floor.
+The released models are DINOv3 ViT-S/16, ViT-S/16+ and ViT-B/16, each fully
+fine-tuned at a learning rate eight times below the head's. Any tower whose
+Hugging Face configuration `AutoModel` can build and whose hidden states the
+three taps can read will load; pass it with `--backbone_model`.
 
 ## What is *not* in here
 

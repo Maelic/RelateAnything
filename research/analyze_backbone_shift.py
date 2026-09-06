@@ -55,8 +55,8 @@ import torch.nn.functional as F
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
-from data.relation_dataset import RelationDataset      # noqa: E402
-from relsgg.backbone import RelAnythingBackbone        # noqa: E402
+from relsgg.data.dataset import RelationDataset      # noqa: E402
+from relsgg.model.backbone import Backbone        # noqa: E402
 
 
 # ---------------------------------------------------------------- weights ---
@@ -179,7 +179,7 @@ class CKAAccumulator:
 
 
 @torch.no_grad()
-def hidden_stack(bb: RelAnythingBackbone, images: torch.Tensor, n_patch: int):
+def hidden_stack(bb: Backbone, images: torch.Tensor, n_patch: int):
     """All hidden states + fused map + the tap decomposition.
 
     Returns (hs, cls, fused, taps_used, tap_idx, w) where ``taps_used`` are the
@@ -189,11 +189,11 @@ def hidden_stack(bb: RelAnythingBackbone, images: torch.Tensor, n_patch: int):
     """
     x = bb.preprocess(images)
     out = bb.model(pixel_values=x, output_hidden_states=True)
-    hs = [h[:, -n_patch:, :] for h in out.hidden_states]
-    cls = [h[:, 0, :] for h in out.hidden_states]
+    hs = [h[:, -n_patch:,:] for h in out.hidden_states]
+    cls = [h[:, 0,:] for h in out.hidden_states]
     idx = bb._resolve_layer_indices(len(out.hidden_states))
     w = F.softmax(bb.layer_weights, dim=0)
-    taps = [out.hidden_states[i][:, -n_patch:, :] for i in idx]
+    taps = [out.hidden_states[i][:, -n_patch:,:] for i in idx]
     if bb.norm_taps:
         taps = [F.layer_norm(t, t.shape[-1:]) for t in taps]
     fused = sum(w[i] * t for i, t in enumerate(taps))
@@ -236,8 +236,8 @@ class MapStats:
                             3, stride=1)
         self.hi_num += (g - blur).pow(2).sum().item()
         self.hi_den += g.pow(2).sum().item()
-        a = F.normalize(g[:, :, :, :-1], dim=1)
-        b = F.normalize(g[:, :, :, 1:], dim=1)
+        a = F.normalize(g[:,:,:,:-1], dim=1)
+        b = F.normalize(g[:,:,:, 1:], dim=1)
         self.nbr += float((a * b).sum(1).sum())
         self.n_tok += a.shape[0] * a.shape[2] * a.shape[3]
         x = m.reshape(-1, d).double()
@@ -267,7 +267,7 @@ def joint_pca_rgb(token_sets: list[np.ndarray], h: int, w: int):
     lo = np.percentile(cat, 1, axis=0)
     hi = np.percentile(cat, 99, axis=0)
     return [np.clip((p - lo) / (hi - lo + 1e-8), 0, 1)
-            .reshape(h, w, 3).astype(np.float32) for p in projs]
+.reshape(h, w, 3).astype(np.float32) for p in projs]
 
 
 def upsample(m: np.ndarray, H: int, W: int) -> np.ndarray:
@@ -307,11 +307,11 @@ def main() -> None:
     bb_kwargs = dict(backbone_type=a0.get("backbone_type", "dinov3"),
                      model_name=a0.get("backbone_model") or None,
                      lora_rank=-1, pretrained=True)
-    models: dict[str, RelAnythingBackbone] = {}
+    models: dict[str, Backbone] = {}
     # The pretrained reference keeps the ARCHITECTURAL default (norm_taps off).
     # Its fused map is only a formality anyway: layer_weights is zero-init, so
     # "pretrained fused" is an unweighted mean, not something the head ever saw.
-    models["pretrained"] = RelAnythingBackbone(
+    models["pretrained"] = Backbone(
         **bb_kwargs, norm_taps=False).to(device).eval()
     drifts = {}
     init_sd = {k: v.cpu() for k, v in models["pretrained"].state_dict().items()}
@@ -327,7 +327,7 @@ def main() -> None:
         # when a norm_taps arm is compared against a non-norm_taps control.
         a = ck["args"] if isinstance(ck["args"], dict) else vars(ck["args"])
         nt = bool(a.get("norm_taps", False))
-        bb = RelAnythingBackbone(**bb_kwargs, norm_taps=nt).to(device).eval()
+        bb = Backbone(**bb_kwargs, norm_taps=nt).to(device).eval()
         missing, unexpected = bb.load_state_dict(sd, strict=False)
         assert not unexpected, f"unexpected backbone keys: {unexpected[:5]}"
         if missing:

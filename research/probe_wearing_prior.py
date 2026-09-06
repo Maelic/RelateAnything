@@ -130,7 +130,7 @@ def analyse(root: Path, split: str, pattern: str, max_objects: int,
         # distinct (sub,obj) pairs — a pair carrying two synonym forms is ONE
         # edge in the scene, and counting it twice would fake a fan-in of 2.
         seen = set()
-        for s, o, p in r[:, :3]:
+        for s, o, p in r[:,:3]:
             if (s, o) in seen:
                 continue
             seen.add((s, o))
@@ -203,7 +203,7 @@ def analyse(root: Path, split: str, pattern: str, max_objects: int,
             img=np.array(img_ids), pred=np.array(pred_ids),
             sub_box=sb, obj_box=ob,
             sub_cat=np.array(sub_cats), obj_cat=np.array(obj_cats),
-        )
+)
         print(f"\n  dumped -> {dump}")
 
     return {
@@ -251,7 +251,7 @@ def main():
     print("{:<16}{:>10}{:>12}{:>9}{:>9}{:>9}{:>10}{:>16}".format(*hdr))
     for r in rows:
         print("{:<16}{:>10,}{:>11.2f}%{:>9.3f}{:>9.4f}{:>9.4f}{:>9.3f}%{:>16.4f}"
-              .format(r["pack"], r["n_pairs"], 100 * r["fanin_ge2_frac"],
+.format(r["pack"], r["n_pairs"], 100 * r["fanin_ge2_frac"],
                       r["fanout_mean"], r["iou_p5"], r["iou_median"],
                       100 * r["disjoint_frac"], r["contain_obj_median"]))
 

@@ -35,7 +35,7 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import research.analyze_patch_similarity as aps  # noqa: E402
-from data.relation_dataset import RelationDataset  # noqa: E402
+from relsgg.data.dataset import RelationDataset  # noqa: E402
 
 from sklearn.linear_model import LogisticRegression  # noqa: E402
 from sklearn.metrics import roc_auc_score, f1_score  # noqa: E402

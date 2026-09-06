@@ -1,6 +1,6 @@
 """Run a prompt-baked open-vocab detector over a packed split's images.
 
-Saves flat arrays (img_idx, xyxy pixels, conf, cls) to an .npz, aligned with
+Saves flat arrays (img_idx, xyxy pixels, conf, cls) to an.npz, aligned with
 the pack's file_names.json order, for downstream IoU-matching against GT
 boxes (deployment-gap eval / detector-box training).
 
@@ -33,7 +33,7 @@ def main():
     ap.add_argument("--limit", type=int, default=0, help="debug: only first N images")
     ap.add_argument("--save_masks", default="",
                     help="segmentation weights only: also write per-image "
-                         "instance-mask RLEs to this .jsonl, aligned with the "
+                         "instance-mask RLEs to this.jsonl, aligned with the "
                          "npz detection order, for mask AP. Forces "
                          "retina_masks so masks come back at ORIGINAL image "
                          "resolution (letterbox-padded masks would be "
@@ -182,10 +182,10 @@ def main():
         n_images=np.int64(len(paths)),
         # The vocabulary `cls` indexes, saved WITH the detections: pack categories
         # under --set_classes, the detector's own names otherwise. Consumers must
-        # read it from here -- re-deriving it from the .pt gives the PLACEHOLDER
+        # read it from here -- re-deriving it from the.pt gives the PLACEHOLDER
         # names for a prompted run and silently mislabels every box.
         names=np.array(names),
-    )
+)
     tot = sum(len(a) for a in img_idx)
     print(f"saved {out}: {tot} boxes over {len(paths)} images "
           f"({tot / max(len(paths), 1):.1f}/img)")

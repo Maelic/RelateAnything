@@ -17,7 +17,6 @@ dependencies = [
     "torch~=2.13",
     "torchvision~=0.28",
     "transformers~=5.14",   # >=5.14: ships DINOv3ConvNextModel (ConvNeXt family)
-    "peft~=0.19",
     "numpy~=2.5",
     "Pillow~=12.3",
     "opencv-python-headless~=5.0",
@@ -59,7 +58,7 @@ Models = "https://huggingface.co/maelic"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["relsgg", "data"]
+include = ["relsgg", "relsgg.*"]
 
 [tool.setuptools.package-data]
 relsgg = ["corpus_type_map.json"]

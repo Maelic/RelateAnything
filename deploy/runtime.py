@@ -16,12 +16,15 @@ from __future__ import annotations
 import warnings
 import json
 import os
+import sys
 import time
 from dataclasses import dataclass, field
 from typing import List, Optional, Sequence
 
 import numpy as np
 import onnxruntime as ort
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from deploy.postprocess import (ThresholdConfig, Triplet, decode,
                                 decode_decomposed)
@@ -122,7 +125,7 @@ class OnnxDetector:
     def make_input(self, frame_bgr: np.ndarray):
         """Letterbox + BGR->RGB, HWC->CHW, [0,1]. Returns (x, r, dw, dh)."""
         pad, r, dw, dh = letterbox(frame_bgr, self.imgsz)
-        x = pad[:, :, ::-1].transpose(2, 0, 1)[None].astype(np.float32) / 255.0
+        x = pad[:,:,::-1].transpose(2, 0, 1)[None].astype(np.float32) / 255.0
         return np.ascontiguousarray(x), r, dw, dh
 
     def __call__(self, frame_bgr: np.ndarray, cfg: DetectorConfig):
@@ -131,7 +134,7 @@ class OnnxDetector:
         out = self._run_engine(x)
 
         pred = out[0].T                              # [A, 4+C]
-        boxes_cxcywh, scores = pred[:, :4], pred[:, 4:]
+        boxes_cxcywh, scores = pred[:,:4], pred[:, 4:]
         cls = scores.argmax(1)
         conf = scores[np.arange(len(cls)), cls]
         m = conf >= cfg.conf
@@ -263,7 +266,7 @@ class OnnxRelationHead:
         # This matches relsgg.api.RelateAnything._to_chw (and training).
         img = cv2.resize(frame_bgr, (self.img_size, self.img_size),
                          interpolation=cv2.INTER_LINEAR)
-        x = img[:, :, ::-1].transpose(2, 0, 1)[None].astype(np.float32) / 255.0
+        x = img[:,:,::-1].transpose(2, 0, 1)[None].astype(np.float32) / 255.0
 
         b = boxes_xyxy.astype(np.float32).copy()
         b[:, [0, 2]] /= max(W, 1); b[:, [1, 3]] /= max(H, 1)
@@ -276,7 +279,7 @@ class OnnxRelationHead:
         Nmax = self.max_boxes
         padded = np.zeros((1, Nmax, 4), np.float32)
         n = min(N, Nmax)
-        padded[0, :n] = boxes[:n]
+        padded[0,:n] = boxes[:n]
 
         feed = {"image": np.ascontiguousarray(x), "boxes": padded,
                 "box_counts": np.array([n], np.int64)}
@@ -313,8 +316,8 @@ class Result:
     det_ms: float = 0.0
     rel_ms: float = 0.0
     dec_ms: float = 0.0
-    # decompose mode: {"spatial": [...], "semantic": [...]} from the SAME
-    # forward pass; `triplets` stays the single merged stream for HUD/back-compat
+    # decompose mode: {"spatial": [...], "semantic": [...]} from the same
+    # forward pass; `triplets` stays the single merged stream.
     graphs: "Optional[dict]" = None
 
     @property
@@ -354,15 +357,15 @@ class TorchDetector:
 
 
 class TorchRelationHead:
-    """Relation head from a torch deploy bundle, exposing the SAME raw-score
-    contract as OnnxRelationHead so both backends share `decode`, the
+    """Relation head from a released ``model.pth``, exposing the same raw-score
+    contract as ``OnnxRelationHead`` so both backends share ``decode``, the
     thresholds and the demo's live keys."""
 
-    def __init__(self, deploy_path: str, bank_path: str = "", device: str = "cpu"):
+    def __init__(self, checkpoint: str, bank_path: str = "", device: str = "cpu"):
         import torch
         from relsgg.api import RelateAnything
         self._torch = torch
-        self.ra = RelateAnything.from_deploy(deploy_path, device=device)
+        self.ra = RelateAnything.from_checkpoint(checkpoint, device=device)
         self.model = self.ra.model
         self.device = device
         self.img_size = self.ra.img_size
@@ -404,7 +407,7 @@ class TorchRelationHead:
         H, W = frame_bgr.shape[:2]
         img = cv2.resize(frame_bgr, (self.img_size, self.img_size),
                          interpolation=cv2.INTER_LINEAR)
-        x = img[:, :, ::-1].transpose(2, 0, 1)[None].astype(np.float32) / 255.0
+        x = img[:,:,::-1].transpose(2, 0, 1)[None].astype(np.float32) / 255.0
 
         b = boxes_xyxy.astype(np.float32).copy()
         b[:, [0, 2]] /= max(W, 1); b[:, [1, 3]] /= max(H, 1)
@@ -418,10 +421,8 @@ class TorchRelationHead:
                              t.from_numpy(boxes).to(self.device),
                              box_counts=t.tensor([n], device=self.device),
                              targets=None)
-        # LOGITS, matching the v2 ONNX head. The additive-fusion identity for
-        # a missing pair term is 0.0, not 1.0 (which was the multiplicative
-        # identity) — copying the old line here would silently add +1 logit
-        # to every pair.
+        # Logits, as the ONNX head emits them; the host applies the score
+        # contract.
         pred = out["logits"][0].float().cpu().numpy()
         pair = (out["pair_logits"][0].float().cpu().numpy()
                 if out.get("pair_logits") is not None
@@ -432,7 +433,7 @@ class TorchRelationHead:
 
 
 def _find_detector(dist_dir: str) -> str:
-    """detector.onnx in the bundle, else ../detector-local/detector.onnx."""
+    """detector.onnx in the bundle, else../detector-local/detector.onnx."""
     cands = [os.path.join(dist_dir, "detector.onnx"),
              os.path.join(os.path.dirname(os.path.abspath(dist_dir)), "detector-local", "detector.onnx")]
     for c in cands:
@@ -459,16 +460,16 @@ class ScenePipeline:
         given, which overrides it for the relation head only — the Intel GPU
         plugin's Gather kernel doesn't support the relation head's axis-4
         gather (RuntimeError: "Unsupported gather axis: 4"), so GPU detector
-        + CPU relation head is the working combo on iGPU. files are OpenVINO IR .xml produced by
+        + CPU relation head is the working combo on iGPU. files are OpenVINO IR.xml produced by
         deploy/export_openvino.py — int8 preferred, fp16 fallback), or "torch"
-        (needs torch + ultralytics; `relation` is a prepare_deploy_ckpt.py
-        bundle and `detector` an ultralytics .pt)."""
+        (needs torch + ultralytics; `relation` is a released model.pth
+        bundle and `detector` an ultralytics.pt)."""
         bank = bank or os.path.join(dist_dir, "predicate_bank.npz")
         if not os.path.exists(bank):
             bank = ""
         if backend == "torch":
             if not relation:
-                raise ValueError("backend=torch needs --deploy (a .pt bundle)")
+                raise ValueError("backend=torch needs --deploy (a.pt bundle)")
             self.det = TorchDetector(
                 detector or "checkpoints/detectors/yolov8s-worldv2_megasg497.pt",
                 arch=det_arch, device=device)

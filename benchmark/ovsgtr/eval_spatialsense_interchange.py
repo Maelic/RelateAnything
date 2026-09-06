@@ -32,7 +32,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from relsgg.spatialsense_metrics import (best_threshold, summarise,  # noqa: E402
+from relsgg.eval.spatialsense import (best_threshold, summarise,  # noqa: E402
                                          print_summary)
 
 
@@ -40,7 +40,7 @@ def load_cells(cells_json: str, pred_names):
     side = json.load(open(cells_json))
     if list(side["predicates"]) != list(pred_names):
         raise SystemExit(f"cells predicate list != prediction vocabulary:\n"
-                         f"  cells: {side['predicates']}\n  pred : {list(pred_names)}")
+                         f"  cells: {side['predicates']}\n  pred: {list(pred_names)}")
     # Keyed by the converter's image id, which IS the pack row index (asserted
     # round-trip in convert_spatialsense_test.py; eval_spatialsense.py relies on it too).
     return {int(k): [(int(s), int(o), int(p), int(l)) for s, o, p, l in v]

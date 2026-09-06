@@ -5,7 +5,8 @@ history. None of it belongs in a public artifact, and the optimizer alone is
 about two thirds of the file for full fine-tuning runs. The stripped file keeps
 exactly what inference needs:
 
-    model            the EMA weights (what every reported eval used)
+    model            the EMA weights (what every reported evaluation used),
+                     less the entries the current model no longer defines
     args             the training config (from_checkpoint rebuilds from these),
                      with machine-local paths removed
     backbone_config  the backbone's Hugging Face config, so the tower is built
@@ -17,7 +18,7 @@ The text student the checkpoint names is copied next to the output as
 ``text_student.pt`` (with its CLIP tokenizer files), which is the layout every
 released model repository uses.
 
-Verified after writing: ``RelateAnything.from_checkpoint(strict_release=True)``
+Verified after writing: ``RelateAnything.from_checkpoint(strict=True)``
 on the stripped file with the Hugging Face hub disabled. A stripped checkpoint
 that cannot strict-load offline must not ship, so verification is the exit
 condition.
@@ -40,8 +41,11 @@ sys.path.insert(0, REPO)
 os.environ.setdefault("HF_HOME", os.path.join(REPO, ".hf_cache"))
 
 from relsgg.checkpoint import hub_id_for_backbone  # noqa: E402
+from relsgg.text.student import resolve_student_path  # noqa: E402
 
 KEEP = ("args", "pred_names", "epoch")
+#: State-dict entries the current model no longer defines.
+from relsgg.checkpoint import OBSOLETE_KEYS  # noqa: E402
 #: Arg values that name machine-local files. They are rewritten to the
 #: repository-relative form the docs use, or dropped when they only mattered
 #: on the training machine.
@@ -119,6 +123,10 @@ def main() -> None:
     args = scrub_args(raw_args)
     args["backbone_model"] = hub_id_for_backbone(raw_args.get("backbone_model"))
     student_src = a.text_student or raw_args.get("text_student")
+    if student_src:
+        # The source checkpoint may name the student by an absolute path (a
+        # training run) or as the file beside it (an already-stripped one).
+        student_src = resolve_student_path(student_src, near=a.checkpoint)
     if student_src and os.path.exists(student_src):
         out_dir = os.path.dirname(os.path.abspath(a.out))
         os.makedirs(out_dir, exist_ok=True)
@@ -144,7 +152,8 @@ def main() -> None:
         print(f"[strip] warning: text student {student_src} not found; "
               "from_checkpoint will need text_student= or embeddings=")
     out["args"] = args
-    out["model"] = {k: v.detach().cpu() for k, v in sd.items()}
+    out["model"] = {k: v.detach().cpu() for k, v in sd.items()
+                    if k not in OBSOLETE_KEYS}
     out["stripped_weights"] = a.weights
     out["stripped_from_run"] = os.path.basename(os.path.dirname(os.path.abspath(a.checkpoint)))
 
@@ -159,7 +168,7 @@ def main() -> None:
         os.environ["TRANSFORMERS_OFFLINE"] = "1"
         from relsgg.api import RelateAnything
         ra = RelateAnything.from_checkpoint(
-            a.out, ["on", "holding"], device="cpu", strict_release=True)
+            a.out, ["on", "holding"], device="cpu", strict=True)
         n = sum(p.numel() for p in ra.model.parameters())
         print(f"[strip] verify: strict offline from_checkpoint OK ({n/1e6:.1f}M params)")
 

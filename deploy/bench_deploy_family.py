@@ -188,7 +188,7 @@ def main():
         mname, run_dir, bundle = spec.split("=", 2)
         onnx_rel = os.path.join(
             a.onnx_dir, "relateanything_" + bundle.rstrip("/").split("/")[-1]
-            .replace("relsgg-", "") + ".onnx")
+.replace("relsgg-", "") + ".onnx")
         print(f"\n=== {mname} ===")
         for arm in ARMS:
             label, backend, overlap, mode = arm

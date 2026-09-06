@@ -34,7 +34,7 @@ def _inputs(scores, pair=None):
         obj_idx=np.array([1, 0, 2][:K]),
         valid_mask=np.ones(K, bool),
         predicates=PREDS,
-    )
+)
 
 
 def test_global_threshold_floors_scores():

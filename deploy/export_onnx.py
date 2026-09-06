@@ -25,9 +25,8 @@ Two vocabulary modes:
 
 Usage:
     python deploy/export_onnx.py \
-        --checkpoint runs/train/v34_student_cooc_6ep/checkpoint_best.pth \
-        --dinotxt checkpoints/dinov3_vitl16_dinotxt_vision_head_and_text_encoder-a442d8f5.pth \
-        --out relateanything.onnx
+        --checkpoint runs/train/relsgg-vits16plus/model.pth \
+        --vocab-mode input --check --out relateanything.onnx
 """
 from __future__ import annotations
 
@@ -75,14 +74,11 @@ class RelSGGExport(nn.Module):
 
         out = self.model(image, boxes, box_counts=box_counts, targets=None)
 
-        # RAW LOGITS, not sigmoids. The score contract is
+        # Raw logits, not probabilities: the score contract is
         # sigmoid(a * (pred + w * pair) + b) (relsgg/scoring.py), which cannot
-        # be reconstructed from two separate sigmoids without an inverse — and
-        # the inverse is precisely where the precision is gone: the raw head
-        # puts ~97% of pred_score above 0.9 and much of it above 0.9999, where
-        # fp32 logit() has only a couple of significant digits left. Emitting
-        # logits also moves the calibration to the host, so (a, b) can be
-        # re-fitted without re-exporting the graph.
+        # be recovered from two separate sigmoids, and emitting logits keeps
+        # the calibration on the host so (a, b) can be refitted without a
+        # re-export.
         pred_logits = out["logits"]                        # [B, K, V]
         pair_logits = out.get("pair_logits")
         if pair_logits is None:
@@ -96,16 +92,14 @@ class RelSGGExport(nn.Module):
             out["sub_idx"].to(torch.int64),                # [B, K]
             out["obj_idx"].to(torch.int64),                # [B, K]
             out["valid_mask"].to(torch.bool),              # [B, K]
-        )
+)
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--checkpoint", required=True)
-    ap.add_argument("--dinotxt", default="",
-                    help="raw dino.txt weights (v33 and earlier checkpoints)")
     ap.add_argument("--text-student", default=None,
-                    help="distilled student ckpt (v34+); default: read from checkpoint args")
+                    help="text student checkpoint; default: the one the checkpoint names")
     ap.add_argument("--out", default="relateanything.onnx")
     ap.add_argument("--predicates", nargs="*", default=None)
     ap.add_argument("--vocab-npz", default="",
@@ -147,22 +141,12 @@ def main() -> None:
     # Release exports must load every trained tensor or fail — a silently
     # dropped module here ships a wrong model with no error anywhere.
     ra = RelateAnything.from_checkpoint(
-        args.checkpoint, preds, dinotxt_weights=args.dinotxt,
-        text_student=args.text_student,
+        args.checkpoint, preds, text_student=args.text_student,
         device="cpu", weights=args.weights, img_size=args.img_size,
-        strict_release=True, embeddings=bank_E)
-    bt = str(getattr(ra.model.config, "backbone_type", "dinov3"))
-    if "convnext" in bt and args.img_size != 448:
-        # _extract_convnext resamples stage maps with adaptive_avg_pool2d,
-        # whose legacy ONNX symbolic only exports when the input size divides
-        # the output size exactly — true at 448 (stage strides 4/8/16/32),
-        # a hard export failure at most other sizes. Refuse early and clearly.
-        raise SystemExit(f"[export] ConvNeXt export requires --img-size 448 "
-                         f"(got {args.img_size}): adaptive_avg_pool2d only "
-                         "exports at exact-divisor sizes.")
-    print("[export] text encoder: " + (
-        f"none (baked vocabulary from {args.vocab_npz})" if bank_E is not None
-        else ("student " + str(ra.text_student) if ra.text_student else "dino.txt")))
+        strict=True, embeddings=bank_E)
+    bt = "dinov3"
+    print("[export] text encoder: " + (f"none (vocabulary from {args.vocab_npz})"
+                                       if bank_E is not None else str(ra.text_student)))
     model = ra.model.eval()
 
     V = model.vocab_head.W.shape[0]
@@ -195,10 +179,7 @@ def main() -> None:
         dynamic_axes["W"] = {0: "num_predicates"}
         dynamic_axes["alpha"] = {0: "num_predicates"}
 
-    # v2 output names. The graph used to emit "pred_score"/"pair_score" —
-    # already sigmoided — and deploy/runtime.py keys off these names so an
-    # older .onnx still loads (converted back, with a loud warning about the
-    # precision that conversion cannot recover).
+    # deploy/runtime.py keys off these names.
     output_names = ["pred_logits", "pair_logits", "sub_idx", "obj_idx",
                     "valid_mask"]
 
@@ -215,7 +196,7 @@ def main() -> None:
             input_names=input_names, output_names=output_names,
             dynamic_axes=dynamic_axes, opset_version=args.opset,
             do_constant_folding=True, dynamo=args.dynamo,
-        )
+)
     sz = os.path.getsize(args.out) / 1e6
     print(f"[export] wrote {args.out} ({sz:.0f} MB)")
 
@@ -245,7 +226,7 @@ def main() -> None:
         "final_budget": model.config.final_budget, "vocab_mode": args.vocab_mode,
         "text_dim": int(model.vocab_head.W.shape[1]),
         "outputs": output_names,
-        "output_kind": "logits",       # v2; v1 emitted "scores" (sigmoided)
+        "output_kind": "logits",
         "score_contract": CONTRACT,
         "calibration": {"a": contract.calib_a, "b": contract.calib_b},
         "calibrated": contract.is_calibrated,
@@ -257,9 +238,6 @@ def main() -> None:
                                   capture_output=True, text=True).stdout.strip(),
         "backbone_type": bt,
         "backbone_model": ck_args.get("backbone_model"),
-        "lora_rank_premerge": ck_args.get("_merged_from_lora_rank"),
-        "lora_rank": ck_args.get("lora_rank"),
-        "merged": ck_args.get("_merged_from_lora_rank") is not None,
         "text_student": _student,
         "text_student_sha256": _sha256(_student),
         "pred_embeds": ck_args.get("pred_embeds"),

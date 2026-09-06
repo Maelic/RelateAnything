@@ -12,7 +12,7 @@ megasg is the training split; vg150/psg are held out to measure generalization
 of the reparameterize()-time text space.
 
 Reuses (never reimplements):
-  training/text_space_diag.py :: build_groups, TEMPLATE_SETS,
+  training/text_space_diag.py:: build_groups, TEMPLATE_SETS,
       encode_all_templates, encode_dinotxt, combine_templates, DINOTXT_CKPT
 
 Outputs (to --out, default runs/packed/text_student):
@@ -42,7 +42,7 @@ import numpy as np
 PROJ = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJ))
 
-from training.text_space_diag import (  # noqa: E402
+from training.text_space_diag import (# noqa: E402
     TEMPLATE_SETS,
     build_groups,
     combine_templates,
@@ -81,7 +81,7 @@ def build_corpus(holdout_frac: float = 0.1, seed: int = 0,
             return
         p = provenance.setdefault(
             s, {"packs": set(), "split": "heldout", "raw": True}
-        )
+)
         p["packs"].add(pack)
         # a string is "train" if it appears as a real predicate in the train pack
         if split == "train":
@@ -230,7 +230,7 @@ def encode_teacher(strings: list[str], out_dir: Path, force: bool = False) -> No
             embeddings=E.astype(np.float16),
             strings=np.array(strings, dtype=object),
             templates=np.array(templates, dtype=object),
-        )
+)
         print(f"[teacher]   saved teacher_targets_{tset}.npz  {E.shape}")
 
 
@@ -279,7 +279,7 @@ def main() -> None:
     json.dump(
         {k: v for k, v in vocab.items() if k != "compact_of_clip"},
         open(out_dir / "token_vocab.json", "w"), indent=1,
-    )
+)
 
     if args.encode_teacher:
         encode_teacher(strings, out_dir, force=args.force_teacher)

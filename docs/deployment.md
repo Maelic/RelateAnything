@@ -8,8 +8,8 @@ the contract and the decisions.
 
 ## Building a release bundle
 
-One driver runs the whole chain — LoRA merge if needed → ONNX export with a
-parity check → per-checkpoint threshold calibration → predicate bank:
+One driver runs the whole chain — ONNX export with a parity check,
+per-checkpoint threshold calibration, then the predicate bank:
 
 ```bash
 python deploy/build_release.py --only relsgg-vits16plus
@@ -25,7 +25,7 @@ Models are declared in
 [`deploy/release_manifest.json`](../deploy/release_manifest.json) — the single
 source of truth every release script iterates. The individual steps stay
 runnable by hand (`export_onnx.py`, `calibrate_thresholds.py`,
-`build_predicate_bank.py`, `merge_lora.py`); the driver only sequences them.
+`build_predicate_bank.py`); the driver only sequences them.
 
 Three invariants the tooling **enforces** rather than trusts:
 

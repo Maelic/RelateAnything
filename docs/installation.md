@@ -15,9 +15,9 @@ idempotent — re-running it is safe.
 Knobs:
 
 ```bash
-PYTHON_BIN=python3.13 ./install.sh   # pick the interpreter
-VENV_DIR=/scratch/env ./install.sh   # put the venv elsewhere
-SKIP_HF_WARMUP=1 ./install.sh        # no network at install time
+PYTHON_BIN=python3.13./install.sh   # pick the interpreter
+VENV_DIR=/scratch/env./install.sh   # put the venv elsewhere
+SKIP_HF_WARMUP=1./install.sh        # no network at install time
 ```
 
 ## Extras
@@ -89,8 +89,8 @@ snapshot_download("maelic/OV-SGG-Bench", repo_type="dataset", local_dir="runs/ov
 snapshot_download("maelic/RA-4M", repo_type="dataset", local_dir="runs/ra4m")
 PY
 mkdir -p runs/packed runs/datamix
-ln -s ../ovsgg_bench/packs/* ../ra4m/packs/* runs/packed/
-ln -s ../ovsgg_bench/datamix/* runs/datamix/
+ln -s../ovsgg_bench/packs/*../ra4m/packs/* runs/packed/
+ln -s../ovsgg_bench/datamix/* runs/datamix/
 ln -s ovsgg_bench/text_student_v2_512 runs/packed/text_student_v2_512
 ln -s ovsgg_bench/datamix_v22 runs/packed/datamix_v22
 ```
@@ -138,7 +138,7 @@ Compute nodes are usually offline. Warm the cache on a login node, then export
 the offline flags in the job:
 
 ```bash
-source .venv/bin/activate
+source.venv/bin/activate
 export HF_HOME="$PWD/.hf_cache"
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1

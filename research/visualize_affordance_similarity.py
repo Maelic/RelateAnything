@@ -36,7 +36,7 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import research.analyze_patch_similarity as aps  # noqa: E402
-from data.relation_dataset import RelationDataset  # noqa: E402
+from relsgg.data.dataset import RelationDataset  # noqa: E402
 
 import matplotlib  # noqa: E402
 matplotlib.use("Agg")

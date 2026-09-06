@@ -36,8 +36,8 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data import RelationDataset, collate_fn                      # noqa: E402
-from relsgg.train_engine import evaluate                          # noqa: E402
+from relsgg.data import RelationDataset, collate_fn                      # noqa: E402
+from relsgg.training.engine import evaluate                          # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt        # noqa: E402
 
 

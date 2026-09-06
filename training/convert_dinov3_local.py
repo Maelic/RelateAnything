@@ -7,7 +7,7 @@ pip wheels don't ship convert_*.py) and monkeypatches hf_hub_download to
 return the local file. The official script then verifies the converted model
 against hardcoded expected outputs — a real correctness check.
 
-Usage (login node, .venv):
+Usage (login node,.venv):
     python training/convert_dinov3_local.py --script /path/to/convert_dinov3.py \
         --models vitb16_lvd1689m vits16_lvd1689m vits16plus_lvd1689m
 
@@ -44,7 +44,7 @@ def main() -> None:
             raise FileNotFoundError(
                 f"{p} not found — place the Meta checkpoint there "
                 f"(expected for {repo_id})"
-            )
+)
         print(f"[local] using {p}")
         return str(p)
 

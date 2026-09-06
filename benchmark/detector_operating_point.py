@@ -46,14 +46,14 @@ def to_xyxy(b: np.ndarray, W: float, H: float) -> np.ndarray:
 def iou_mat(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     if not len(a) or not len(b):
         return np.zeros((len(a), len(b)), np.float32)
-    x1 = np.maximum(a[:, None, 0], b[None, :, 0])
-    y1 = np.maximum(a[:, None, 1], b[None, :, 1])
-    x2 = np.minimum(a[:, None, 2], b[None, :, 2])
-    y2 = np.minimum(a[:, None, 3], b[None, :, 3])
+    x1 = np.maximum(a[:, None, 0], b[None,:, 0])
+    y1 = np.maximum(a[:, None, 1], b[None,:, 1])
+    x2 = np.minimum(a[:, None, 2], b[None,:, 2])
+    y2 = np.minimum(a[:, None, 3], b[None,:, 3])
     inter = np.clip(x2 - x1, 0, None) * np.clip(y2 - y1, 0, None)
     aa = np.clip(a[:, 2] - a[:, 0], 0, None) * np.clip(a[:, 3] - a[:, 1], 0, None)
     bb = np.clip(b[:, 2] - b[:, 0], 0, None) * np.clip(b[:, 3] - b[:, 1], 0, None)
-    return (inter / np.clip(aa[:, None] + bb[None, :] - inter, 1e-9, None)).astype(np.float32)
+    return (inter / np.clip(aa[:, None] + bb[None,:] - inter, 1e-9, None)).astype(np.float32)
 
 
 def dedup_same_class(box: np.ndarray, conf: np.ndarray, cls: np.ndarray,
@@ -134,12 +134,12 @@ def main() -> None:
                 n_det += len(bx)
                 if len(g) and len(bx):
                     hit += int(ok.any(1).sum())
-                    same = gc[:, None] == cl[None, :]
+                    same = gc[:, None] == cl[None,:]
                     covered = (ok & same).any(1)
                     hit_cls += int(covered.sum())
                     det_tp += int(ok.any(0).sum())
                     # same-class pairs offered to the head
-                    S = cl[:, None] == cl[None, :]
+                    S = cl[:, None] == cl[None,:]
                     np.fill_diagonal(S, False)
                     same_pairs += int(S.sum())
                     D = iou_mat(bx, bx) >= a.dup_iou
@@ -180,12 +180,12 @@ def main() -> None:
               f"{r['same_cls_pairs_per_img']:>12.1f} {r['dup_pairs_per_img']:>13.1f}")
 
     best_f1 = max(rows, key=lambda x: x["box_F1"])
-    print(f"\nF1-optimal          : conf {best_f1['conf']:.2f} dedup "
+    print(f"\nF1-optimal: conf {best_f1['conf']:.2f} dedup "
           f"{'off' if best_f1['dedup']>=1 else best_f1['dedup']:} "
           f"-> F1 {100*best_f1['box_F1']:.1f}%, pairRec {100*best_f1['pair_recall']:.1f}%, "
           f"dupPairs/img {best_f1['dup_pairs_per_img']:.1f}")
     base = rows[0]
-    print(f"as-run (first row)  : conf {base['conf']:.2f} -> F1 {100*base['box_F1']:.1f}%, "
+    print(f"as-run (first row): conf {base['conf']:.2f} -> F1 {100*base['box_F1']:.1f}%, "
           f"pairRec {100*base['pair_recall']:.1f}%, dupPairs/img {base['dup_pairs_per_img']:.1f}")
     print(f"\nceiling cost of the F1-optimal point: "
           f"{100*(base['pair_recall']-best_f1['pair_recall']):+.1f} points of pair recall")

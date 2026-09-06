@@ -68,7 +68,7 @@ def test_decode_decomposed_thresholds_per_stream():
         sub_idx=np.array([0]), obj_idx=np.array([1]),
         valid_mask=np.array([True]), predicates=PREDS, is_spatial=IS_SP,
         cfg=ThresholdConfig(threshold=0.5, pair_weight=0.0),
-    )
+)
     out = decode_decomposed(**kw)
     assert [t.predicate for t in out["spatial"]] == ["on"]
     assert [t.predicate for t in out["semantic"]] == ["holding"]

@@ -35,7 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from benchmark.relation_precision import GENERIC_PREDICATES   # noqa: E402
 
 def load_run(path: str) -> dict:
-    """Read a verdicts file, transparently handling the committed .gz copies.
+    """Read a verdicts file, transparently handling the committed.gz copies.
 
     runs/benchmark/a5b/ stores the raw records gzipped (6 MB -> ~126 KB), which is the
     only reason they can live in the repo at all; analysis must not need a manual

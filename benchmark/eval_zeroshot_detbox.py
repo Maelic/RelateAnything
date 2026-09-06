@@ -24,7 +24,7 @@ Usage:
     python benchmark/eval_zeroshot_detbox.py \
         --checkpoint runs/train/full_v33a_50ep_v3/checkpoint_best.pth \
         --dataset_root runs/packed/vg150 --dataset_name vg150 \
-        --det_weights .../BACKBONES/yolo12m_vg150.pt \
+        --det_weights.../BACKBONES/yolo12m_vg150.pt \
         --det runs/detect/yolo12m_vg150_val.npz \
         --protocols lenient,strict
 """
@@ -45,9 +45,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from relsgg.checkpoint import build_model_from_ckpt    # noqa: E402
 from benchmark.eval_detboxes import cxcywh_to_xyxy, pairwise_iou, greedy_match  # noqa: E402
-from relsgg.evaluator import SGClsEvaluator                  # noqa: E402
-from relsgg.train_engine import evaluate                     # noqa: E402
-from data.relation_dataset import TargetList, _box_raster     # noqa: E402
+from relsgg.eval.evaluator import SGClsEvaluator                  # noqa: E402
+from relsgg.training.engine import evaluate                     # noqa: E402
+from relsgg.data.dataset import TargetList, _box_raster     # noqa: E402
 from datagen.build_mask_rasters import mask_raster            # noqa: E402
 
 TRAIN_TEMPLATES = ["{p}", "one object is {p} another object",
@@ -266,7 +266,7 @@ def collate(batch):
     max_n = max(1, int(box_counts.max()))
     boxes = torch.zeros(len(batch), max_n, 4, dtype=torch.float32)
     for i, (_, bx, _, n) in enumerate(batch):
-        boxes[i, :n] = bx[:n]
+        boxes[i,:n] = bx[:n]
     targets = TargetList(b[2] for b in batch)
     if batch and "cov" in batch[0][2]:
         g = batch[0][2]["cov"].shape[-1]
@@ -274,8 +274,8 @@ def collate(batch):
         fill = torch.ones(len(batch), max_n, dtype=torch.float32)
         for i, b in enumerate(batch):
             n = b[2]["cov"].shape[0]
-            cov[i, :n] = b[2]["cov"]
-            fill[i, :n] = b[2]["fill"]
+            cov[i,:n] = b[2]["cov"]
+            fill[i,:n] = b[2]["fill"]
         targets.cov, targets.fill = cov, fill
         targets.mode = torch.tensor([float(b[2].get("mode", 1.0)) for b in batch])
     return images, boxes, box_counts, targets
@@ -296,7 +296,7 @@ def main() -> None:
     p.add_argument("--det_vocab", default="weights", choices=["weights", "pack"],
                    help="'pack' for detections made with detect_boxes.py --set_classes, "
                         "whose cls already indexes the pack's categories")
-    p.add_argument("--det", required=True, help="detections .npz from detect_boxes.py")
+    p.add_argument("--det", required=True, help="detections.npz from detect_boxes.py")
     p.add_argument("--det_masks", default="",
                    help="instance-mask RLE jsonl from detect_boxes.py --save_masks, "
                         "aligned with --det. Given, the head reads the DETECTOR's "
@@ -306,12 +306,9 @@ def main() -> None:
     p.add_argument("--weights", default="ema", choices=["ema", "raw"])
     p.add_argument("--score_mode", default="softmax", choices=["sigmoid", "softmax"],
                    help="softmax matches the literature SGDet convention")
-    p.add_argument("--dinotxt_weights",
-                   default="checkpoints/dinov3_vitl16_dinotxt_vision_head_and_text_encoder-a442d8f5.pth")
     p.add_argument("--text_student", default=None,
                    help="Student text-encoder ckpt for reparameterization. "
-                        "Defaults to whatever the checkpoint was trained with "
-                        "(required for v34+ 768-d student-space heads).")
+                        "Defaults to the one the checkpoint names.")
     p.add_argument("--iou_thr", type=float, default=0.5)
     p.add_argument("--det_conf", type=float, default=0.10)
     p.add_argument("--img_size", type=int, default=448)
@@ -344,11 +341,8 @@ def main() -> None:
 
     print(f"[{args.dataset_name}] {len(pred_names)} predicates, {len(cat_names)} "
           f"categories — reparameterizing vocab head")
-    # Match the text encoder to the one the head was trained against. Student-
-    # space checkpoints (v34+) have a 768-d head; encoding them with the 2048-d
-    # dino.txt teacher raises a dim error at best and silently evaluates a
-    # teacher vocabulary against a student-trained head at worst. Mirrors the
-    # same guard in eval_zeroshot.py.
+    # The vocabulary has to be encoded by the encoder the head was trained
+    # against: a head scored against a different text space measures nothing.
     ck_args = ckpt.get("args") or {}
     if not isinstance(ck_args, dict):
         ck_args = vars(ck_args)
@@ -360,14 +354,15 @@ def main() -> None:
         model.vocab_head.pred_names = list(pred_names)
     elif text_student:
         print(f"[{args.dataset_name}] vocabulary encoder: STUDENT ({text_student})")
-        from relsgg.text_student import encode_texts_student
+        from relsgg.text.student import encode_texts_student
         E = encode_texts_student(pred_names, text_student,
                                  templates=TRAIN_TEMPLATES, device=device)
         model.vocab_head.set_vocabulary_matrix(pred_names, E)
     else:
-        model.vocab_head.encode_vocabulary_dinotxt(
-            pred_names, dinotxt_weights=args.dinotxt_weights,
-            templates=TRAIN_TEMPLATES)
+        raise SystemExit(
+            "this checkpoint names no text student. The vocabulary has to be "
+            "encoded by the encoder the head was trained against; pass "
+            "--text_student, or use a released model, which ships its own.")
     model.reparameterize()
 
     if args.geo_budget > 0:
@@ -408,13 +403,9 @@ def main() -> None:
         loader = DataLoader(ds, batch_size=args.batch_size, shuffle=False,
                             collate_fn=collate, num_workers=args.num_workers,
                             pin_memory=True)
-        # GRAPH-CONSTRAINED BY DEFAULT. This script previously never passed the
-        # flag, so every detector-box number this project produced was
-        # UNCONSTRAINED while every GT-box number since the protocol fix was
-        # constrained ([[relsgg-eval-protocol-graph-constraint]]) — and the
-        # recorded "GT -> detector costs -40..-78%" divided one by the other,
-        # handing the detector side an inflation bonus of 12-19 points. The
-        # true deployment gap is therefore LARGER than recorded, not smaller.
+        # Graph-constrained by default, matching the ground-truth-box
+        # evaluation. Mixing the two conventions inflates the detector side by
+        # 12-19 points and understates the deployment gap.
         ev = SGClsEvaluator(topk=[20, 50, 100], num_predicates=len(pred_names),
                             score_mode=args.score_mode,
                             graph_constraint=not args.no_graph_constraint)

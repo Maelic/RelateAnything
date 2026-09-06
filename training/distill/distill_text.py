@@ -19,7 +19,7 @@ Objective (only TRAIN-split strings, i.e. megasg; vg150/psg held out):
   L_syn  synonym cohesion — light hinge keeping canonical-group pairs' cosine
          high (mostly redundant with L_rel; cheap insurance).
 
-WHAT v1 GOT WRONG (measured 2026-07-28, job 6919287, 1,967 synonym pairs on the
+WHAT v1 GOT WRONG (measured 2026-07-28, one run, 1,967 synonym pairs on the
 datamix_v22 union vocabulary). The v1 student separated antonyms beautifully
 (syn-vs-inv AUC 0.988 vs the teacher's 0.669, left/right cosine 0.323 vs 0.991)
 and destroyed the general neighbourhood structure paying for it: NN@1-in-own-
@@ -82,7 +82,7 @@ import torch.nn.functional as F
 PROJ = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJ))
 
-from relsgg.text_student import PredicateTextStudent  # noqa: E402
+from relsgg.text.student import PredicateTextStudent  # noqa: E402
 
 
 def load_corpus(art: Path):
@@ -281,7 +281,7 @@ def main() -> None:
     student = PredicateTextStudent.full_vocab(
         token_init=tok_init, d_tok=args.d_tok, dim=args.dim, depth=args.depth,
         heads=args.heads, out_dim=args.out_dim,
-    ).to(device)
+).to(device)
     # student sees the SAME templated strings as the teacher target set
     from training.text_space_diag import TEMPLATE_SETS  # noqa: E402
     tset_templates = TEMPLATE_SETS[args.tset]
@@ -398,7 +398,7 @@ def main() -> None:
                     cos_syn=float(cos_syn.mean()), cos_inv=float(cos_inv.mean()),
                     cos_soft=float(cos_soft.mean()),
                     cos_rand=cos_rand, sec=time.time() - t0,
-                )
+)
             history.append(rec)
             print(f"[ep {ep:4d}] loss {rec['loss']:.4f} | rel {rec['l_rel']:.4f} "
                   f"abs {rec['l_abs']:.4f} nbr {rec['l_nbr']:.4f} "

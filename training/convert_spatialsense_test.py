@@ -7,29 +7,30 @@ NEGATIVE (subject, predicate, object) triples. The test split is exactly
 balanced (1,379 true / 1,379 false), so chance is 50% and language/frequency
 priors buy nothing.
 
-WHY THIS IS A CLEAN ZERO-SHOT PROBE (verified 2026-07-30):
-  - v43 trains on megasg_clean + vg_raw. Neither pack contains ANY SpatialSense
-    image (0/5,976 train, 0/1,126 valid, 0/1,920 test by filename).
-  - Test images do not appear in SpatialSense's own train/valid (0 overlap), so
+WHY THIS IS A CLEAN ZERO-SHOT PROBE:
+  - The released models train on megasg_clean, vg_raw and hicodet. None of
+    those packs contains a SpatialSense image (0/5,976 train, 0/1,126 valid,
+    0/1,920 test by filename).
+  - Test images do not appear in SpatialSense's own train or valid split, so
     the valid split is an uncontaminated set for choosing the decision
-    threshold — which is what their protocol does, and what makes our accuracy
-    comparable to their published numbers.
-  (`training/convert_spatialsense.py` writes their TRAIN split into the datamix
-  for a future training arm; that source is not part of v43.)
+    threshold, which is their protocol and what makes the accuracy comparable
+    to their published numbers.
+  (`training/convert_spatialsense.py` writes their train split into the mixture
+  for a training arm that no released model uses.)
 
 Emits per split:
   DATASETS/SpatialSense/spatialsense_<split>_coco.json  — images, deduped boxes,
       rel_annotations = the label=true cells (so packers/recall evals work)
   runs/datamix/spatialsense_<split>_cells.json — {"predicates": [...],
-      "by_image_id": {img_id: [[sub_local, obj_local, pred_id, label], ...]}}
+      "by_image_id": {img_id: [[sub_local, obj_local, pred_id, label],...]}}
       carrying BOTH labels, which is what eval_spatialsense.py scores.
 
 Source bbox convention is [y0, y1, x0, x1] in pixels -> COCO xywh.
 
     python training/convert_spatialsense_test.py
     python training/pack_megasg.py --train_ann /dev/null \
-        --val_ann .../spatialsense_test_coco.json \
-        --val_img_dir .../SpatialSense/images --out runs/packed/spatialsense_test \
+        --val_ann.../spatialsense_test_coco.json \
+        --val_img_dir.../SpatialSense/images --out runs/packed/spatialsense_test \
         --splits val --min_rels 0
 """
 from __future__ import annotations

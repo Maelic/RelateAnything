@@ -55,20 +55,20 @@ def cxcywh_to_xyxy(b):
 
 def cross_geometry(sb, ob):
     """All-pairs [S,O] IoU, containment of obj in sub, and rectangle gap."""
-    ix1 = np.maximum(sb[:, None, 0], ob[None, :, 0])
-    iy1 = np.maximum(sb[:, None, 1], ob[None, :, 1])
-    ix2 = np.minimum(sb[:, None, 2], ob[None, :, 2])
-    iy2 = np.minimum(sb[:, None, 3], ob[None, :, 3])
+    ix1 = np.maximum(sb[:, None, 0], ob[None,:, 0])
+    iy1 = np.maximum(sb[:, None, 1], ob[None,:, 1])
+    ix2 = np.minimum(sb[:, None, 2], ob[None,:, 2])
+    iy2 = np.minimum(sb[:, None, 3], ob[None,:, 3])
     inter = np.clip(ix2 - ix1, 0, None) * np.clip(iy2 - iy1, 0, None)
     sa = np.clip((sb[:, 2] - sb[:, 0]) * (sb[:, 3] - sb[:, 1]), 1e-9, None)
     oa = np.clip((ob[:, 2] - ob[:, 0]) * (ob[:, 3] - ob[:, 1]), 1e-9, None)
-    iou = inter / (sa[:, None] + oa[None, :] - inter)
-    dx = np.maximum(np.maximum(ob[None, :, 0] - sb[:, None, 2],
-                               sb[:, None, 0] - ob[None, :, 2]), 0)
-    dy = np.maximum(np.maximum(ob[None, :, 1] - sb[:, None, 3],
-                               sb[:, None, 1] - ob[None, :, 3]), 0)
+    iou = inter / (sa[:, None] + oa[None,:] - inter)
+    dx = np.maximum(np.maximum(ob[None,:, 0] - sb[:, None, 2],
+                               sb[:, None, 0] - ob[None,:, 2]), 0)
+    dy = np.maximum(np.maximum(ob[None,:, 1] - sb[:, None, 3],
+                               sb[:, None, 1] - ob[None,:, 3]), 0)
     gap = np.sqrt(dx ** 2 + dy ** 2) / np.sqrt(2.0)
-    return iou, inter / oa[None, :], gap
+    return iou, inter / oa[None,:], gap
 
 
 BINS = np.array([-1e-9, 1e-9, 0.01, 0.03, 0.05, 0.10, 0.20, 0.35, 0.50, 1.01])
@@ -136,7 +136,7 @@ def analyse(root: Path, split: str, pattern: str, max_objects: int,
             if len(r):
                 pmap = {int(v): k for k, v in enumerate(pi)}
                 omap = {int(v): k for k, v in enumerate(oi)}
-                for s, o in r[:, :2]:
+                for s, o in r[:,:2]:
                     a, b = pmap.get(int(s)), omap.get(int(o))
                     if a is not None and b is not None:
                         lab[a, b] = True
@@ -168,7 +168,7 @@ def analyse(root: Path, split: str, pattern: str, max_objects: int,
         print(f"  {nm:<12}{n_pair[k]:>12,}{n_wear[k]:>11,}{100*r:>8.2f}%"
               f"{r/max(base,1e-12):>8.2f}x")
 
-    print(f"\n  ... by containment of garment in person box")
+    print(f"\n... by containment of garment in person box")
     for k in range(len(CBINS) - 1):
         if c_pair[k] == 0:
             continue
@@ -178,7 +178,7 @@ def analyse(root: Path, split: str, pattern: str, max_objects: int,
         print(f"  {nm:<12}{c_pair[k]:>12,}{c_wear[k]:>11,}{100*r:>8.2f}%"
               f"{r/max(base,1e-12):>8.2f}x")
 
-    print(f"\n  ... DISJOINT pairs only, by gap (fraction of image diagonal)")
+    print(f"\n... DISJOINT pairs only, by gap (fraction of image diagonal)")
     for k in range(len(GBINS) - 1):
         if g_pair[k] == 0:
             continue

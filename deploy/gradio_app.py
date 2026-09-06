@@ -129,7 +129,7 @@ def render(res, show_masks: bool, show_labels: bool,
     cv2.rectangle(img, (0, 0), (W, 24), (20, 20, 20), -1)
     cv2.putText(img, hud, (8, 17), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                 (120, 230, 160), 1, cv2.LINE_AA)
-    return img[:, :, ::-1]
+    return img[:,:,::-1]
 
 
 def infer(frame_rgb, conf, top_k, score_thr, show_masks, show_labels, mode,
@@ -137,7 +137,7 @@ def infer(frame_rgb, conf, top_k, score_thr, show_masks, show_labels, mode,
     if frame_rgb is None or PIPE is None:
         return None, "", ""
     PIPE.cfg.det_conf = float(conf)
-    res = PIPE(frame_rgb[:, :, ::-1].copy(), top_k=int(top_k),
+    res = PIPE(frame_rgb[:,:,::-1].copy(), top_k=int(top_k),
                score_thr=float(score_thr), decompose=(mode != "merged"),
                spatial_drop_pair=bool(spatial_raw))
 

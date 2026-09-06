@@ -30,9 +30,9 @@ Give the model an image and a set of regions, from any detector, any
 segmenter, or ground truth. It returns ranked relations between pairs of them:
 
 ```python
-from relsgg.api import RelateAnything
+from relsgg import RelateAnything
 
-model = RelateAnything.from_checkpoint("model.pth", predicates=["riding", "holding", "next to"])
+model = RelateAnything.from_pretrained("maelic/relsgg-vits16plus")
 model.predict(image, boxes)                       # [Triplet(sub=3, "riding", obj=7, 0.91), ...]
 model.set_vocabulary(["about to collide with", "reflected in"])   # any strings, no retraining
 ```
@@ -68,24 +68,23 @@ Optional: `pip install -e ".[deploy]"` for ONNX Runtime and the laptop demo,
 ## Quickstart
 
 ```python
-from huggingface_hub import snapshot_download
-from relsgg.api import RelateAnything
+from relsgg import RelateAnything
 
-d = snapshot_download("maelic/relsgg-vits16plus")          # model.pth + text encoder, 0.3 GB
-model = RelateAnything.from_checkpoint(
-    f"{d}/model.pth", predicates=["holding", "looking at", "leaning against"], device="cuda")
+model = RelateAnything.from_pretrained("maelic/relsgg-vits16plus", device="cuda")
 
-triplets = model.predict(image, boxes_xyxy, topk=20)      # image: PIL or HWC array; boxes: [N, 4] pixels
+triplets = model.predict(image, boxes_xyxy, topk=20)   # PIL or HWC array; boxes [N, 4] in pixels
 for t in triplets:
-    print(t.subject_idx, t.predicate, t.object_idx, round(t.score, 3))
+    print(t)                                           # (person) --riding [0.91]--> (horse)
 
-graphs = model.predict(image, boxes_xyxy, decompose=True)   # two graphs from the same pass
-graphs["spatial"], graphs["semantic"]
+model.set_vocabulary(["tethered to", "grazing beside", "casting a shadow on"])
+graphs = model.predict(image, boxes_xyxy, masks=masks, decompose=True)
+graphs["spatial"], graphs["semantic"]                  # two graphs, one forward pass
 ```
 
-Released checkpoints embed their backbone configuration, so nothing else is
-downloaded and no gated login is needed. Box sources, score calibration,
-thresholds and batching: [docs/quickstart.md](docs/quickstart.md).
+A released model carries its own backbone configuration and text encoder, so
+nothing else is downloaded and no gated login is needed. Masks are optional;
+boxes alone are the contract. Box sources, calibration, thresholds and
+batching: [docs/quickstart.md](docs/quickstart.md).
 
 ## Models
 
@@ -225,8 +224,7 @@ entry there has produced a plausible wrong result at least once.
 
 | path | what |
 |---|---|
-| [`relsgg/`](relsgg/) | the model: backbone, geometry, pair sampler, relation transformer, vocabulary head, losses, scoring, checkpoint loading, the public API |
-| [`data/`](data/) | pack loader, dataset mixtures, multi-scale sampling |
+| [`relsgg/`](relsgg/) | the package: `api.py` and `config.py` at the top, then `model/` (backbone, geometry, pooling, sampler, transformer, deformable read, vocabulary head), `text/` (the predicate encoder), `data/` (packs and mixtures), `training/` (objective, loop), `eval/` (evaluators) |
 | [`train.py`](train.py), [`train.sh`](train.sh) | training entry point and the released recipe |
 | [`training/`](training/) | pack builders, converters, vocabulary and soft-supervision builders, text-student distillation, released configs |
 | [`benchmark/`](benchmark/) | OV-SGG-Bench: the specification, every scorer and entry point, the baseline adapter |
@@ -234,7 +232,7 @@ entry there has produced a plausible wrong result at least once.
 | [`datagen/`](datagen/) | the RA-4M generation pipeline and its prompts |
 | [`research/`](research/) | probes behind the paper's analysis sections |
 | [`release/`](release/) | checkpoint stripping, model and dataset cards, Hugging Face upload |
-| [`docs/`](docs/) | installation, quickstart, architecture, data, training, evaluation, deployment, pitfalls |
+| [`docs/`](docs/) | installation, quickstart, architecture, data, training, evaluation, deployment, the objective, pitfalls |
 | [`tests/`](tests/) | CPU-only tests, run by CI on Python 3.12 and 3.13 |
 
 ## Documentation
@@ -249,6 +247,7 @@ entry there has produced a plausible wrong result at least once.
 | [Evaluation](docs/evaluation.md) | reporting a number or comparing against another method |
 | [Deployment](docs/deployment.md) | exporting to ONNX or OpenVINO, picking thresholds |
 | [Pitfalls](docs/pitfalls.md) | before you trust a number |
+| [The objective](docs/objective.md) | adding a dataset or a loss term |
 | [Contributing](CONTRIBUTING.md) | opening a pull request |
 
 ## License

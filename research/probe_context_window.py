@@ -7,7 +7,7 @@ SSP is structurally LOCAL: it only ever pools features from inside the
 pair's own boxes. The cross-attention layer is the only mechanism with
 access to the scene OUTSIDE those boxes (occlusion, supporting surfaces,
 broader layout) — so whether it's worth fixing / redesigning (deformable
-attention, DAB-DETR-style box-conditioned modulation, ...) hinges on
+attention, DAB-DETR-style box-conditioned modulation,...) hinges on
 whether that outside-the-box context is ever actually used. This probe
 tests it directly, per pair, three conditions:
 
@@ -31,8 +31,8 @@ conditions score the literal same relation instances.
 Usage
 -----
     python training/probe_context_window.py \\
-        --checkpoints runs/train/A/checkpoint_best.pth ... \\
-        --labels A ... \\
+        --checkpoints runs/train/A/checkpoint_best.pth... \\
+        --labels A... \\
         --data_root runs/packed/psg --split val --spatial_root runs/packed/megasg_clean \\
         --n_images 30 --n_pairs 4 --margin 0.15 \\
         --out runs/analysis/context_window_probe.json
@@ -56,28 +56,16 @@ import torch
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
-from data.relation_dataset import RelationDataset          # noqa: E402
-from relsgg.geometry import RelGeomEncoder                  # noqa: E402
-from relsgg.roi import union_box                             # noqa: E402
-from relsgg.text_student import encode_texts_student        # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES                    # noqa: E402
+from relsgg.data.dataset import RelationDataset          # noqa: E402
+from relsgg.model.geometry import RelGeomEncoder                  # noqa: E402
+from relsgg.model.pooling import union_box                             # noqa: E402
+from relsgg.text.student import encode_texts_student        # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES                    # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt       # noqa: E402
 from benchmark.eval_zeroshot import spatial_predicate_names  # noqa: E402
 
 EPS = 1e-8
 _GEO_WEIGHT_KEYS = ("geo_encoder.mlp.0.weight", "sampler.geo_scorer.0.weight")
-
-
-def _pad_geo_checkpoint(ckpt: dict, target_dim: int) -> None:
-    for sd_key in ("model", "ema_model"):
-        sd = ckpt.get(sd_key)
-        if not sd:
-            continue
-        for wkey in _GEO_WEIGHT_KEYS:
-            w = sd.get(wkey)
-            if w is not None and w.shape[1] < target_dim:
-                pad = torch.zeros(w.shape[0], target_dim - w.shape[1], dtype=w.dtype)
-                sd[wkey] = torch.cat([w, pad], dim=1)
 
 
 def _kl(p: torch.Tensor, q: torch.Tensor) -> torch.Tensor:
@@ -107,7 +95,6 @@ def probe_checkpoint(
     weights: str,
 ) -> dict:
     ckpt = torch.load(checkpoint, map_location="cpu", weights_only=False)
-    _pad_geo_checkpoint(ckpt, RelGeomEncoder.NUM_GEO)
     model = build_model_from_ckpt(ckpt, weights).to(device).eval()
 
     ck_args = ckpt.get("args") or {}
@@ -119,10 +106,10 @@ def probe_checkpoint(
                                  templates=TRAIN_TEMPLATES, device=device)
         model.vocab_head.set_vocabulary_matrix(pred_names, E)
     else:
-        dinotxt_weights = ck_args.get("dinotxt_weights") or \
-            "checkpoints/dinov3_vitl16_dinotxt_vision_head_and_text_encoder-a442d8f5.pth"
-        model.vocab_head.encode_vocabulary_dinotxt(
-            pred_names, dinotxt_weights=dinotxt_weights, templates=TRAIN_TEMPLATES)
+        raise SystemExit(
+            "this checkpoint names no text student. The vocabulary has to be "
+            "encoded by the encoder the head was trained against; pass "
+            "--text_student, or use a released model, which ships its own.")
     model.reparameterize()
 
     is_spatial = torch.tensor([n in spatial_names for n in pred_names], device=device)
@@ -208,7 +195,7 @@ def probe_checkpoint(
             u = union_box(
                 torch.from_numpy(boxes_np[s_box:s_box + 1]).unsqueeze(0),
                 torch.from_numpy(boxes_np[o_box:o_box + 1]).unsqueeze(0),
-            )[0, 0]
+)[0, 0]
             cx, cy, w, h = u.tolist()
             hw, hh = w / 2 * (1 + margin), h / 2 * (1 + margin)
             x0 = max(0, int((cx - hw) * W)); x1 = min(W, int((cx + hw) * W) + 1)

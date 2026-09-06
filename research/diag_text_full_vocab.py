@@ -18,7 +18,7 @@ Exact here means:
     python training/diag_text_full_vocab.py \\
         --spaces $TS/pred_embeds_dinotxt_photo.npz $TS/pred_embeds_student_photo.npz \\
                  $TS/pred_embeds_studentv2_photo.npz \\
-        --tags dinotxt student_v1 student_v2 --canon_groups $TS/canonical_groups.json
+        --tags teacher student --canon_groups $TS/canonical_groups.json
 """
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ def full_pass(E: np.ndarray, k: int = 10):
         rows = np.arange(i, min(i + CHUNK, V))
         S[np.arange(len(rows)), rows] = -2.0                   # drop self
         argmax[rows] = S.argmax(1)
-        top = np.argpartition(-S, k, axis=1)[:, :k]
+        top = np.argpartition(-S, k, axis=1)[:,:k]
         np.add.at(nk, top.reshape(-1), 1)
         off = S[S > -1.5]
         csum += float(off.sum())

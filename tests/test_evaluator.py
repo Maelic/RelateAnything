@@ -1,15 +1,15 @@
-"""Evaluator math on hand-computable cases.
+"""Evaluator arithmetic on hand-computable cases.
 
-Every number the release reports flows through SGClsEvaluator, and two of its
-properties have each bitten this project when silently absent:
-  * the GRAPH CONSTRAINT (one predicate per ordered pair) — its absence
-    inflated R@K by 12-19 points and zeroed spatial classes in training logs;
-  * F1@K = harmonic mean of R@K and mR@K — must equal the closed form, and
-    must be 0 when either side is 0 (a tail-blind model cannot score).
+Every reported number flows through SGClsEvaluator, and two of its properties
+are easy to lose silently:
+  * the graph constraint (one predicate per ordered pair) — without it R@K
+    reads 12 to 19 points high and spatial classes fall to zero;
+  * F1@K, the harmonic mean of R@K and mR@K — it must equal the closed form
+    and must be 0 when either side is 0, since a tail-blind model cannot score.
 """
 import torch
 
-from relsgg.evaluator import SGClsEvaluator, _harmonic
+from relsgg.eval.evaluator import SGClsEvaluator, _harmonic
 
 NAMES = ["on", "holding", "behind", "wearing"]
 V = len(NAMES)
@@ -29,7 +29,7 @@ def test_harmonic_closed_form():
     assert _harmonic(0.0, 0.0) == 0.0
     assert _harmonic(1.0, 0.0) == 0.0          # tail-blind -> zero, not 0.5
     assert abs(_harmonic(0.5, 0.5) - 0.5) < 1e-12
-    # v43's published pair, computed by hand: 2*.3597*.2656/(.3597+.2656)
+    # a published pair, computed by hand: 2*.3597*.2656/(.3597+.2656)
     assert abs(_harmonic(0.3597, 0.2656) - 0.30558) < 1e-4
 
 

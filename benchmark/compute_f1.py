@@ -5,9 +5,10 @@
 WHY IT IS WORTH REPORTING. R@K and mR@K are in tension by construction: the
 head-heavy prediction that maximises R@K flattens mR@K, and the tail-boosting
 one does the reverse. Reporting them side by side lets a run look good on
-whichever one it happens to win, and our own history is full of exactly that
-trade (v42: PSG mR +19% with `on` -81%). The harmonic mean weights the SMALLER
-of the two, so a run only scores well by not sacrificing either.
+whichever one it happens to win — a change that took PSG mean recall +19% while
+collapsing `on` by 81% reads as a win on one of the two. The harmonic mean
+weights the smaller of the two, so a run only scores well by sacrificing
+neither.
 
 RETROACTIVE COMPUTATION IS EXACT, NOT AN APPROXIMATION. F1@K is a pure function
 of the two aggregate numbers, both of which are already stored in every
@@ -15,8 +16,7 @@ history.json and eval json — so nothing needs re-running on a GPU.
 
 THE ONE REAL PITFALL: R@K and mR@K must come from the SAME protocol. Mixing a
 graph-constrained mR with an unconstrained R produces a number that is not
-F1 of anything ([[relsgg-eval-protocol-graph-constraint]] — unconstrained R@K
-runs 12-19 points high, which would inflate F1 while looking plausible). This
+F1 of anything. This
 script therefore only pairs values found in the same metrics dict, and refuses
 to combine across files.
 

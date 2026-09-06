@@ -5,7 +5,7 @@ pattern never leaves the anchor centers and all learned structure is
 query-conditional (union anchor row-norm 0.75, others static). This script
 shows the query-conditional behavior itself, on real validation pairs:
 
-  per image  : one ROW per top-scoring distinct pair, six panels:
+  per image: one ROW per top-scoring distinct pair, six panels:
                [0] colour image, sub (blue) / obj (orange) boxes and the TOTAL
                    attention-mass map of the read (all heads, all anchors);
                [1-4] one panel per anchor (sub / obj / union / contact): the
@@ -21,7 +21,7 @@ shows the query-conditional behavior itself, on real validation pairs:
                and head as marker SHAPE — 128 overlapping glyphs per panel that
                hid the boxes and the image. Weight is now a heatmap, position
                a dot, head a bar.
-  heads_XXX  : for the top pair of the first --n_head_images images, one
+  heads_XXX: for the top pair of the first --n_head_images images, one
                panel per head (its own mass map, points coloured by anchor).
   deform_offset_fields.png (corpus): where the points land RELATIVE to their
                anchor, in half-extent units — attention-weighted 2-D histogram
@@ -57,12 +57,11 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data.relation_dataset import RelationDataset                  # noqa: E402
-from relsgg.geometry import RelGeomEncoder                         # noqa: E402
-from relsgg.text_student import encode_texts_student               # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES                           # noqa: E402
+from relsgg.data.dataset import RelationDataset                  # noqa: E402
+from relsgg.model.geometry import RelGeomEncoder                         # noqa: E402
+from relsgg.text.student import encode_texts_student               # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES                           # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt              # noqa: E402
-from relsgg.checkpoint import pad_geo_checkpoint as _pad_geo_checkpoint  # noqa: E402
 
 ANCHORS = ["sub", "obj", "union", "contact"]
 COLORS = {"sub": "#2a78d6", "obj": "#eb6834",
@@ -111,7 +110,7 @@ def run_image(model, image, boxes, box_count, device, score_mode="sigmoid"):
     level_w = (dr.last_level_w[0][valid] if getattr(dr, "last_level_w", None)
                is not None else None)                        # [K',H,A,L]
     if L > 1:
-        pos = pos.view(-1, H, len(ANCHORS), L, P, 2)[:, :, :, 0]  # any level
+        pos = pos.view(-1, H, len(ANCHORS), L, P, 2)[:,:,:, 0]  # any level
         w = w.sum(3)                                         # mass at each place
     else:
         pos = pos.view(-1, H, len(ANCHORS), P, 2)
@@ -132,8 +131,8 @@ def run_image(model, image, boxes, box_count, device, score_mode="sigmoid"):
 def offsets_in_units(rec):
     """Sampled offsets in anchor half-extent units. [K',H,A,P,2]"""
     # anchors are shared by all heads -> broadcast a head axis in.
-    centers = rec["anch"][:, None, :, None, :2]
-    half = (rec["anch"][:, None, :, None, 2:].clamp_min(0.05) * 0.5)
+    centers = rec["anch"][:, None,:, None,:2]
+    half = (rec["anch"][:, None,:, None, 2:].clamp_min(0.05) * 0.5)
     return (rec["pos"] - centers) / half
 
 
@@ -223,7 +222,7 @@ def draw_image(img_np, rec, pred_names, n_pairs, path, ent_names=None,
         outside = (off.abs().max(-1).values > 1.0).float()      # [H,A,P]
         out_w = float((outside * wgt).sum() / wgt.sum().clamp_min(1e-9))
         clamped = _clamped_frac(rec["pos"][i])
-        heats = [splat(rec["pos"][i, :, ai], wgt[:, ai], H, W, sigma)
+        heats = [splat(rec["pos"][i,:, ai], wgt[:, ai], H, W, sigma)
                  for ai in range(A)]
         total = sum(heats)
         vmax_anchor = max(h.max() for h in heats)
@@ -257,7 +256,7 @@ def draw_image(img_np, rec, pred_names, n_pairs, path, ent_names=None,
                       interpolation="bilinear")
             _box_patch(ax, rec["anch"][i, ai].tolist(), W, H, COLORS[name],
                        lw=2.2, ls="-" if ai < 2 else "--")
-            pts = rec["pos"][i, :, ai].reshape(-1, 2).numpy()
+            pts = rec["pos"][i,:, ai].reshape(-1, 2).numpy()
             ax.scatter(pts[:, 0] * W, pts[:, 1] * H, s=16, color=COLORS[name],
                        edgecolors="white", linewidths=0.5, zorder=7, alpha=0.95)
             out_a = float((outside[:, ai] * wgt[:, ai]).sum()
@@ -371,8 +370,8 @@ class OffsetFields:
             self.hist[key][ai] += hst
         half_s = anch[0, 2:].clamp_min(0.05) * 0.5
         half_o = anch[1, 2:].clamp_min(0.05) * 0.5
-        self.partner[key][0] += ((anch[1, :2] - anch[0, :2]) / half_s).numpy()
-        self.partner[key][1] += ((anch[0, :2] - anch[1, :2]) / half_o).numpy()
+        self.partner[key][0] += ((anch[1,:2] - anch[0,:2]) / half_s).numpy()
+        self.partner[key][1] += ((anch[0,:2] - anch[1,:2]) / half_o).numpy()
         self.count[key] += 1
 
     def figure(self, keys, out_path, title):
@@ -464,7 +463,6 @@ def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ckpt = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
-    _pad_geo_checkpoint(ckpt, RelGeomEncoder.NUM_GEO)
     model = build_model_from_ckpt(ckpt, args.weights).to(device).eval()
     assert hasattr(model, "deformable_read"), "checkpoint has no deformable read"
 
@@ -548,16 +546,16 @@ def main():
                 level_share[grp].append(
                     rec["level_w"][i].sum(1).mean(0).numpy())
             for ai, aname in enumerate(ANCHORS):
-                o = off[i, :, ai]                        # [H,P,2]
+                o = off[i,:, ai]                        # [H,P,2]
                 stats[grp]["mag"][aname].append(float(o.norm(dim=-1).mean()))
                 stats[grp]["outside"][aname].append(
                     float((o.abs().max(-1).values > 1.0).float().mean()))
                 # per-head softmaxes each sum to 1, so divide by H to keep the
                 # share on a 0-1 scale comparable with the single-head arm.
-                stats[grp]["wshare"][aname].append(float(wgt[i, :, ai].sum()) / Hh)
-                stats[grp]["nullshare"][aname].append(float(nw[i, :, ai].sum()) / Hh)
+                stats[grp]["wshare"][aname].append(float(wgt[i,:, ai].sum()) / Hh)
+                stats[grp]["nullshare"][aname].append(float(nw[i,:, ai].sum()) / Hh)
                 stats[grp]["clamped"][aname].append(
-                    _clamped_frac(rec["pos"][i, :, ai]))
+                    _clamped_frac(rec["pos"][i,:, ai]))
         if (n + 1) % 50 == 0:
             print(f"stats {n + 1}/{len(stat_idx)}")
 

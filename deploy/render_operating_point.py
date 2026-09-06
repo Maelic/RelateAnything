@@ -11,7 +11,7 @@ The only deliberate departure from a webcam run: images come from the PSG val
 split so GT is available, which lets each predicted edge be marked against the
 annotation. That marking is INFORMATIVE, NOT A VERDICT — PSG annotates a
 fraction of true relations, so an edge marked "not annotated" is frequently
-correct and simply unlabelled ([[relsgg-haystack-federated-precision]]). It is
+correct and simply unlabelled. It is
 drawn in a third, neutral style for exactly that reason; treating it as red
 would reproduce the error this project spent a day disproving.
 
@@ -35,14 +35,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 def _iou_matrix(a, b):
     if len(a) == 0 or len(b) == 0:
         return np.zeros((len(a), len(b)), np.float32)
-    x1 = np.maximum(a[:, None, 0], b[None, :, 0])
-    y1 = np.maximum(a[:, None, 1], b[None, :, 1])
-    x2 = np.minimum(a[:, None, 2], b[None, :, 2])
-    y2 = np.minimum(a[:, None, 3], b[None, :, 3])
+    x1 = np.maximum(a[:, None, 0], b[None,:, 0])
+    y1 = np.maximum(a[:, None, 1], b[None,:, 1])
+    x2 = np.minimum(a[:, None, 2], b[None,:, 2])
+    y2 = np.minimum(a[:, None, 3], b[None,:, 3])
     inter = np.clip(x2 - x1, 0, None) * np.clip(y2 - y1, 0, None)
     aa = (a[:, 2] - a[:, 0]) * (a[:, 3] - a[:, 1])
     bb = (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
-    return inter / (aa[:, None] + bb[None, :] - inter + 1e-9)
+    return inter / (aa[:, None] + bb[None,:] - inter + 1e-9)
 
 
 def main():
@@ -56,7 +56,7 @@ def main():
     # earlier render byte-for-byte. Point it elsewhere and the calibration must
     # come with it: tau and the Platt (a, b) are properties of a checkpoint's
     # logit_scale/logit_bias, which got no gradient under the ranking loss and
-    # are therefore an accident of init per model ([[relsgg-untrained-output-head]]).
+    # are therefore an accident of init per model.
     # Reusing one model's tau on another is the mistake this flag exists to make
     # visible, hence the is_calibrated assertion below.
     p.add_argument("--checkpoint", default=None,
@@ -76,7 +76,7 @@ def main():
     import matplotlib.pyplot as plt
     from matplotlib.patches import FancyArrowPatch, Rectangle
 
-    from data.relation_dataset import RelationDataset
+    from relsgg.data.dataset import RelationDataset
     from deploy.pipeline import ParallelScenePipeline, PipelineConfig
 
     tau = a.tau
@@ -117,7 +117,7 @@ def main():
         rels = tgt.get("relations")
         if rels is None or len(rels) == 0:
             continue
-        frame = (img.permute(1, 2, 0).numpy() * 255).astype(np.uint8)[:, :, ::-1].copy()
+        frame = (img.permute(1, 2, 0).numpy() * 255).astype(np.uint8)[:,:,::-1].copy()
         H, W = frame.shape[:2]
         res = pipe(frame, top_k=40, score_thr=float(tau))
         if not res.triplets:
@@ -153,7 +153,7 @@ def main():
 
         # ---- draw ----
         fig, ax = plt.subplots(figsize=(11, 7.2), dpi=120)
-        ax.imshow(frame[:, :, ::-1])
+        ax.imshow(frame[:,:,::-1])
         ax.axis("off")
         STYLE = {"correct": ("#2E7D32", "-"), "wrong_predicate": ("#EF6C00", "-"),
                  "not_annotated": ("#5C6BC0", (0, (4, 3))),

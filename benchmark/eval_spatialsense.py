@@ -9,10 +9,9 @@ We report three things, in increasing order of how much they assume:
   AUC / AP    threshold-free, the honest headline for a model that was never
               trained to make a binary decision on this vocabulary.
   acc@valid   accuracy at the single global threshold chosen on SpatialSense's
-              VALID split — their protocol, and legitimate for us because v43
-              trains on megasg_clean + vg_raw, neither of which contains any
-              SpatialSense image (verified 0/5,976 train, 0/1,126 valid,
-              0/1,920 test).
+              VALID split — their protocol, and available to us because the
+              training corpus contains no SpatialSense image (verified
+              0/5,976 train, 0/1,126 valid, 0/1,920 test).
   acc@oracle  accuracy at the best test threshold. An UPPER BOUND, never a
               headline — it peeks at test labels and is reported only to show
               how much of any gap is calibration versus ranking.
@@ -39,14 +38,13 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data import RelationDataset, collate_fn                      # noqa: E402
-from relsgg.train_engine import evaluate                          # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES                          # noqa: E402
+from relsgg.data import RelationDataset, collate_fn                      # noqa: E402
+from relsgg.training.engine import evaluate                          # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES                          # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt             # noqa: E402
-from benchmark.eval_zeroshot import ablate_head_layers           # noqa: E402
 # The metric code lives in one torch-free module so the OvSGTR interchange scorer
 # (benchmark/ovsgtr/eval_spatialsense_interchange.py) computes the identical numbers.
-from relsgg.spatialsense_metrics import (best_threshold,          # noqa: E402,F401
+from relsgg.eval.spatialsense import (best_threshold,          # noqa: E402,F401
                                          summarise, print_summary)
 
 
@@ -121,7 +119,7 @@ def score_split(model, pack, cells_json, device, a):
                         pin_memory=True)
     ck = model._ckpt_args
     ts = ck.get("text_student") or ""
-    from relsgg.text_student import encode_texts_student
+    from relsgg.text.student import encode_texts_student
     E = encode_texts_student(pred_names, ts, templates=TRAIN_TEMPLATES,
                              device=device)
     model.vocab_head.set_vocabulary_matrix(pred_names, E)
@@ -144,10 +142,6 @@ def main() -> None:
                    default="runs/datamix/spatialsense_test_cells.json")
     p.add_argument("--valid_cells",
                    default="runs/datamix/spatialsense_valid_cells.json")
-    p.add_argument("--ablate_head", default="",
-                   help="DIAGNOSTIC head-depth ablation, e.g. self:1 — see\n"
-                        "eval_zeroshot.ablate_head_layers. Pair with --out so a\n"
-                        "crippled model never overwrites spatialsense.json.")
     p.add_argument("--img_size", type=int, default=448)
     p.add_argument("--batch_size", type=int, default=32)
     p.add_argument("--num_workers", type=int, default=8)
@@ -162,7 +156,6 @@ def main() -> None:
     ckpt = torch.load(a.checkpoint, map_location="cpu", weights_only=False)
     print(f"checkpoint: {a.checkpoint} (epoch {ckpt.get('epoch')})")
     model = build_model_from_ckpt(ckpt, "ema").to(device).eval()
-    ablate_head_layers(model, a.ablate_head)
     ck_args = ckpt.get("args") or {}
     model._ckpt_args = ck_args if isinstance(ck_args, dict) else vars(ck_args)
 

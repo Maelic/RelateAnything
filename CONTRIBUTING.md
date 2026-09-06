@@ -37,30 +37,16 @@ loss computation only.
 rationale sections and the manifest's `resolution` fields record what did not
 work and why. Deleting them re-opens closed questions.
 
-## Adding a module under `data/`
+## Adding a configuration field
 
-`data/` is both a source package and a historical dataset directory, so
-`.gitignore` ignores everything under it and allowlists the source files
-explicitly:
-
-```gitignore
-/data/*
-!/data/__init__.py
-!/data/multipack.py
-...
-```
-
-**Every new module under `data/` needs its own allowlist line.** `multiscale.py`
-was once added without one, and every fresh clone failed at import because
-`multipack.py` imports it at module level.
-
-## Adding a config field
-
-1. Add it to `RelSGGConfig` with a default that reproduces existing runs.
-2. Document inline: what it does, why it exists, what it measured.
-3. Add the argparse flag in `train.py`.
-4. Confirm it round-trips through `relsgg/api.py:_cfg_from_args` — the drift
-   guard will fail loudly if it does not, which is the point.
+1. Add it to `RelSGGConfig` in [`relsgg/config.py`](relsgg/config.py). Its
+   default is what ships, so a new field's default must be the released
+   behaviour — `tests/test_config.py` checks that every released model differs
+   from `RelSGGConfig()` only in its backbone.
+2. Say inline what it does and why it exists.
+3. Add the argparse flag in `train.py` with the same name, and it round-trips
+   into and out of a checkpoint by itself: `config_from_args` reads every field
+   by its own name.
 
 ## Adding a dataset
 
@@ -68,9 +54,9 @@ See [data.md](docs/data.md). The leakage audit is not optional.
 
 ## Running experiments
 
-See [training.md](docs/training.md), especially the launch-hygiene rules. Use the
-validated 50K proxy pack for ablations — ~2.5 GPU-hours per arm instead of ~24,
-with 4/4 of the full-scale signatures reproduced.
+See [training.md](docs/training.md). Use the 50K proxy pack for ablations:
+about 2.5 GPU-hours per arm instead of 24, once you have checked that the
+effect you are chasing shows up on it at all.
 
 ## Style
 

@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 # Fresh-environment install for RelSGG.
 #
-#   ./install.sh                      # venv + editable install + HF cache warmup
-#   SKIP_HF_WARMUP=1 ./install.sh     # offline machine: skip the downloads
+#./install.sh                      # venv + editable install + HF cache warmup
+#   SKIP_HF_WARMUP=1./install.sh     # offline machine: skip the downloads
 #
-# The dino.txt teacher checkpoint (2.25 GB, gated by Meta) is ONLY needed to
-# retrain the distilled text student or to run v33-era checkpoints. Shipping
-# models (v34+) embed text with the small distilled student that comes with
-# each release — so its absence is a note here, never a failure.
+# The dino.txt teacher checkpoint (2.25 GB, gated by Meta) is needed only to
+# retrain the distilled text student. Released models ship their own student,
+# so its absence is a note here, never a failure.
 set -euo pipefail
 
 PYTHON_BIN=${PYTHON_BIN:-python3}
@@ -25,7 +24,7 @@ if [[ ! -d "$VENV_DIR" ]]; then
 fi
 source "$VENV_DIR/bin/activate"
 python -m pip install --upgrade pip setuptools wheel
-python -m pip install -e .
+python -m pip install -e.
 
 mkdir -p "$HF_HOME_DIR"
 export HF_HOME="$HF_HOME_DIR"
@@ -49,7 +48,7 @@ fi
 
 if [[ ! -f "$CHECKPOINT" ]]; then
     echo "[note] dino.txt teacher not present ($CHECKPOINT)."
-    echo "       Only needed to retrain the text student or run v33-era checkpoints."
+    echo "       Only needed to retrain the text student."
 fi
 
 cat <<EOF

@@ -58,13 +58,9 @@ class ThresholdConfig:
     """Weight on the pair-existence LOGIT: sigmoid(a*(pred + w*rel) + b).
     1.0 is the trained fusion, 0.0 drops relatedness, >1 sharpens it.
 
-    This used to be an EXPONENT on the pair probability, i.e. the score was
-    sigmoid(pred) * sigmoid(rel)**w. That is a different score function with a
-    different cross-pair ranking, and it disagreed with relsgg/evaluator.py —
-    so the product never ran the formula we benchmarked. It also looks BETTER
-    on PSG/VG150 and worse on adjudicated negatives, because multiplying
-    up-weights relatedness and relatedness predicts annotation propensity
-    rather than truth. See relsgg/scoring.py."""
+    The weight is on the logit, not an exponent on the probability: the two
+    rank pairs differently, and only this one matches what the evaluator
+    scores. See relsgg/scoring.py."""
 
     calib_a: float = 1.0
     calib_b: float = 0.0
@@ -110,10 +106,9 @@ def decode(
 ) -> List[Triplet]:
     """Raw graph outputs -> ranked triplets, under a fully dynamic threshold.
 
-    Takes LOGITS (v2 export). The graph used to emit sigmoided scores; the
-    additive contract cannot be recovered from those without an inverse, and
-    the inverse is where the precision has already gone. deploy/runtime.py
-    converts an old artifact and warns.
+    Takes logits, not probabilities: the score contract cannot be recovered
+    from two separate sigmoids, and the inverse is where the precision has
+    already gone.
     """
     pred_logits = np.asarray(pred_logits, np.float32)
     if pred_logits.ndim == 3:                      # drop batch
@@ -151,7 +146,7 @@ def decode(
 
     # --- the dynamic part: a [V] threshold vector compared elementwise -----
     thr = cfg.thresholds_vector(predicates)                          # [V]
-    keep = (score >= thr[None, :]) & valid_mask[:, None]
+    keep = (score >= thr[None,:]) & valid_mask[:, None]
     keep &= (in_range & (sub_idx != obj_idx))[:, None]
 
     if cfg.max_per_pair == 1:
@@ -178,7 +173,7 @@ def decode(
             object_box=None if boxes_xyxy is None else boxes_xyxy[oi],
             subject_label=None if box_labels is None else box_labels[si],
             object_label=None if box_labels is None else box_labels[oi],
-        ))
+))
     return out
 
 
@@ -217,7 +212,7 @@ def decode_decomposed(
             continue
         # -inf in LOGIT space, which the contract maps to score 0 for any
         # (a > 0, b). Masking a probability with -inf would not survive it.
-        masked = np.where(sel[None, :], pred_logits, -np.inf)
+        masked = np.where(sel[None,:], pred_logits, -np.inf)
         out[tag] = decode(masked, pair_logits, sub_idx, obj_idx, valid_mask,
                           predicates, cfg, boxes_xyxy=boxes_xyxy,
                           box_scores=box_scores, box_labels=box_labels)

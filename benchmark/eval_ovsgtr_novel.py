@@ -31,7 +31,7 @@ Usage (offline compute node, detections already cached by detect_boxes.py):
     python benchmark/eval_ovsgtr_novel.py \
         --checkpoint runs/train/full_v33a_50ep_v3/checkpoint_best.pth \
         --dataset_root runs/packed/vg150 \
-        --det_weights .../BACKBONES/yolo12m_vg150.pt \
+        --det_weights.../BACKBONES/yolo12m_vg150.pt \
         --det runs/detect/yolo12m_vg150_val.npz
 """
 
@@ -48,10 +48,10 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data import RelationDataset, collate_fn                      # noqa: E402
-from relsgg.evaluator import SGClsEvaluator                       # noqa: E402
-from relsgg.train_engine import evaluate                          # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES  # noqa: E402
+from relsgg.data import RelationDataset, collate_fn                      # noqa: E402
+from relsgg.eval.evaluator import SGClsEvaluator                       # noqa: E402
+from relsgg.training.engine import evaluate                          # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES  # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt  # noqa: E402
 from benchmark.eval_zeroshot_detbox import DetBoxDataset, collate, det_class_names  # noqa: E402
 
@@ -173,7 +173,7 @@ def main() -> None:
                    help="VG150 split. OvSGTR reports TEST; default is test here.")
     p.add_argument("--text_student", default=None,
                    help="Student text-encoder ckpt. Defaults to whatever the "
-                        "checkpoint was trained with (required for v34+ heads).")
+                        "checkpoint names.")
     p.add_argument("--no_graph_constraint", action="store_true",
                    help="Emit every (pair, predicate) cell instead of one predicate "
                         "per pair. OFF by default: OvSGTR's published R@K IS graph-"
@@ -188,8 +188,6 @@ def main() -> None:
                         "reports (synonym-trained head: softmax over a synonym-sharing "
                         "vocabulary deflates each synonym's probability)")
     p.add_argument("--det_score_mode", default="sigmoid", choices=["sigmoid", "softmax"])
-    p.add_argument("--dinotxt_weights",
-                   default="checkpoints/dinov3_vitl16_dinotxt_vision_head_and_text_encoder-a442d8f5.pth")
     p.add_argument("--iou_thr", type=float, default=0.5)
     p.add_argument("--det_conf", type=float, default=0.10)
     p.add_argument("--det_conf_sweep", default="",
@@ -229,11 +227,8 @@ def main() -> None:
 
     # reparameterize to ALL 50 VG150 predicates (base+novel) — identical to
     # OvSGTR's inference vocabulary in the OvR setting.
-    # Match the text encoder to the one the head was trained against. v34+ heads
-    # live in the 512-d student space; encoding their vocabulary with the 2048-d
-    # dino.txt teacher raises a dim error at best and silently scores a teacher
-    # vocabulary against a student-trained head at worst. Same guard as
-    # eval_zeroshot_detbox.py -- without it every number below is meaningless.
+    # The vocabulary has to be encoded by the encoder the head was trained
+    # against: a head scored against a different text space measures nothing.
     ck_args = ckpt.get("args") or {}
     if not isinstance(ck_args, dict):
         ck_args = vars(ck_args)
@@ -242,15 +237,16 @@ def main() -> None:
     print(f"reparameterizing vocab head to {len(pred_names)} VG150 predicates")
     if text_student:
         print(f"  vocabulary encoder: STUDENT ({text_student})")
-        from relsgg.text_student import encode_texts_student
+        from relsgg.text.student import encode_texts_student
         E = encode_texts_student(pred_names, text_student,
                                  templates=TRAIN_TEMPLATES, device=device)
         model.vocab_head.set_vocabulary_matrix(pred_names, E)
     else:
         print("  vocabulary encoder: dino.txt TEACHER")
-        model.vocab_head.encode_vocabulary_dinotxt(
-            pred_names, dinotxt_weights=args.dinotxt_weights,
-            templates=TRAIN_TEMPLATES)
+        raise SystemExit(
+            "this checkpoint names no text student. The vocabulary has to be "
+            "encoded by the encoder the head was trained against; pass "
+            "--text_student, or use a released model, which ships its own.")
     model.reparameterize()
 
     if args.geo_budget > 0:

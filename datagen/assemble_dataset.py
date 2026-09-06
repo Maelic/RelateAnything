@@ -125,7 +125,7 @@ def main():
     # Scan every run dir, then GROUP by split — multiple run dirs can be disjoint
     # chunks of the same split (e.g. incremental --skip/--limit batches), and their
     # coverage/stats must accumulate rather than the later one overwriting the first.
-    by_split: dict = defaultdict(list)     # split -> [(run_dir, summaries, shard_paths, last_seen), ...]
+    by_split: dict = defaultdict(list)     # split -> [(run_dir, summaries, shard_paths, last_seen),...]
     for rd in args.runs:
         run_dir = Path(rd) if Path(rd).is_absolute() else REPO_ROOT / rd
         print(f"Scanning {run_dir} …")

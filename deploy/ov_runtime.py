@@ -24,9 +24,12 @@ Device notes:
 from __future__ import annotations
 
 import os
+import sys
 from typing import List, Optional, Sequence
 
 import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from deploy.runtime import OnnxDetector, OnnxRelationHead
 
@@ -64,7 +67,7 @@ def _compile(path: str, device: str, threads: int):
 
 class OVDetector(OnnxDetector):
     """YOLO-World v2 on OpenVINO. Same sidecar/meta conventions as the ONNX
-    class — the IR's .xml sits next to a .json copied at conversion time."""
+    class — the IR's.xml sits next to a.json copied at conversion time."""
 
     def __init__(self, xml_path: str, device: str = "CPU", threads: int = 0,
                  providers: Optional[Sequence[str]] = None):

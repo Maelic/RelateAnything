@@ -207,10 +207,9 @@ model.set_vocabulary(["about to collide with", "reflected in"])   # any strings,
 graphs = model.predict(image, boxes_xyxy, decompose=True)          # {{"spatial": [...], "semantic": [...]}}
 ```
 
-`model.pth` embeds the backbone config, so nothing else is downloaded: no
-gated DINOv3 login is needed to run it. `text_student.pt` (the distilled
-predicate text encoder, with its CLIP tokenizer files) sits next to it and is
-found automatically.
+`from_pretrained` downloads `model.pth` and the text encoder beside it. The
+weights embed the backbone configuration, so no gated DINOv3 login is needed
+to run them.
 
 Files: `model.pth` (torch, EMA weights), `text_student.pt`, {onnx_note}`README.md`.
 

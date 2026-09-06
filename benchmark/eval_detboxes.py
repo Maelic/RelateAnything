@@ -33,12 +33,12 @@ from torch.utils.data import DataLoader, Dataset
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data import RelationDataset, collate_fn                    # noqa: E402
+from relsgg.data import RelationDataset, collate_fn                    # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt       # noqa: E402
-from relsgg.evaluator import (SGClsEvaluator, SoftSGClsEvaluator,  # noqa: E402
+from relsgg.eval.evaluator import (SGClsEvaluator, SoftSGClsEvaluator,  # noqa: E402
                               build_match_matrix)
-from relsgg.loss_synonym import PredicateOntology               # noqa: E402
-from relsgg.train_engine import evaluate                        # noqa: E402
+from relsgg.training.losses import PredicateOntology               # noqa: E402
+from relsgg.training.engine import evaluate                        # noqa: E402
 
 
 def cxcywh_to_xyxy(b):
@@ -55,12 +55,12 @@ def pairwise_iou(a, b):
     """a [G,4] xyxy, b [D,4] xyxy -> [G,D]."""
     if len(a) == 0 or len(b) == 0:
         return np.zeros((len(a), len(b)), np.float32)
-    tl = np.maximum(a[:, None, :2], b[None, :, :2])
-    br = np.minimum(a[:, None, 2:], b[None, :, 2:])
+    tl = np.maximum(a[:, None,:2], b[None,:,:2])
+    br = np.minimum(a[:, None, 2:], b[None,:, 2:])
     wh = np.clip(br - tl, 0, None)
     inter = wh[..., 0] * wh[..., 1]
     area_a = ((a[:, 2] - a[:, 0]) * (a[:, 3] - a[:, 1]))[:, None]
-    area_b = ((b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1]))[None, :]
+    area_b = ((b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1]))[None,:]
     return inter / np.clip(area_a + area_b - inter, 1e-9, None)
 
 
@@ -73,7 +73,7 @@ def greedy_match(iou, thr):
         if iou[g, d] < thr:
             break
         match[g] = d
-        iou[g, :] = -1
+        iou[g,:] = -1
         iou[:, d] = -1
     return match
 
@@ -125,7 +125,7 @@ def main():
                    default="runs/packed/megasg/text_space/pred_embeds_dinotxt_photo.npz")
     p.add_argument("--tau_eval", type=float, default=0.9311)
     p.add_argument("--weights", default="ema", choices=["ema", "raw"])
-    p.add_argument("--det", required=True, help="detections .npz from detect_boxes.py")
+    p.add_argument("--det", required=True, help="detections.npz from detect_boxes.py")
     p.add_argument("--det_name", default="det")
     p.add_argument("--iou_thr", type=float, default=0.5)
     p.add_argument("--det_conf", type=float, default=0.10,

@@ -112,7 +112,7 @@ def gather(m: dict, weights_dir: str | None, torch_only: bool) -> dict:
         if any(fnmatch.fnmatch(k, pat) for pat in EXCLUDE_PATTERNS):
             raise SystemExit(f"[upload] {mid}: {k} matches an excluded pattern, refusing.")
         if k.endswith(".pt") and k not in ALLOWED_PT:
-            raise SystemExit(f"[upload] {mid}: {k} is a .pt file that is not the text student, refusing.")
+            raise SystemExit(f"[upload] {mid}: {k} is a.pt file that is not the text student, refusing.")
     return files
 
 

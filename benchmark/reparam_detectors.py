@@ -7,7 +7,7 @@ load without any text encoder:
     checkpoints/detectors/yolov8x-worldv2_megasg497.pt   (YOLO-World v2)
     checkpoints/detectors/yoloe-11l-megasg497.pt         (YOLOE-11L)
 
-Usage:  cd checkpoints/detectors && ../../.venv/bin/python ../../training/reparam_detectors.py
+Usage:  cd checkpoints/detectors &&../../.venv/bin/python../../training/reparam_detectors.py
 (cwd matters: ultralytics drops CLIP/MobileCLIP weights into the cwd)
 """
 import json

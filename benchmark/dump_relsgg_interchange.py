@@ -25,7 +25,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO)
 
 from relsgg.checkpoint import build_model_from_ckpt           # noqa: E402
@@ -79,7 +79,7 @@ def main():
     ts = ck_args.get("text_student") or ""
     if not ts:
         raise SystemExit("checkpoint not trained in student text space")
-    from relsgg.text_student import encode_texts_student
+    from relsgg.text.student import encode_texts_student
 
     if a.vocab == "pack":
         pred_names = list(meta["predicates"])
@@ -112,7 +112,7 @@ def main():
     d_conf, d_cls = det["conf"][keep], det["cls"][keep].astype(np.int64)
     order = np.argsort(d_idx, kind="stable")
     d_idx, d_xyxy, d_conf, d_cls = d_idx[order], d_xyxy[order], d_conf[order], d_cls[order]
-    # ...and labels must land in PACK category space, so a renderer can name them.
+    #...and labels must land in PACK category space, so a renderer can name them.
     remap = np.array([class_remap.get(n, -1) for n in d_names], dtype=np.int64)
     d_cls = remap[d_cls]
     starts = np.searchsorted(d_idx, np.arange(len(ds) + 1))
@@ -203,7 +203,7 @@ def main():
             "topk": a.topk if a.emit == "topk" else None,
             "n_images": len(out_index),
         })]),
-    )
+)
     print(f"wrote {a.out}  images={len(out_index)} pairs={pair_ptr[-1]}")
 
 

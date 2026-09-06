@@ -366,7 +366,7 @@ def run(args):
             # `all_node_pairs` indexes the surviving nodes, and downstream scoring
             # assumes node i == supplied box i. That identity is NOT guaranteed: the
             # postprocessor runs batched_nms at nms_iou_threshold=0.5 (groundingdino.py
-            # :774) which can drop overlapping same-class boxes and reorder the rest
+            #:774) which can drop overlapping same-class boxes and reorder the rest
             # (all fake-predcls scores are tied at 1.0). Verify per image rather than
             # trusting a spot check, since a silent permutation would corrupt every
             # triplet without changing any count.
@@ -428,7 +428,7 @@ def run(args):
             "ovsgtr_root": str(OVSGTR_ROOT),
             "shard": args.shard, "num_shards": args.num_shards, "pack_n": n,
         })]),
-    )
+)
     print(f"wrote {out}  images={n} empty={n_empty} pairs={pair_ptr[-1]} "
           f"({time.time()-t0:.0f}s)")
 

@@ -105,7 +105,7 @@ def load_npz(path):
     d = {k: z[k] for k in z.files}
     d["_meta"] = m = json.loads(str(d["meta"][0]))
     # Records written before `label_base` was stamped: OvSGTR's postprocessor is
-    # 1-based (index 0 = __background__). Backfill rather than rewrite the .npz.
+    # 1-based (index 0 = __background__). Backfill rather than rewrite the.npz.
     if "label_base" not in m:
         m["label_base"] = 1 if m.get("model") == "OvSGTR" else 0
     return d

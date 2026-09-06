@@ -6,7 +6,7 @@ IndoorVG: those packs annotate a fraction of the true relations, so a
 prediction absent from GT is "unannotated", not "wrong". Measured on Haystack's
 explicitly adjudicated negatives, the same checkpoint scores AP 0.5602 where
 the PSG convention scores 0.0171 — a 33x gap that is entirely annotation
-([[relsgg-haystack-federated-precision]]). So annotated precision is a LOWER
+. So annotated precision is a LOWER
 BOUND and an F1 built on it is pessimistic by an unknown factor.
 
 Recall does NOT have this problem: a relation someone bothered to annotate is
@@ -56,14 +56,13 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data.relation_dataset import RelationDataset, collate_fn  # noqa: E402
-from relsgg.geometry import RelGeomEncoder  # noqa: E402
+from relsgg.data.dataset import RelationDataset, collate_fn  # noqa: E402
+from relsgg.model.geometry import RelGeomEncoder  # noqa: E402
 from relsgg.scoring import ScoreContract  # noqa: E402
-from relsgg.text_student import encode_texts_student  # noqa: E402
+from relsgg.text.student import encode_texts_student  # noqa: E402
 from benchmark.eval_deploy_metrics import auc, pr_curve, reliability  # noqa: E402
-from relsgg.api import TRAIN_TEMPLATES  # noqa: E402
+from relsgg.vocabulary import TRAIN_TEMPLATES  # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt  # noqa: E402
-from relsgg.checkpoint import pad_geo_checkpoint as _pad_geo_checkpoint  # noqa: E402
 
 
 @torch.no_grad()
@@ -202,7 +201,6 @@ def main():
 
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ck = torch.load(a.checkpoint, map_location="cpu", weights_only=False)
-    _pad_geo_checkpoint(ck, RelGeomEncoder.NUM_GEO)
     model = build_model_from_ckpt(ck, "ema").to(dev).eval()
     # DEPLOYMENT configuration, not the eval defaults.
     model.sampler.geo_budget = a.geo_budget

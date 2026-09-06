@@ -51,7 +51,7 @@ Each axis is load-bearing, and each is individually gameable:
 - **A6** is the only axis where a wrong answer is *provably* wrong — annotators
   wrote triples a model would get wrong, and the split is exactly balanced.
 
-A6 earned its place empirically: **every recipe change from v41 to v43 moved A1
+A6 earned its place empirically: **a sequence of recipe changes moved A1
 by +40–47 % and A6 by nothing.** Recall-style gains are vocabulary and ranking
 gains. Without A6 the suite could not tell those apart from spatial
 understanding, and we would have claimed the latter.
@@ -82,7 +82,7 @@ python benchmark/eval_zeroshot.py \
 Open-vocabulary mode — the model is never told the benchmark's label set:
 
 ```bash
-python benchmark/eval_zeroshot.py ... --open_vocab --tau_eval 0.72
+python benchmark/eval_zeroshot.py... --open_vocab --tau_eval 0.72
 ```
 
 Other entry points:
@@ -131,7 +131,8 @@ Ground-truth boxes are a laboratory condition. With a real detector, retention
 is **53–63 % on PSG and 29–32 % on IndoorVG** of the GT-box number.
 
 The important finding is that this does **not** flatten the family: model
-improvements from v35 to v43 survive detector boxes at +42–105 %. But retention
+improvements measured with ground-truth boxes survive detector boxes at
++42–105 %. But retention
 itself slid (91 % → 78 %) as models improved, so a gain measured on GT boxes
 overstates the deployed gain. Report both.
 

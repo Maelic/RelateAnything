@@ -24,7 +24,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from relsgg.haystack_eval import HaystackEvaluator  # noqa: E402
+from relsgg.eval.haystack import HaystackEvaluator  # noqa: E402
 
 EPS = 1e-6
 
@@ -88,7 +88,7 @@ def main():
             a, b = int(pair_ptr[i]), int(pair_ptr[i + 1])
             _iid, _w, _h, _b0, nb, r0, nr = (int(x) for x in img_meta[row])
             gt = np.asarray(rels_all[r0:r0 + nr], dtype=np.int64)
-            gt = gt[(gt[:, 0] < nb) & (gt[:, 1] < nb)][:, :3] if gt.size else \
+            gt = gt[(gt[:, 0] < nb) & (gt[:, 1] < nb)][:,:3] if gt.size else \
                 np.zeros((0, 3), np.int64)
             prob = np.delete(d["rel_scores"][a:b].astype(np.float32), bg, axis=1)
             items.append((row, d["pairs"][a:b], prob, gt))
@@ -107,11 +107,11 @@ def main():
             if k:
                 # HaystackEvaluator re-applies the activation, so invert to logits.
                 pr = torch.from_numpy(np.clip(prob, EPS, 1 - EPS))
-                logits[j, :k] = torch.log(pr / (1 - pr)) if args.score_mode == "sigmoid" \
+                logits[j,:k] = torch.log(pr / (1 - pr)) if args.score_mode == "sigmoid" \
                     else torch.log(pr)
-                sub[j, :k] = torch.from_numpy(pairs[:, 0].astype(np.int64))
-                obj[j, :k] = torch.from_numpy(pairs[:, 1].astype(np.int64))
-                valid[j, :k] = True
+                sub[j,:k] = torch.from_numpy(pairs[:, 0].astype(np.int64))
+                obj[j,:k] = torch.from_numpy(pairs[:, 1].astype(np.int64))
+                valid[j,:k] = True
             targets.append({"index": row, "relations": torch.from_numpy(gt)})
 
         ev.update({"logits": logits, "sub_idx": sub, "obj_idx": obj,
