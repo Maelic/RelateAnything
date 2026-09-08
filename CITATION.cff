@@ -6,7 +6,7 @@ authors:
   - family-names: Neau
     given-names: Maëlic
 repository-code: "https://github.com/Maelic/RelateAnything"
-url: "https://maelic.github.io/Relate-Anything-Project"
+url: "https://maelic.github.io/RelateAnythingProject"
 license: Apache-2.0
 keywords:
   - scene graph generation

@@ -5,16 +5,16 @@
 **Real-time open-vocabulary relation prediction from any boxes or masks.**<br>
 53 M parameters · 20 ms per frame on an A40 · no object labels · the predicate vocabulary is an input, not a weight.
 
-[![paper](https://img.shields.io/badge/paper-technical%20report-b31b1b.svg)](https://maelic.github.io/Relate-Anything-Project)
+[![paper](https://img.shields.io/badge/paper-technical%20report-b31b1b.svg)](https://maelic.github.io/RelateAnythingProject)
 [![models](https://img.shields.io/badge/%F0%9F%A4%97%20models-relsgg--*-yellow.svg)](https://huggingface.co/maelic)
 [![dataset](https://img.shields.io/badge/%F0%9F%A4%97%20dataset-RA--4M-yellow.svg)](https://huggingface.co/datasets/maelic/RA-4M)
-[![demo](https://img.shields.io/badge/demo-in%20your%20browser-brightgreen.svg)](https://maelic.github.io/RelateAnything_demo/)
+[![demo](https://img.shields.io/badge/demo-in%20your%20browser-brightgreen.svg)](https://maelic.github.io/RelateAnythingProject/demo/)
 [![ci](https://github.com/Maelic/RelateAnything/actions/workflows/ci.yml/badge.svg)](https://github.com/Maelic/RelateAnything/actions/workflows/ci.yml)
 [![python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](pyproject.toml)
 [![license](https://img.shields.io/badge/code-Apache--2.0-blue.svg)](LICENSE)
 
-[Project page](https://maelic.github.io/Relate-Anything-Project) ·
-[Browser demo](https://maelic.github.io/RelateAnything_demo/) ·
+[Project page](https://maelic.github.io/RelateAnythingProject) ·
+[Browser demo](https://maelic.github.io/RelateAnythingProject/demo/) ·
 [Models](https://huggingface.co/maelic) ·
 [RA-4M](https://huggingface.co/datasets/maelic/RA-4M) ·
 [OV-SGG-Bench](https://huggingface.co/datasets/maelic/OV-SGG-Bench) ·
@@ -51,7 +51,7 @@ Three properties make that work, and they are the point of the project:
   layout relation and an interaction at the same time.
 
 The model runs at 20 ms per frame end to end on an A40 and as one ONNX graph on a
-laptop CPU or [in the browser](https://maelic.github.io/RelateAnything_demo/).
+laptop CPU or [in the browser](https://maelic.github.io/RelateAnythingProject/demo/).
 
 ## Install
 
@@ -94,31 +94,87 @@ the `-zeroshot` models use the same recipe with no HICO-DET, which is the
 paper's zero-shot setting. Every number is generated from measured evaluation
 files by [`release/make_model_cards.py`](release/make_model_cards.py).
 
-| model | backbone | params | A40, batch 1 | img/s, batch 32 | OVS-F1 | OVS-mR |
+| model | backbone | params | A40, batch 1 | img/s, batch 32 | OVS-F1 | HICO F1 |
 |---|---|---|---|---|---|---|
-| [`relsgg-vits16`](https://huggingface.co/maelic/relsgg-vits16) | DINOv3 ViT-S/16 | 44.7 M | 26.0 ms | 201 | 0.393 | 0.350 |
-| [`relsgg-vits16plus`](https://huggingface.co/maelic/relsgg-vits16plus) ⭐ | DINOv3 ViT-S/16+ | 51.8 M | 26.8 ms | 188 | 0.411 | 0.369 |
-| [`relsgg-vitb16`](https://huggingface.co/maelic/relsgg-vitb16) | DINOv3 ViT-B/16 | 112.3 M | 25.9 ms | 130 | 0.417 | 0.374 |
-| [`relsgg-vits16-zeroshot`](https://huggingface.co/maelic/relsgg-vits16-zeroshot) | DINOv3 ViT-S/16 | 44.7 M | 26.0 ms | 201 | 0.376 | |
-| [`relsgg-vits16plus-zeroshot`](https://huggingface.co/maelic/relsgg-vits16plus-zeroshot) | DINOv3 ViT-S/16+ | 51.8 M | 26.8 ms | 188 | 0.386 | |
-| [`relsgg-vitb16-zeroshot`](https://huggingface.co/maelic/relsgg-vitb16-zeroshot) | DINOv3 ViT-B/16 | 112.3 M | 25.9 ms | 130 | 0.395 | |
+| [`relsgg-vits16`](https://huggingface.co/maelic/relsgg-vits16) | DINOv3 ViT-S/16 | 46.1 M | 19.5 ms | 201 | 34.6 | 36.4 |
+| [`relsgg-vits16plus`](https://huggingface.co/maelic/relsgg-vits16plus) ⭐ | DINOv3 ViT-S/16+ | 53.2 M | 20.0 ms | 188 | 37.2 | 37.1 |
+| [`relsgg-vitb16`](https://huggingface.co/maelic/relsgg-vitb16) | DINOv3 ViT-B/16 | 113.8 M | 19.3 ms | 130 | 37.2 | 37.5 |
+| [`relsgg-vits16-zeroshot`](https://huggingface.co/maelic/relsgg-vits16-zeroshot) | DINOv3 ViT-S/16 | 46.1 M | 19.5 ms | 201 | 34.7 | 18.5 |
+| [`relsgg-vits16plus-zeroshot`](https://huggingface.co/maelic/relsgg-vits16plus-zeroshot) | DINOv3 ViT-S/16+ | 53.2 M | 20.0 ms | 188 | 34.2 | 18.7 |
+| [`relsgg-vitb16-zeroshot`](https://huggingface.co/maelic/relsgg-vitb16-zeroshot) | DINOv3 ViT-B/16 | 113.8 M | 19.3 ms | 130 | 35.3 | 20.0 |
 
-⭐ `relsgg-vits16plus` is the recommended default: it reaches the score of the
-ViT-B model at half the parameters. Parameter counts are those of the exported
-graph (the paper's 53 M counts the training-time model). At batch size 1 the
-family is dispatch-bound, so latency is flat across sizes; pick by throughput.
-OVS is the composite of [OV-SGG-Bench](#ov-sgg-bench). Each model card lists
-the full per-benchmark numbers, deployment thresholds, and provenance.
+⭐ `relsgg-vits16plus` is the recommended default: it matches the ViT-B model's
+composite at half the parameters, and the advantage ViT-B holds on individual
+axes does not survive the deployment operating point. Latency is the relation
+head alone, bf16, over the full 19,103-string vocabulary; at batch size 1 the
+family is dispatch-bound, so it is flat across a 2.5× range of FLOPs and the
+argument for the small tower is throughput. The OVS-F1 column is the
+chance-corrected harmonic mean over **A1, A2, A4 and A6** — the axis set used
+for the model ladder, since A5 costs one judge run per arm. It is therefore not
+the five-axis composite of the [headline table](#results): that one adds A5 and
+reads 40.1 for the released tower against 11.8 for the baseline. A composite is
+comparable only between models scored on the same axis set. Each model card
+lists the full per-benchmark numbers, deployment thresholds and provenance.
+
+## Results
+
+Every number below is **cross-dataset**: the tower is evaluated on benchmarks
+that contributed no training image. The one exception is the HICO-DET row of
+the released model, which takes a 5 % relation share of that training split and
+is reported beside the zero-shot tower. The baseline is
+[OvSGTR](https://github.com/gpt4vision/OvSGTR) pre-trained on MegaSG — the
+corpus whose images we re-annotate, which makes it the closest control for
+supervision quality — run through **our** evaluator on the same images and the
+same vocabulary. It receives ground-truth object labels throughout; we never do.
+
+**The six axes** (`relsgg-vits16plus`, one evaluator for both models):
+
+| axis | measure | OvSGTR | RelateAnything |
+|---|---|---|---|
+| A1 transfer | VG150 F1@50 (mR@50), overlap 53 % | 16.5 (10.4) | **36.9 (28.2)** |
+| | PSG F1@50 (mR@50), overlap 39 % | 13.5 (8.8) | **34.7 (30.6)** |
+| | IndoorVG F1@50 (mR@50), overlap 49 % | 20.2 (12.8) | **37.8 (29.5)** |
+| | HICO-DET F1@50 (mR@50), zero-shot tower | 7.9 (4.5) | **18.7 (12.7)** |
+| A2 precision | Haystack mean fAP (rare fAP) | 52.1 (44.6) | **72.6 (70.7)** |
+| A3 open vocabulary | mR@50 over 19,103 strings, VG150 / PSG / IndoorVG | not runnable | **34.5 / 28.3 / 34.6** |
+| A4 deployment | PSG on a shared detector, wR@50 (mR@50) | 4.0 (6.2) | **20.0 (20.5)** |
+| A5 graph quality | true bits per image (share of the annotation's) | 13.4 (0.48) | **18.6 (0.67)** |
+| A6 spatial | SpatialSense macro AUC (pooled) | 59.1 (61.7) | **69.0 (67.5)** |
+| **OVS composite** | harmonic mean of the chance-corrected axes | **11.8** | **40.1** |
+
+A3 is reported but excluded from the composite: it cannot be run on the
+baseline, whose vocabulary arrives as one caption capped at about 150 strings.
+A5 credits each relation a vision-language judge accepts with its surprisal
+under the PSG training marginal, so a graph of five hundred `on` edges scores
+nothing; the same judge returns two verdicts that favour the baseline, and both
+are reported in the paper.
+
+**End-to-end cost**, batch 1, median latency, eager PyTorch for both, whole
+system including the detector:
+
+| system | params | boxes/img | A40 | A100 | H100 | FPS (A40) |
+|---|---|---|---|---|---|---|
+| OvSGTR Swin-T | 177 M | 98 | 194.0 ms | 179.9 ms | 128.1 ms | 5.1 |
+| OvSGTR Swin-B | 237 M | 98 | 228.5 ms | 195.1 ms | 134.3 ms | 4.3 |
+| **RelateAnything + YOLO-World** | 231 M | 20 | **25.0 ms** | 35.0 ms | 25.6 ms | **40.0** |
+
+7.8× end to end on an A40 while carrying more parameters than the Swin-T
+baseline, because batch-1 cost is dispatch-bound rather than FLOP-bound. With
+`torch.compile` the released tower reaches 20 ms per frame (49 FPS) on an A40;
+on eight CPU threads through OpenVINO it reaches 7 FPS.
 
 **Transfer on four test sets the model never trained on**
 (`relsgg-vits16plus`, ground-truth boxes, graph-constrained):
 
-| benchmark | R@50 | mR@50 | F1@50 |
-|---|---|---|---|
-| VG150 | 0.533 | 0.282 | 0.369 |
-| PSG | 0.401 | 0.306 | 0.347 |
-| IndoorVG | 0.527 | 0.295 | 0.378 |
-| HICO-DET | 0.452 | 0.314 | 0.371 |
+| benchmark | R@50 | mR@50 | F1@50 | rare |
+|---|---|---|---|---|
+| VG150 | 0.533 | 0.282 | 0.369 | 0.427 |
+| PSG | 0.401 | 0.306 | 0.347 | 0.239 |
+| IndoorVG | 0.527 | 0.295 | 0.378 | 0.216 |
+| HICO-DET | 0.452 | 0.314 | 0.371 | 0.239 |
+
+Mean recall is 2.3–3.5× the baseline's and rare-bucket recall 5–21×, the ratio
+being undefined on VG150 where the baseline scores exactly 0.0.
 
 **Open vocabulary, no reparameterization**: all 19,103 training predicates stay
 deployed and the model is never told the benchmark's label set; a prediction
@@ -137,12 +193,37 @@ train on. VG150's test split uses the same 50 predicate strings as its training
 split, so a VG150-trained model faces no vocabulary novelty at all, and micro
 recall tracks that overlap and nothing else. A counting baseline over
 ground-truth object-category pairs, using no pixels, beats a trained model on
-the most reported metric while losing to it by a wide margin per predicate.
+the most reported metric while losing to it by a wide margin per predicate:
 
-| training corpus | distinct predicates | overlap with VG150 | with PSG | with IndoorVG |
-|---|---|---|---|---|
-| VG150 train (typical baseline) | 50 | **100.0 %** | 57.3 % | **95.7 %** |
-| RA-4M (ours) | 9,848 | 49.1 % | 35.3 % | 45.4 % |
+| benchmark | edges | freq, micro | ours, micro | freq, macro | ours, macro |
+|---|---|---|---|---|---|
+| VG150 | 152,535 | **68.4** | 57.7 (−15.6 %) | 18.9 | **35.1** (+85.7 %) |
+| PSG | 13,623 | **50.9** | 43.3 (−15.0 %) | 20.7 | **31.6** (+52.4 %) |
+| IndoorVG | 29,175 | **67.9** | 57.3 (−15.5 %) | 29.8 | **38.4** (+28.9 %) |
+
+The lookup table receives oracle object categories we never see, and the join
+finds our model correct where it is wrong on 6.9–12.8 % of edges, so this is
+not an argument that pixels are unnecessary. It is the narrower one: a metric a
+pixel-free table can win does not measure relation understanding, and it is the
+metric that orders leaderboards.
+
+The second prior is the vocabulary a benchmark shares with the corpus a model
+trained on — *annotation-style overlap*, the share of a training source's
+relation instances whose predicate string appears verbatim in the benchmark's
+vocabulary:
+
+| training corpus | distinct predicates | VG150 | PSG | IndoorVG | Haystack |
+|---|---|---|---|---|---|
+| VG150 train (typical baseline) | 50 | **100.0 %** | 57.3 % | **95.7 %** | 57.3 % |
+| RA-4M (ours) | 9,848 | 49.1 % | 35.3 % | 45.4 % | 35.3 % |
+| raw Visual Genome, leakage-filtered | 17,352 | 74.6 % | 47.9 % | 71.4 % | 47.9 % |
+| the released mixture | 19,103 | 53.4 % | 38.7 % | 49.5 % | 38.7 % |
+| the zero-shot mixture | 19,103 | 53.0 % | 37.2 % | 49.4 % | 37.2 % |
+
+Micro recall tracks this statistic and the tail metrics do not: an arm trained
+with a larger share of raw Visual Genome reached 54.3 R@50 on VG150, the best
+zero-shot figure we are aware of, while being the worst model we trained on
+every tail metric.
 
 ### OV-SGG-Bench
 
@@ -152,11 +233,16 @@ that no single one can be won by matching a benchmark's prior:
 | axis | question | source |
 |---|---|---|
 | A1 transfer | generalises across annotation styles? | VG150, PSG, IndoorVG, HICO-DET, ground-truth boxes |
-| A2 precision | hallucinates rare predicates? | Haystack and HICO-DET explicit negatives |
-| A3 open vocabulary | means the right relation, without the label set? | synonym matcher at a calibrated threshold |
-| A4 deployment | survives a real detector? | SGDet on a shared open-vocabulary detector |
-| A5 graph quality | is the graph as a whole true and informative? | a vision-language judge, no ground truth in the prompt, scored per relation |
+| A2 precision | hallucinates rare predicates? | Haystack's explicit negatives: 2,870 positives against 23,174 adjudicated negatives |
+| A3 open vocabulary | means the right relation, without the label set? | all 19,103 strings, synonym matcher at a calibrated threshold |
+| A4 deployment | survives a real detector? | SGDet on a shared open-vocabulary detector, against its measured pair-recall ceiling |
+| A5 graph quality | is the graph true *and* informative? | a vision-language judge, one relation at a time, no ground truth in the prompt; each accepted relation credited with its surprisal |
 | A6 spatial | understands space, or co-occurrence? | SpatialSense adversarial true/false pairs |
+
+The composite over A1, A2, A4, A5 and A6 is chance-corrected and combined by a
+harmonic mean, so a weak axis cannot be averaged away; withholding each axis in
+turn leaves the ordering of the two systems unchanged, at ratios between 2.0
+and 3.7×. Never select a model on it.
 
 The protocol: [`benchmark/SPEC.md`](benchmark/SPEC.md). The argument and the
 traps in scene-graph metrics: [docs/evaluation.md](docs/evaluation.md). The
@@ -178,7 +264,7 @@ Pipeline: [`datagen/`](datagen/). Format and packs: [docs/data.md](docs/data.md)
 ## Run the demo
 
 **In your browser**, fully client-side (ONNX Runtime Web, WebGPU or WASM), no
-install: **<https://maelic.github.io/RelateAnything_demo/>**.
+install: **<https://maelic.github.io/RelateAnythingProject/demo/>**.
 
 **On your laptop**, CPU only, no torch: a detector, the relation head and the
 decode with `numpy` and `onnxruntime`:

@@ -36,7 +36,7 @@ Six axes, chosen so that no single one can be won by prior matching.
 | **A2** Precision | hallucinates rare predicates? | Haystack's explicit negatives | fAP, P-AUC |
 | **A3** Open-vocab | *means* the right relation? | full training vocabulary deployed, synonym matcher at calibrated τ | open-vocab mR@50 |
 | **A4** Deployment | survives a real detector? | SGDet on a **shared** open-vocab detector | wR@50 vs pair-recall ceiling |
-| **A5** Graph quality | is the graph *as a whole* good? | LLM oracle, pairwise, **no GT in the prompt** | win rate, gated on controls |
+| **A5** Graph quality | is the graph true *and* informative? | VLM judge, one relation at a time, **no GT in the prompt**, each acceptance credited with its surprisal | true bits per image |
 | **A6** Spatial | understands space, or co-occurrence? | SpatialSense balanced adversarial true/false | AUC (chance 0.5) |
 
 Each axis is load-bearing, and each is individually gameable:
@@ -56,11 +56,21 @@ by +40–47 % and A6 by nothing.** Recall-style gains are vocabulary and ranking
 gains. Without A6 the suite could not tell those apart from spatial
 understanding, and we would have claimed the latter.
 
-The composite (`benchmark/overall_score.py`) spans A1, A2, A4 and A6.
+The headline composite (`benchmark/overall_score.py`) spans A1, A2, A4, A5 and
+A6, and reads **40.1** for the released tower against **11.8** for the baseline.
 It is chance-corrected and combined as a harmonic mean, so a weak axis cannot be
-averaged away. A3 and A5 are measured, reported and not summed: A3 cannot be run
-on the baseline, and A5 is a pairwise preference whose two values sum to 1.
-**Never select a model on the composite unless the run targets its weakest
+averaged away, and two cells are normalised by a measured quantity instead of a
+chance level: A4 by the shared detector's pair-recall ceiling, A5 by the
+information in the images' own annotation. A3 is measured, reported and not
+summed — it cannot be run on the baseline, whose vocabulary arrives as one
+caption of about 150 strings.
+
+Mind which axis set a composite covers, because they are not comparable. The
+**model ladder** is scored on A1, A2, A4 and A6, since A5 costs one judge run
+per arm and was run for the released tower only; **OVS-dev**, over A1, A2, A3
+and A6, selected the recipe before A4 and A5 existed. Recomputing every
+selection decision on the ladder composite changes no outcome.
+**Never select a model on a composite unless the run targets its weakest
 axis** — otherwise you are optimizing the aggregate rather than the deficiency.
 
 ## Running an evaluation
