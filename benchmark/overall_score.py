@@ -28,7 +28,7 @@ DEFINITION
 ----------
 Per cell:  norm = clip((x - chance) / (1 - chance), 0, 1)
 Per axis:  arithmetic mean of its cells (same capability, different sources)
-Overall:   OVS = harmonic mean of the COMPOSITE axes (A1, A2, A4, A6)
+Overall:   OVS = harmonic mean of the COMPOSITE axes (A1, A2, A4, A5, A6)
 
 A3 is measured, reported, and out of the composite: the baseline cannot be run
 on it at all -- its predicate vocabulary is a caption capped at 512 word pieces
