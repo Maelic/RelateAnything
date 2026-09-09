@@ -26,6 +26,20 @@ repositories, and its calibration is installed when `calibration.json` sits
 next to the weights. Without `predicates` the vocabulary is the one in
 [`relsgg/vocabulary.py`](../relsgg/vocabulary.py).
 
+To answer from the whole training vocabulary instead — 19,103 strings for the
+released towers — ask for it:
+
+```python
+model = RelateAnything.from_pretrained("maelic/relsgg-vits16plus", full_vocabulary=True)
+```
+
+The strings come from the checkpoint, and their embeddings from the
+`predicate_embeddings.npz` published beside it, which is what the text student
+produces for them; encoding that many strings takes about a minute and a half
+on a CPU otherwise. Expect free-text answers the benchmark vocabularies do not
+contain (`wearing clothing`, `riding on`), which is the point of the axis and
+what exact-string recall penalises.
+
 ## Predicting
 
 ```python
@@ -120,9 +134,13 @@ model.set_calibration(a, b)     # monotone for a > 0
 Raw head scores pile into `[0.9, 1.0)` — the output head is trained against a
 balanced prior while a real frame is 0.2–4 % positive — so an uncalibrated
 threshold is a knob connected to nothing. A two-parameter Platt fit moves
-expected calibration error from ~0.92 to ~0.009 and transfers out of domain.
-Because it is monotone, **every ranking metric is bit-identical**; only the
-meaning of a threshold changes. Release bundles ship with the fit installed.
+expected calibration error from 0.176 to 0.004 when it is fitted on annotation
+hits and scored against them. What the fit is made against decides what the
+number means: the map the release ships is fitted on **adjudicated negatives**,
+so its score estimates the probability that a person would call the relation
+true, and it is conservative in the useful direction — 0.77 reported precision
+where the adjudicated precision is 0.90. Because the fit is monotone, **every
+ranking metric is bit-identical**; only the meaning of a threshold changes.
 
 Fit one yourself with `benchmark/eval_deploy_metrics.py --fit_platt`.
 

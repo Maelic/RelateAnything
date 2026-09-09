@@ -1,5 +1,15 @@
-"""Annotation-style overlap: how much of a training corpus's relation mass lands on a
+"""Predicate-string overlap: how much of a training corpus's relation mass lands on a
 benchmark's exact predicate strings.
+
+This is ONE COMPONENT of the shared triplet mass the report leads with (see
+benchmark/SPEC.md). The headline statistic charges for the two object categories as
+well -- the fraction of relation instances whose <subject category, predicate, object
+category> triple the benchmark also annotates -- because a predicate string is not an
+annotation: `on` between a person and a horse and `on` between a book and a table are
+different acts. The triple is measured on the packed corpora, which carry the object
+categories; what this script needs is only each pack's predicate histogram, which is why
+it runs from meta.json alone. Read its output as the predicate component, not as the
+triple.
 
 WHY IT IS THE BENCHMARK'S MOST IMPORTANT NUMBER
 -----------------------------------------------
@@ -68,7 +78,10 @@ def main():
         for blabel in bench_vocab:
             hit = sum(v for k, v in mass.items() if k in bench_vocab[blabel])
             row[blabel] = hit / total if total else 0.0
-        rows[clabel] = {"total_relations": total, "overlap": row,
+        rows[clabel] = {"total_relations": total,
+                        # the key the report reads for the predicate component; "overlap"
+                        # is kept for older readers of this file and means the same thing
+                        "predicate_only": row, "overlap": row,
                         "distinct_predicates": len(mass)}
         table.append((clabel, row))
 

@@ -13,28 +13,35 @@ model faces **no vocabulary novelty at all** — its recall is bounded below by 
 agreement, not by understanding. The field nonetheless ranks open-vocabulary methods on
 exactly that number.
 
-We quantify this per (corpus, benchmark) cell as **annotation-style overlap**: the
-fraction of a training corpus's relation *instances* whose predicate string appears
-verbatim in the benchmark's vocabulary. It involves zero image overlap, so it is
-complementary to (not a substitute for) an image-id leakage check.
+We quantify this per (corpus, benchmark) cell as **shared triplet mass**: the fraction
+of a training corpus's relation *instances* whose ⟨subject category, predicate, object
+category⟩ triple the benchmark also annotates. The triple rather than the predicate,
+because a predicate string is not an annotation: `on` between a person and a horse and
+`on` between a book and a table are different acts, and two corpora can agree on the
+string while never agreeing on the pair it is asserted of. It involves zero image
+overlap, so it is complementary to (not a substitute for) an image-id leakage check.
 
-Measured (`benchmark/annotation_overlap.py`):
-
-| training corpus | #distinct pred | vg150/test | psg/test | indoorvg/test | haystack |
+| training corpus | matched on | VG150 | PSG | IndoorVG | Haystack |
 |---|---|---|---|---|---|
-| OURS megasg_clean | 9,848 | 49.1% | 35.3% | 45.4% | 35.3% |
-| OURS vg_raw | 17,352 | 74.6% | 47.9% | 71.4% | 47.9% |
-| OvSGTR vg150/train | **50** | **100.0%** | 57.3% | **95.7%** | 57.3% |
+| the released mixture (19,103 predicates) | predicate string | 53.4 % | 38.7 % | 49.5 % | 38.7 % |
+| | both object categories | 44.4 % | 36.7 % | 26.8 % | 30.7 % |
+| | **the whole triple** | **12.8 %** | **10.7 %** | **6.6 %** | **4.9 %** |
+| VG150 train (the baseline's, 50 predicates) | predicate string | **100.0 %** | 57.3 % | **95.7 %** | 57.3 % |
+| | both object categories | 100.0 % | 22.1 % | 12.3 % | 7.1 % |
+| | **the whole triple** | **90.9 %** | 8.6 % | 10.4 % | 0.6 % |
 
-**No existing benchmark is neutral.** VG150 is 100% in-domain for a VG150-trained model
-against our 49.1%; IndoorVG is 95.7% against 45.4%. The `#distinct pred` column is the
-other half of the story: a 50-predicate training vocabulary cannot be asked an
-open-vocabulary question at all.
+**No existing benchmark is neutral, and the confound is concentrated in-domain.** On
+VG150 the baseline's fine-tuning corpus reproduces 90.9% of its relation mass as triples
+the benchmark also annotates, against our 12.8%; on PSG the two are 8.6% and 10.7%. A
+50-predicate training vocabulary is also the other half of the story: it cannot be asked
+an open-vocabulary question at all.
 
-**Empirical confirmation.** Micro R@50 tracks the overlap gap and nothing else:
-OvSGTR beats us on IndoorVG (50-pt gap in their favour, +48%) and loses on PSG (22-pt
-gap, −10%), while **every tail metric goes our way on both**. That correspondence is
-the benchmark's reason to exist.
+**Empirical confirmation.** Micro R@50 tracks this statistic and the tail metrics do
+not: OvSGTR beats us on IndoorVG micro recall and loses on PSG, while **every tail
+metric goes our way on both**. That correspondence is the benchmark's reason to exist.
+
+`benchmark/annotation_overlap.py` reports the predicate-string component; the object-pair
+and triple components come from the same packs and are reported in the report.
 
 ---
 
@@ -48,7 +55,7 @@ need a fourth that LVIS does not, because SGG benchmarks leak annotation style.
 |---|---|---|---|
 | **A1 Transfer** | does it generalise across annotation styles? | GT boxes, closed vocab, graph-constrained, on ≥3 sources of differing overlap | wR@50 + bucket split |
 | **A2 Precision** | does it hallucinate rare predicates? | Haystack's explicit negatives | fAP (n_pos≥5), P-AUC |
-| **A3 Open-vocab** | does it *mean* the right relation? | full training vocabulary deployed, synonym matcher at calibrated τ=0.955 | mR@50 (open-vocab) |
+| **A3 Open-vocab** | does it *mean* the right relation? | full training vocabulary deployed, synonym matcher at the τ calibrated for the shipped text space (0.72) | mR@50 (open-vocab) |
 | **A4 Deployment** | does it survive a real detector? | SGDet on a **shared** open-vocab detector | wR@50 vs pair-recall ceiling |
 | **A5 Graph quality** | is the graph true *and* informative? | VLM judge, one relation at a time, **no GT in the prompt** | true bits per image, gated on controls |
 | **A6 Spatial** | does it understand space, or co-occurrence? | SpatialSense: balanced adversarial true/false triples | AUC (chance = 0.5) |
@@ -163,7 +170,7 @@ into a claimed real-world precision, and do not compute ECE/Brier on it.
 ## 4. Metrics, and what each is for
 
 - **R@K (micro)** — reported *only* for comparability with the literature. It is the
-  metric most inflated by annotation-style overlap and should never be the headline.
+  metric most inflated by shared triplet mass and should never be the headline.
 - **mR@K (macro)** — per-class mean; the standard long-tail metric.
 - **R@K rare/common/freq** — LVIS-style buckets at <50 / 50–500 / >500 GT relations,
   with `n_cls_*` reported so the split stays interpretable. **Head collapse cannot hide

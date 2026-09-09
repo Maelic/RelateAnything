@@ -7,23 +7,34 @@ train on. VG150's test split uses the same 50 predicate strings as its training
 split, so a VG150-trained model faces **no vocabulary novelty at all**. The field
 nonetheless ranks open-vocabulary methods on exactly that number.
 
-We quantify this per (corpus, benchmark) cell as **annotation-style overlap**:
-the fraction of a training corpus's relation *instances* whose predicate string
-appears verbatim in the benchmark's vocabulary. It involves zero image overlap,
-so it is complementary to a leakage check, not a substitute for one.
+We quantify this per (corpus, benchmark) cell as **shared triplet mass**: the
+fraction of a training corpus's relation *instances* whose ⟨subject category,
+predicate, object category⟩ triple the benchmark also annotates. The triple
+rather than the predicate, because a predicate string is not an annotation —
+`on` between a person and a horse and `on` between a book and a table are
+different acts, and two corpora can agree on the string while never agreeing on
+the pair it is asserted of. It involves zero image overlap, so it is
+complementary to a leakage check, not a substitute for one.
 
-`python benchmark/annotation_overlap.py`
-
-| training corpus | distinct predicates | vg150/test | psg/test | indoorvg/test | haystack |
+| training corpus | matched on | VG150 | PSG | IndoorVG | Haystack |
 |---|---|---|---|---|---|
-| OvSGTR — vg150/train | **50** | **100.0 %** | 57.3 % | **95.7 %** | 57.3 % |
-| ours — megasg_clean | 9,848 | 49.1 % | 35.3 % | 45.4 % | 35.3 % |
-| ours — vg_raw | 17,352 | 74.6 % | 47.9 % | 71.4 % | 47.9 % |
+| the released mixture (19,103 predicates) | predicate string | 53.4 % | 38.7 % | 49.5 % | 38.7 % |
+| | both object categories | 44.4 % | 36.7 % | 26.8 % | 30.7 % |
+| | **the whole triple** | **12.8 %** | **10.7 %** | **6.6 %** | **4.9 %** |
+| VG150 train (the baseline's, 50 predicates) | predicate string | **100.0 %** | 57.3 % | **95.7 %** | 57.3 % |
+| | both object categories | 100.0 % | 22.1 % | 12.3 % | 7.1 % |
+| | **the whole triple** | **90.9 %** | 8.6 % | 10.4 % | 0.6 % |
 
-**No existing benchmark is neutral.** And the correspondence is empirical, not
-theoretical: micro R@50 tracks the overlap gap and nothing else. Against
-OvSGTR we lose on IndoorVG (50-point overlap gap in their favour) and win on
-PSG (22-point gap) — while **every tail metric goes our way on both**.
+**No existing benchmark is neutral, and the confound is concentrated
+in-domain.** On VG150 the baseline's fine-tuning corpus reproduces 90.9 % of its
+relation mass as triples the benchmark also annotates, against our 12.8 %. The
+correspondence is empirical: micro R@50 tracks this statistic and the tail
+metrics do not. Charging for the object names as well charges for taxonomy and
+domain mismatch too, which is why the components are printed separately.
+
+`python benchmark/annotation_overlap.py` reports the predicate-string component
+(the first row of each block); the object-pair and triple components are
+measured on the packed corpora and reported in the report's appendix.
 
 ## OV-SGG: six axes
 

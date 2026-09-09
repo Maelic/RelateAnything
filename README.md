@@ -20,7 +20,9 @@
 [OV-SGG-Bench](https://huggingface.co/datasets/maelic/OV-SGG-Bench) ·
 [Docs](docs/)
 
-<img src="assets/hero.gif" alt="RelateAnything running in the browser: a detector finds objects, the relation model predicts open-vocabulary relations between them" width="720">
+<img src="assets/hero.gif" alt="Six photographs in turn. Regions arrive three ways — boxes from a 497-class detector, instance masks from a 4,585-class one, then masks from a class-agnostic segmenter with no names at all — and the same relation model draws a ranked graph over each" width="720">
+
+<sub>Rebuild it with <a href="deploy/make_reel.py"><code>deploy/make_reel.py</code></a>. Photo credits: <a href="assets/reel/credits.json"><code>assets/reel/credits.json</code></a>.</sub>
 
 </div>
 
@@ -79,6 +81,10 @@ for t in triplets:
 model.set_vocabulary(["tethered to", "grazing beside", "casting a shadow on"])
 graphs = model.predict(image, boxes_xyxy, masks=masks, decompose=True)
 graphs["spatial"], graphs["semantic"]                  # two graphs, one forward pass
+
+# or answer from the whole training vocabulary, 19,103 strings, encoded once
+# and shipped beside the weights
+model = RelateAnything.from_pretrained("maelic/relsgg-vits16plus", full_vocabulary=True)
 ```
 
 A released model carries its own backbone configuration and text encoder, so
@@ -126,14 +132,19 @@ is reported beside the zero-shot tower. The baseline is
 corpus whose images we re-annotate, which makes it the closest control for
 supervision quality — run through **our** evaluator on the same images and the
 same vocabulary. It receives ground-truth object labels throughout; we never do.
+It is also the only system we can run on every axis the composite spans, which
+is why it carries the composite. On transfer the stronger baseline is
+ROBIN-3B, a scene-graph model built on a 3B vision-language model: it leads
+OvSGTR on F1@50 on all three benchmarks both were run on (19.6 / 27.9 / 22.7
+against 16.5 / 13.5 / 20.2) and still trails us on both metrics everywhere.
 
 **The six axes** (`relsgg-vits16plus`, one evaluator for both models):
 
 | axis | measure | OvSGTR | RelateAnything |
 |---|---|---|---|
-| A1 transfer | VG150 F1@50 (mR@50), overlap 53 % | 16.5 (10.4) | **36.9 (28.2)** |
-| | PSG F1@50 (mR@50), overlap 39 % | 13.5 (8.8) | **34.7 (30.6)** |
-| | IndoorVG F1@50 (mR@50), overlap 49 % | 20.2 (12.8) | **37.8 (29.5)** |
+| A1 transfer | VG150 F1@50 (mR@50), triplet mass 13 % | 16.5 (10.4) | **36.9 (28.2)** |
+| | PSG F1@50 (mR@50), triplet mass 11 % | 13.5 (8.8) | **34.7 (30.6)** |
+| | IndoorVG F1@50 (mR@50), triplet mass 7 % | 20.2 (12.8) | **37.8 (29.5)** |
 | | HICO-DET F1@50 (mR@50), zero-shot tower | 7.9 (4.5) | **18.7 (12.7)** |
 | A2 precision | Haystack mean fAP (rare fAP) | 52.1 (44.6) | **72.6 (70.7)** |
 | A3 open vocabulary | mR@50 over 19,103 strings, VG150 / PSG / IndoorVG | not runnable | **34.5 / 28.3 / 34.6** |
@@ -142,8 +153,16 @@ same vocabulary. It receives ground-truth object labels throughout; we never do.
 | A6 spatial | SpatialSense macro AUC (pooled) | 59.1 (61.7) | **69.0 (67.5)** |
 | **OVS composite** | harmonic mean of the chance-corrected axes | **11.8** | **40.1** |
 
-A3 is reported but excluded from the composite: it cannot be run on the
-baseline, whose vocabulary arrives as one caption capped at about 150 strings.
+A3 is reported but excluded from the composite: it cannot be run on OvSGTR,
+whose vocabulary arrives as one caption capped at about 150 strings. Systems
+that answer in free text can be scored there by construction, and against
+ROBIN-3B on PSG the ordering depends on the matcher — it leads on exact strings
+(20.0 mR@50 against our 13.0) and we lead under every synonym-tolerant one
+(31.3 against 25.1), while micro recall never turns over. A single row there is
+a choice of scorer rather than a measurement of a model, so the report prints
+the band. What survives the matcher is which pairs a system proposes at all:
+99.7 % of annotated pairs for us, 45.6–77.4 % for ROBIN, 23.1–35.5 % for
+prompted general multimodal models.
 A5 credits each relation a vision-language judge accepts with its surprisal
 under the PSG training marginal, so a graph of five hundred `on` edges scores
 nothing; the same judge returns two verdicts that favour the baseline, and both
@@ -191,7 +210,7 @@ counts when a synonym matcher accepts it at a calibrated threshold:
 Scene-graph benchmarks share their predicate vocabulary with the corpora models
 train on. VG150's test split uses the same 50 predicate strings as its training
 split, so a VG150-trained model faces no vocabulary novelty at all, and micro
-recall tracks that overlap and nothing else. A counting baseline over
+recall tracks that agreement and nothing else. A counting baseline over
 ground-truth object-category pairs, using no pixels, beats a trained model on
 the most reported metric while losing to it by a wide margin per predicate:
 
@@ -207,23 +226,29 @@ not an argument that pixels are unnecessary. It is the narrower one: a metric a
 pixel-free table can win does not measure relation understanding, and it is the
 metric that orders leaderboards.
 
-The second prior is the vocabulary a benchmark shares with the corpus a model
-trained on — *annotation-style overlap*, the share of a training source's
-relation instances whose predicate string appears verbatim in the benchmark's
-vocabulary:
+The second prior is what a benchmark shares with the corpus a model trained
+on — and it is not the vocabulary. A predicate string is not an annotation:
+`on` between a person and a horse and `on` between a book and a table are
+different acts, so two corpora can agree on the string while never agreeing on
+the pair it is asserted of. *Shared triplet mass* is the share of a training
+corpus's relation instances whose ⟨subject category, predicate, object
+category⟩ triple the benchmark also annotates:
 
-| training corpus | distinct predicates | VG150 | PSG | IndoorVG | Haystack |
+| training corpus | matched on | VG150 | PSG | IndoorVG | Haystack |
 |---|---|---|---|---|---|
-| VG150 train (typical baseline) | 50 | **100.0 %** | 57.3 % | **95.7 %** | 57.3 % |
-| RA-4M (ours) | 9,848 | 49.1 % | 35.3 % | 45.4 % | 35.3 % |
-| raw Visual Genome, leakage-filtered | 17,352 | 74.6 % | 47.9 % | 71.4 % | 47.9 % |
-| the released mixture | 19,103 | 53.4 % | 38.7 % | 49.5 % | 38.7 % |
-| the zero-shot mixture | 19,103 | 53.0 % | 37.2 % | 49.4 % | 37.2 % |
+| the released mixture (19,103 predicates) | predicate string | 53.4 % | 38.7 % | 49.5 % | 38.7 % |
+| | both object categories | 44.4 % | 36.7 % | 26.8 % | 30.7 % |
+| | **the whole triple** | **12.8 %** | **10.7 %** | **6.6 %** | **4.9 %** |
+| VG150 train (typical baseline, 50 predicates) | predicate string | **100.0 %** | 57.3 % | **95.7 %** | 57.3 % |
+| | both object categories | 100.0 % | 22.1 % | 12.3 % | 7.1 % |
+| | **the whole triple** | **90.9 %** | 8.6 % | 10.4 % | 0.6 % |
 
-Micro recall tracks this statistic and the tail metrics do not: an arm trained
-with a larger share of raw Visual Genome reached 54.3 R@50 on VG150, the best
-zero-shot figure we are aware of, while being the worst model we trained on
-every tail metric.
+The confound is concentrated in-domain and is very large there: on VG150 the
+baseline's fine-tuning corpus reproduces 90.9 % of its relation mass as triples
+the benchmark also annotates, against our 12.8 %. Micro recall tracks this
+statistic and the tail metrics do not: an arm trained with a larger share of
+raw Visual Genome reached 54.3 R@50 on VG150, the best zero-shot figure we are
+aware of, while being the worst model we trained on every tail metric.
 
 ### OV-SGG-Bench
 
@@ -232,7 +257,7 @@ that no single one can be won by matching a benchmark's prior:
 
 | axis | question | source |
 |---|---|---|
-| A1 transfer | generalises across annotation styles? | VG150, PSG, IndoorVG, HICO-DET, ground-truth boxes |
+| A1 transfer | generalises across annotation styles? | VG150, PSG, IndoorVG, HICO-DET, ground-truth boxes, four sources of differing shared triplet mass |
 | A2 precision | hallucinates rare predicates? | Haystack's explicit negatives: 2,870 positives against 23,174 adjudicated negatives |
 | A3 open vocabulary | means the right relation, without the label set? | all 19,103 strings, synonym matcher at a calibrated threshold |
 | A4 deployment | survives a real detector? | SGDet on a shared open-vocabulary detector, against its measured pair-recall ceiling |
