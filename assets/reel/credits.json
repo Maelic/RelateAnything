@@ -1,0 +1,64 @@
+[
+ {
+  "file": "images/bicycle.jpg",
+  "title": "Man riding bicycle (Unsplash).jpg",
+  "artist": "Clem Onojeghuo clemono2",
+  "license": "CC0",
+  "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+  "page": "https://commons.wikimedia.org/wiki/File:Man_riding_bicycle_(Unsplash).jpg",
+  "w": 1280,
+  "h": 805
+ },
+ {
+  "file": "images/catlaptop.jpg",
+  "title": "Cat on laptop yawning.jpg",
+  "artist": "acebrand",
+  "license": "CC0",
+  "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+  "page": "https://commons.wikimedia.org/wiki/File:Cat_on_laptop_yawning.jpg",
+  "w": 1280,
+  "h": 837
+ },
+ {
+  "file": "images/skateboard.jpg",
+  "title": "N Peters Street Skateboarder, New Orleans 9 March 2020.jpg",
+  "artist": "Infrogmation of New Orleans",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:N_Peters_Street_Skateboarder,_New_Orleans_9_March_2020.jpg",
+  "w": 1280,
+  "h": 960
+ },
+ {
+  "file": "images/frisbee.jpg",
+  "title": "Australian Shepherd catching a frisbee.jpg",
+  "artist": "Sally Wehner",
+  "license": "CC BY 2.0",
+  "license_url": "https://creativecommons.org/licenses/by/2.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Australian_Shepherd_catching_a_frisbee.jpg",
+  "w": 1280,
+  "h": 1600
+ },
+ {
+  "file": "images/horse.jpg",
+  "title": "A horse rider in Maidan , Kolkata.jpg",
+  "artist": "Subhrajyoti07",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:A_horse_rider_in_Maidan_,_Kolkata.jpg",
+  "w": 1280,
+  "h": 907,
+  "also": "ships with the browser demo as a sample photo"
+ },
+ {
+  "file": "images/tennis.jpg",
+  "title": "Steffi Graf (Wimbledon 2009).jpg",
+  "artist": "Chris Eason from London",
+  "license": "CC BY 2.0",
+  "license_url": "https://creativecommons.org/licenses/by/2.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Steffi_Graf_(Wimbledon_2009).jpg",
+  "w": 1280,
+  "h": 850,
+  "also": "ships with the browser demo as a sample photo"
+ }
+]

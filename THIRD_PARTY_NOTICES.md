@@ -21,6 +21,27 @@ legal advice; each upstream license is authoritative.
 | `vg_raw` relation annotations | **Visual Genome** | CC BY 4.0 — attribution: Krishna et al., *Visual Genome*, IJCV 2017. |
 | Eval packs (VG150, PSG, IndoorVG, HICO-DET, SpatialSense) | Respective benchmark releases | Used for evaluation; redistributed annotations retain their upstream licenses and citations (see paper bibliography). |
 
+## Reel photographs
+
+`assets/reel/images/` holds the six photographs `deploy/make_reel.py` renders
+into `assets/hero.gif` and the project page's video. All are from **Wikimedia
+Commons** and are redistributed here under their own terms; per-file title,
+author, licence and source page are in `assets/reel/credits.json`, which is the
+authoritative list.
+
+| Photograph | Author | Licence |
+|---|---|---|
+| `bicycle.jpg` | Clem Onojeghuo | CC0 |
+| `catlaptop.jpg` | acebrand | CC0 |
+| `frisbee.jpg` | Sally Wehner | CC BY 2.0 |
+| `skateboard.jpg` | Infrogmation of New Orleans | CC BY-SA 4.0 |
+| `horse.jpg` | Subhrajyoti07 | CC BY-SA 4.0 |
+| `tennis.jpg` | Chris Eason | CC BY 2.0 |
+
+The last two also ship with the browser demo as sample photos. The CC BY and
+CC BY-SA images require attribution wherever the rendered video appears; the
+project page carries it in its footer.
+
 ## Detectors (demo)
 
 The webcam demo uses YOLO-World v2 / YOLOE / YOLO26 detectors built on **ultralytics**

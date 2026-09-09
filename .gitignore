@@ -43,3 +43,14 @@ deploy/dist/relsgg-*/*
 !deploy/dist/relsgg-*/thresholds.json
 !deploy/dist/relsgg-*/calibration.json
 !deploy/dist/relsgg-*/README.md
+
+# Rendered by deploy/make_reel.py from the tracked inputs beside them
+# (images/, credits.json, shots.json). The README ships assets/hero.gif and the
+# project page ships the video, so the copies under assets/reel/ are build
+# output, not sources.
+assets/reel/reel.mp4
+assets/reel/hero.gif
+assets/reel/poster.jpg
+
+# The report PDF: read it on arXiv rather than carrying 12 MB per revision here
+main.pdf

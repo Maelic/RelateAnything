@@ -44,6 +44,10 @@ detector = ["ultralytics~=8.4"]
 # train or run RelSGG). These were previously CORE dependencies, which made
 # every fresh install build autoawq — moved here.
 datagen = ["compressed-tensors", "autoawq"]
+# Render the project reel (deploy/make_reel.py). imageio-ffmpeg only vendors an
+# ffmpeg binary; a system ffmpeg with libx264 works just as well, and the script
+# falls back to whatever `ffmpeg` is on PATH.
+reel = ["imageio-ffmpeg~=0.6"]
 monitoring = ["wandb~=0.28", "matplotlib~=3.11"]
 release = ["huggingface_hub~=1.23"]
 # scikit-learn: the SpatialSense (A6) metrics in relsgg/spatialsense_metrics.py,

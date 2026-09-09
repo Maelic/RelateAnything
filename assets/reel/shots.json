@@ -1,0 +1,23 @@
+{
+  "_comment": [
+    "Shot list for deploy/make_reel.py. Two shots per input mode, so the reel",
+    "shows each way of handing the model regions twice on different pictures",
+    "and nobody has to take a single lucky frame on trust.",
+    "Photo credits and licences are in credits.json, beside this file.",
+    "conf 0 = the mode's own default (see MODES in deploy/make_reel.py)."
+  ],
+  "shots": [
+    {"image": "images/bicycle.jpg", "mode": "boxes", "max_edges": 3,
+     "note": "man riding bicycle — the cleanest box-input shot"},
+    {"image": "images/horse.jpg", "mode": "boxes", "max_edges": 2,
+     "note": "person riding horse; also the browser demo's first sample. Two edges: the 497-class detector finds only three regions here, and the third relation it ranks is between the rider's shirt and the horse behind it"},
+    {"image": "images/catlaptop.jpg", "mode": "masks", "max_edges": 3,
+     "note": "cat sitting on laptop — masks separate cat from desk clutter"},
+    {"image": "images/skateboard.jpg", "mode": "masks", "max_edges": 2,
+     "note": "two edges only: the ranking's next two are true but hang off 'oilrig', which is what the 4,585-class vocabulary calls the scaffolding behind the rider. A wrong object name is the detector's, not the relation model's, but a viewer cannot tell that from a video"},
+    {"image": "images/frisbee.jpg", "mode": "unnamed", "max_edges": 3,
+     "note": "no class names anywhere: watching/holding between unnamed masks"},
+    {"image": "images/tennis.jpg", "mode": "unnamed", "max_edges": 3,
+     "note": "holding, with the racket segmented but never named"}
+  ]
+}

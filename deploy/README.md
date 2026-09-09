@@ -105,3 +105,44 @@ schema do not offer the feature, and say so rather than degrading silently.
 ```bash
 python deploy/demo_webcam.py --backend torch --checkpoint <snapshot>/model.pth
 ```
+
+---
+
+## 7. The project reel (`make_reel.py`)
+
+`assets/hero.gif` in the README and the video on the project page are one
+rendered artifact, not a screen recording. It makes a single claim visible —
+the model reads *regions*, and nothing else — by changing only where the
+regions come from, three times:
+
+| shot | detector | drawn |
+|---|---|---|
+| `boxes` | YOLO-World v2-S · MEGASG-497 | boxes + class names |
+| `masks` | YOLOE-11s prompt-free · 4,585 classes | instance masks + class names |
+| `unnamed` | FastSAM-s · class-agnostic | instance masks, **no names at all** |
+
+```bash
+pip install -e ".[deploy,reel]"
+python deploy/make_reel.py --models ../relate-anything/demo/models --out assets/reel
+# -> assets/reel/{reel.mp4, hero.gif, poster.jpg}
+```
+
+`--models` is the browser demo's export directory: the segmentation detectors
+are AGPL-3.0 ultralytics derivatives and are not redistributed here (see
+[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md)). The box detector comes
+from `deploy/dist/detector-local/` when it is present. The shot list, and a note
+per shot on why it draws the number of edges it draws, is
+[`assets/reel/shots.json`](../assets/reel/shots.json).
+
+Two things worth knowing before changing it:
+
+* **What runs is the exported graph**, which takes `image` and `boxes` only —
+  the same one the browser runs. `RelateAnything.predict(..., masks=)` in the
+  torch API rasterises masks into the head; that is a different path and the
+  reel does not use it. In the mask shots the segmenter chooses the regions and
+  the masks are what you see, while the boxes around them are what is scored.
+* **Which edges get drawn is a rule, not a preference** (`select_edges`): the
+  model's ranking in order, minus one edge per pair, one per predicate, and
+  anything whose endpoints are too small to see. `deploy/seg_detector.py`
+  additionally collapses regions that are the same object under two names,
+  which a 4,585-class vocabulary produces constantly (`persian cat` / `feline`).
