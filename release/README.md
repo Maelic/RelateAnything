@@ -5,7 +5,7 @@ are generated from measured evaluation files, never typed.
 
 | script | does |
 |---|---|
-| `strip_checkpoint.py` | training checkpoint -> `model.pth` (EMA weights, scrubbed args, embedded backbone config) + `text_student.pt`; verifies a strict offline load |
+| `strip_checkpoint.py` | training checkpoint -> `model.pth` (EMA weights, scrubbed args, embedded backbone config) + `text_student.pt` + `predicate_embeddings.npz` (the training vocabulary encoded with that student); verifies a strict offline load |
 | `make_model_cards.py` | writes `deploy/dist/<model_id>/README.md` from the eval JSONs under `$RA_RUNS` |
 | `hf_upload.py` | one Hugging Face model repository per `deploy/release_manifest.json` entry |
 | `upload_datasets.py` | the `RA-4M` and `OV-SGG-Bench` dataset repositories |

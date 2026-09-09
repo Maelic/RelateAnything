@@ -33,6 +33,30 @@ except Exception:                               # pragma: no cover
     Image = None
 
 RASTER_RES = 32   # mask rasters are g x g coverage grids over the image
+#: Precomputed embeddings of the training vocabulary, written next to a
+#: released checkpoint by release/strip_checkpoint.py.
+EMBEDDINGS_FILE = "predicate_embeddings.npz"
+
+
+def load_sidecar_embeddings(ckpt_path: str, names: Sequence[str]):
+    """The ``predicate_embeddings.npz`` beside a checkpoint as a
+    ``[len(names), text_dim]`` matrix, or None when there is no such file or
+    it does not cover ``names`` (the caller then encodes, which is slower but
+    always available). The file is written with the text student the
+    checkpoint ships, so it holds what encoding those strings would produce.
+    """
+    path = os.path.join(os.path.dirname(os.path.abspath(ckpt_path)), EMBEDDINGS_FILE)
+    if not os.path.exists(path):
+        return None
+    z = np.load(path, allow_pickle=True)
+    stored = [str(s) for s in z["names"]]
+    W = z["W"].astype(np.float32)
+    if stored == list(names):
+        return W
+    index = {n: i for i, n in enumerate(stored)}
+    if any(n not in index for n in names):
+        return None
+    return W[[index[n] for n in names]]
 
 
 @dataclass
@@ -75,7 +99,8 @@ class RelateAnything:
         local = snapshot_download(
             repo_id, revision=revision,
             allow_patterns=["model.pth", "text_student.pt", "tokenizer*", "vocab.json",
-                            "merges.txt", "special_tokens_map.json", "calibration.json"])
+                            "merges.txt", "special_tokens_map.json", "calibration.json",
+                            EMBEDDINGS_FILE])
         return cls.from_checkpoint(os.path.join(local, "model.pth"), predicates,
                                    device=device, **kw)
 
@@ -84,7 +109,8 @@ class RelateAnything:
                         device: Union[str, torch.device] = "cpu", weights: str = "ema",
                         img_size: int = 448, text_student: Optional[str] = None,
                         strict: bool = True, embeddings=None,
-                        calibration: bool = True) -> "RelateAnything":
+                        calibration: bool = True,
+                        full_vocabulary: bool = False) -> "RelateAnything":
         """Load ``model.pth`` and encode ``predicates`` (default: the
         vocabulary in ``relsgg.vocabulary``).
 
@@ -92,6 +118,13 @@ class RelateAnything:
         checkpoint (the layout of every released model). ``embeddings``
         supplies a ready ``[V, text_dim]`` matrix instead of encoding.
         A ``calibration.json`` next to the checkpoint is applied when present.
+
+        ``full_vocabulary`` starts from the whole training vocabulary the
+        checkpoint records (19,103 strings for the released towers) rather
+        than the default list. The embeddings then come from the
+        ``predicate_embeddings.npz`` beside the checkpoint when it is there,
+        which is the same matrix the text student produces and saves the
+        minute or two encoding that many strings costs on a CPU.
         """
         from.text.student import resolve_student_path
         ckpt = load_checkpoint(ckpt_path)
@@ -99,6 +132,13 @@ class RelateAnything:
         if text_student is None:
             text_student = ckpt["args"].get("text_student") or "text_student.pt"
         text_student = resolve_student_path(text_student, near=ckpt_path)
+        if predicates is None and full_vocabulary:
+            predicates = ckpt.get("pred_names")
+            if not predicates:
+                raise ValueError(f"{ckpt_path} records no training vocabulary "
+                                 "(pred_names); pass predicates=[...] instead")
+            if embeddings is None:
+                embeddings = load_sidecar_embeddings(ckpt_path, predicates)
         ra = cls(model, list(predicates or DEFAULT_PREDICATES), text_student,
                  img_size=img_size, device=device)
         ra.set_vocabulary(ra.predicates, embeddings=embeddings)

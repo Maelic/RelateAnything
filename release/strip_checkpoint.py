@@ -15,8 +15,10 @@ exactly what inference needs:
     epoch            provenance
 
 The text student the checkpoint names is copied next to the output as
-``text_student.pt`` (with its CLIP tokenizer files), which is the layout every
-released model repository uses.
+``text_student.pt`` (with its CLIP tokenizer files), and the training
+vocabulary is encoded with it once into ``predicate_embeddings.npz``, so that
+``from_checkpoint(full_vocabulary=True)`` does not re-encode 19k strings on
+every machine. That is the layout every released model repository uses.
 
 Verified after writing: ``RelateAnything.from_checkpoint(strict=True)``
 on the stripped file with the Hugging Face hub disabled. A stripped checkpoint
@@ -109,6 +111,9 @@ def main() -> None:
                          "(default: the path recorded in the checkpoint args)")
     ap.add_argument("--backbone_config", default=None,
                     help="config.json of the backbone, when the hub is not reachable")
+    ap.add_argument("--skip_embeddings", action="store_true",
+                    help="do not write predicate_embeddings.npz (the training "
+                         "vocabulary encoded with the shipped student)")
     ap.add_argument("--skip_verify", action="store_true")
     a = ap.parse_args()
     os.chdir(REPO)
@@ -162,6 +167,25 @@ def main() -> None:
     src = os.path.getsize(a.checkpoint) / 1e9
     dst = os.path.getsize(a.out) / 1e9
     print(f"[strip] {src:.2f} GB -> {dst:.2f} GB  ({a.out})")
+
+    # The training vocabulary, encoded once with the student that ships beside
+    # the weights. Encoding 19k strings costs a minute and a half on a CPU, and
+    # every user of full_vocabulary=True would pay it; the file is what that
+    # encoding produces, so loading it is the same vocabulary, not an
+    # approximation of it.
+    out_dir = os.path.dirname(os.path.abspath(a.out))
+    student_out = os.path.join(out_dir, "text_student.pt")
+    if not a.skip_embeddings and out.get("pred_names") and os.path.exists(student_out):
+        import numpy as np
+        from relsgg.text.student import encode_texts_student
+        from relsgg.vocabulary import TRAIN_TEMPLATES
+        names = [str(n) for n in out["pred_names"]]
+        W = encode_texts_student(names, student_out, templates=TRAIN_TEMPLATES, device="cpu")
+        emb = os.path.join(out_dir, "predicate_embeddings.npz")
+        np.savez_compressed(emb, names=np.array(names, dtype=object),
+                            W=W.cpu().numpy().astype(np.float16))
+        print(f"[strip] {len(names)} predicate embeddings -> {emb} "
+              f"({os.path.getsize(emb)/1e6:.1f} MB)")
 
     if not a.skip_verify:
         os.environ["HF_HUB_OFFLINE"] = "1"

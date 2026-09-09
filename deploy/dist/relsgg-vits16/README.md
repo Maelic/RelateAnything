@@ -6,7 +6,6 @@ tags:
   - scene-graph-generation
   - open-vocabulary
   - visual-relationship-detection
-  - onnx
 library_name: relsgg
 model-index:
   - name: relsgg-vits16
@@ -38,22 +37,40 @@ Open-Vocabulary Relation Prediction From Any Inputs*). Trained on
 
 ```bash
 pip install git+https://github.com/Maelic/RelateAnything
+hf download maelic/relsgg-vits16          # optional; the API fetches on first use
 ```
 
 ```python
 from relsgg import RelateAnything
 
+# Regions come from any detector, any segmenter, or your own annotation.
+# Object class labels are never an input.
 model = RelateAnything.from_pretrained("maelic/relsgg-vits16", device="cuda")
-triplets = model.predict(image, boxes_xyxy, topk=20)   # PIL or ndarray; boxes [N, 4] in pixels
-model.set_vocabulary(["about to collide with", "reflected in"])   # any strings, no retraining
-graphs = model.predict(image, boxes_xyxy, decompose=True)          # {"spatial": [...], "semantic": [...]}
+for t in model.predict(image, boxes_xyxy, topk=20):    # PIL/ndarray, boxes [N, 4] in pixels
+    print(t)                                           # (person) --riding [0.67]--> (horse)
+
+# Masks instead of boxes: pass the [N, H, W] binary masks beside their extents.
+triplets = model.predict(image, boxes_xyxy, masks=masks, topk=20)
+
+# The vocabulary is an input. Any strings, at any time, without retraining.
+model.set_vocabulary(["about to collide with", "reflected in"])
+
+# Or answer from the whole training vocabulary, 19,103 strings, read from the weights.
+model = RelateAnything.from_pretrained("maelic/relsgg-vits16", full_vocabulary=True, device="cuda")
+
+# Two graphs from one forward pass.
+graphs = model.predict(image, boxes_xyxy, decompose=True)   # {"spatial": [...], "semantic": [...]}
 ```
 
-`from_pretrained` downloads `model.pth` and the text encoder beside it. The
-weights embed the backbone configuration, so no gated DINOv3 login is needed
-to run them.
+Every vocabulary is encoded once by the text student shipped beside the
+weights, and the head is reparameterized onto it; scoring afterwards is vision
+only. `full_vocabulary=True` reads `predicate_embeddings.npz` instead of
+encoding, which turns a minute and a half of CPU work into a download.
+`model.pth` embeds the backbone configuration, so running these weights needs
+no gated DINOv3 login.
 
-Files: `model.pth` (torch, EMA weights), `text_student.pt`, `relateanything.onnx` + OpenVINO fp16 IR, `predicate_bank.npz`, `thresholds.json`, `calibration.json` (the laptop bundle, see `deploy/README.md`), `README.md`.
+Files: `model.pth` (torch, EMA weights), `text_student.pt` + tokenizer,
+`predicate_embeddings.npz` (the training vocabulary, encoded), `predicate_bank.npz`, `thresholds.json`, `calibration.json`, `README.md`.
 
 **Every number below is generated from measured eval artifacts
 (`release/make_model_cards.py`); none is hand-typed.**

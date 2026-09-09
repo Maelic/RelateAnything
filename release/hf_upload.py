@@ -5,6 +5,8 @@ Layout of ``<org>/<model_id>``:
     model.pth              stripped torch checkpoint (release/strip_checkpoint.py)
     text_student.pt        the distilled predicate text encoder the checkpoint
                            was trained with (+ CLIP tokenizer files)
+    predicate_embeddings.npz  the training vocabulary encoded with that student,
+                           so full_vocabulary=True is a download, not a re-encode
     relateanything.onnx    ONNX graph, numpy + onnxruntime only        (bundles)
     relateanything_fp16.*  OpenVINO IR for CPUs                        (bundles)
     relateanything.json    export metadata: parity, provenance
@@ -47,6 +49,9 @@ ALLOWED_PT = {"text_student.pt"}
 BUNDLE_FILES = ["relateanything.onnx", "relateanything_fp16.xml", "relateanything_fp16.bin"]
 ALWAYS_FILES = ["relateanything.json", "predicate_bank.npz", "thresholds.json",
                 "calibration.json", "README.md"]
+#: Written beside model.pth by strip_checkpoint.py; without it every user of
+#: full_vocabulary=True re-encodes 19k strings locally.
+WEIGHTS_SIDECARS = ["text_student.pt", "predicate_embeddings.npz"]
 TOKENIZER_FILES = ["tokenizer.json", "vocab.json", "merges.txt",
                    "tokenizer_config.json", "special_tokens_map.json"]
 
@@ -86,7 +91,7 @@ def gather(m: dict, weights_dir: str | None, torch_only: bool) -> dict:
                          f"--checkpoint <run>/checkpoint_last.pth --out {dist}/model.pth")
     files["model.pth"] = w
     wdir = os.path.dirname(w)
-    for fname in ["text_student.pt"] + TOKENIZER_FILES:
+    for fname in WEIGHTS_SIDECARS + TOKENIZER_FILES:
         for d in (wdir, dist):
             p = os.path.join(d, fname)
             if os.path.exists(p):

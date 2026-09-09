@@ -90,15 +90,21 @@ def build_card(m: dict, a) -> str:
         metrics_yaml.append(
             f"      - type: F1@50\n        value: {f1(r, mr):.4f}\n"
             f"        name: 'F1@50 ({s} test, graph-constrained)'")
+    # What the card claims the repository holds is what the bundle holds — the
+    # tag list included. A model without an export is not an onnx model.
+    dist = os.path.join("deploy/dist", mid)
+    has_onnx = os.path.exists(os.path.join(dist, "relateanything.onnx"))
+    has_ov = os.path.exists(os.path.join(dist, "relateanything_fp16.xml"))
+    tags = ["scene-graph-generation", "open-vocabulary", "visual-relationship-detection"]
+    if has_onnx:
+        tags.append("onnx")
+    tags_yaml = "\n".join(f"  - {t}" for t in tags)
     head = f"""---
 license: other
 license_name: dinov3-license
 license_link: https://ai.meta.com/resources/models-and-libraries/dinov3-license/
 tags:
-  - scene-graph-generation
-  - open-vocabulary
-  - visual-relationship-detection
-  - onnx
+{tags_yaml}
 library_name: relsgg
 model-index:
   - name: {mid}
@@ -171,11 +177,16 @@ more than the agreement above.
     else:
         ov_section = ""
 
-    has_onnx = os.path.exists(os.path.join("deploy/dist", mid, "relateanything.onnx")) or \
-        "-zeroshot" not in mid
-    onnx_note = (
-        "`relateanything.onnx` + OpenVINO fp16 IR, `predicate_bank.npz`, `thresholds.json`, "
-        "`calibration.json` (the laptop bundle, see `deploy/README.md`), " if has_onnx else "")
+    bundle = []
+    if has_onnx:
+        bundle.append("`relateanything.onnx`" + (" + OpenVINO fp16 IR" if has_ov else ""))
+    bundle += ["`predicate_bank.npz`", "`thresholds.json`", "`calibration.json`"]
+    onnx_note = ", ".join(bundle) + ", "
+    n_pred_note = ""
+    emb = os.path.join(dist, "predicate_embeddings.npz")
+    if os.path.exists(emb):
+        import numpy as np
+        n_pred_note = f", {len(np.load(emb, allow_pickle=True)['names']):,} strings"
     body = f"""# {mid}
 
 Open-vocabulary relation prediction from any boxes or masks. Give the model an
@@ -193,25 +204,40 @@ Open-Vocabulary Relation Prediction From Any Inputs*). Trained on
 
 ```bash
 pip install git+{GITHUB}
+hf download {hf_repo}          # optional; the API fetches on first use
 ```
 
 ```python
-from huggingface_hub import snapshot_download
-from relsgg.api import RelateAnything
+from relsgg import RelateAnything
 
-d = snapshot_download("{hf_repo}")
-model = RelateAnything.from_checkpoint(
-    f"{{d}}/model.pth", predicates=["holding", "riding", "next to"], device="cuda")
-triplets = model.predict(image, boxes_xyxy, topk=20)      # image: PIL / ndarray, boxes: [N, 4] pixels
-model.set_vocabulary(["about to collide with", "reflected in"])   # any strings, no retraining
-graphs = model.predict(image, boxes_xyxy, decompose=True)          # {{"spatial": [...], "semantic": [...]}}
+# Regions come from any detector, any segmenter, or your own annotation.
+# Object class labels are never an input.
+model = RelateAnything.from_pretrained("{hf_repo}", device="cuda")
+for t in model.predict(image, boxes_xyxy, topk=20):    # PIL/ndarray, boxes [N, 4] in pixels
+    print(t)                                           # (person) --riding [0.67]--> (horse)
+
+# Masks instead of boxes: pass the [N, H, W] binary masks beside their extents.
+triplets = model.predict(image, boxes_xyxy, masks=masks, topk=20)
+
+# The vocabulary is an input. Any strings, at any time, without retraining.
+model.set_vocabulary(["about to collide with", "reflected in"])
+
+# Or answer from the whole training vocabulary{n_pred_note}, read from the weights.
+model = RelateAnything.from_pretrained("{hf_repo}", full_vocabulary=True, device="cuda")
+
+# Two graphs from one forward pass.
+graphs = model.predict(image, boxes_xyxy, decompose=True)   # {{"spatial": [...], "semantic": [...]}}
 ```
 
-`from_pretrained` downloads `model.pth` and the text encoder beside it. The
-weights embed the backbone configuration, so no gated DINOv3 login is needed
-to run them.
+Every vocabulary is encoded once by the text student shipped beside the
+weights, and the head is reparameterized onto it; scoring afterwards is vision
+only. `full_vocabulary=True` reads `predicate_embeddings.npz` instead of
+encoding, which turns a minute and a half of CPU work into a download.
+`model.pth` embeds the backbone configuration, so running these weights needs
+no gated DINOv3 login.
 
-Files: `model.pth` (torch, EMA weights), `text_student.pt`, {onnx_note}`README.md`.
+Files: `model.pth` (torch, EMA weights), `text_student.pt` + tokenizer,
+`predicate_embeddings.npz` (the training vocabulary, encoded), {onnx_note}`README.md`.
 
 **Every number below is generated from measured eval artifacts
 (`release/make_model_cards.py`); none is hand-typed.**
