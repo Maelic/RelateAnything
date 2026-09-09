@@ -18,12 +18,13 @@ Run from the training checkout, where `$RA_RUNS/train/<run>/` holds the
 checkpoints and evaluation outputs (`RA_RUNS` defaults to `runs/`).
 
 ```bash
-# 0. export the ONNX / OpenVINO bundles for the three released models
+# 0. export the ONNX / OpenVINO bundles (released models only)
 python deploy/build_release.py                       # reads deploy/release_manifest.json
 
-# 1. strip the six checkpoints (needs the backbone config: HF login, or --backbone_config)
-for m in relsgg-vits16 relsgg-vits16plus relsgg-vitb16 \
-         relsgg-vits16-zeroshot relsgg-vits16plus-zeroshot relsgg-vitb16-zeroshot; do
+# 1. strip the three released checkpoints (needs the backbone config: HF login,
+#    or --backbone_config). The -zeroshot arms in the manifest are status
+#    "unreleased": no weights are published for them and every step here skips them.
+for m in relsgg-vits16 relsgg-vits16plus relsgg-vitb16; do
   run=$(python -c "import json;print([e['run_dir'] for e in json.load(open('deploy/release_manifest.json'))['models'] if e['model_id']=='$m'][0])")
   python release/strip_checkpoint.py --checkpoint "$run/checkpoint_last.pth" --out "deploy/dist/$m/model.pth"
 done

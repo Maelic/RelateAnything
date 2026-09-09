@@ -64,7 +64,7 @@ def build_card(m: dict, a) -> str:
     hint = (f"python benchmark/eval_zeroshot.py --checkpoint {run_dir}/checkpoint_last.pth "
             f"--data_roots runs/packed/vg150 runs/packed/psg runs/packed/indoorvg runs/packed/hicodet "
             f"(and eval_spatialsense.py, eval_decomposed.py; see docs/evaluation.md)")
-    hf_repo = m.get("hf_repo", f"maelic/{mid}")
+    hf_repo = m["hf_repo"]          # main() refuses entries without one
 
     # ---- evidence ----------------------------------------------------------
     a1 = {s: load_metrics(run_dir, f"zeroshot_{s}_test_gc.json", hint)
@@ -335,6 +335,11 @@ def main() -> None:
         if m.get("status") != "final" and not a.allow_standin:
             print(f"[cards] {m['model_id']}: status={m.get('status')} — "
                   "skipped (use --allow_standin for pipeline tests)")
+            continue
+        if not m.get("hf_repo"):
+            # A card is the front page of a Hub repository. Without one to name,
+            # the card would invent a download that does not resolve.
+            print(f"[cards] {m['model_id']}: no hf_repo in the manifest, skipped")
             continue
         card = build_card(m, a)
         out = os.path.join(a.out_dir, m["model_id"], "README.md")

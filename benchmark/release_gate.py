@@ -1,6 +1,7 @@
 """Pre-registered release gates for the model family (deploy/release_manifest.json).
 
-Per official model (status pending/candidate/final/rejected), against its `-zeroshot` sibling:
+Per official model (status pending/candidate/final/rejected), against its `-zeroshot`
+sibling (status `unreleased`: kept as the gate's baseline, never published):
   G1  OVS-F1 >= canonical same size - 0.003        (seed noise floor)
   G2  OVS-mR >= canonical same size - 0.003
   G3  HICO F1@50 (graph-constrained, V2 pack) >= 0.30
@@ -51,7 +52,7 @@ def main():
     print(f"{'model':<30}{'OVS-F1':>8}{'OVS-mR':>8}{'A1':>7}{'A2':>7}{'A3':>7}{'A4':>7}{'A6':>7}{'HICO F1':>9}{'fAP':>7}")
     verdicts = {}
     for m in man:
-        if m["status"] not in ("pending", "candidate", "final", "rehearsal", "rejected"): continue
+        if m["status"] not in ("pending", "candidate", "final", "rehearsal", "rejected", "unreleased"): continue
         r = look(m)
         print(f"{m['model_id']:<30}{f(r['OVS_F1']):>8}{f(r['OVS_mR']):>8}{f(r['A1']):>7}{f(r['A2']):>7}{f(r['A3']):>7}{f(r['A4']):>7}{f(r['A6']):>7}{f(r['HICO_F1']):>9}{f(r['fAP']):>7}")
         if (m["status"] in ("pending", "candidate", "final", "rejected")
@@ -60,6 +61,10 @@ def main():
             b = look(by_id[base_id]) if base_id in by_id else {}
             if r["OVS_F1"] is None or r["HICO_F1"] is None or r["A6"] is None:
                 verdicts[m["model_id"]] = "PENDING (evals incomplete)"; continue
+            if b.get("OVS_F1") is None:
+                # G1/G2 are relative to the sibling. Absent, they would compare
+                # against 0 and pass on nothing, which is worse than not running.
+                verdicts[m["model_id"]] = f"PENDING (no baseline row for {base_id})"; continue
             g = {"G1 OVS-F1": r["OVS_F1"] >= (b.get("OVS_F1") or 0) - NOISE,
                  "G2 OVS-mR": (r["OVS_mR"] or 0) >= (b.get("OVS_mR") or 0) - NOISE,
                  "G3 HICO F1>=.30": r["HICO_F1"] >= HICO_MIN,

@@ -94,20 +94,16 @@ batching: [docs/quickstart.md](docs/quickstart.md).
 
 ## Models
 
-Six checkpoints, one recipe; the backbone is the only variable. The three
-released models train on RA-4M + raw Visual Genome + a 5 % share of HICO-DET;
-the `-zeroshot` models use the same recipe with no HICO-DET, which is the
-paper's zero-shot setting. Every number is generated from measured evaluation
-files by [`release/make_model_cards.py`](release/make_model_cards.py).
+Three checkpoints, one recipe; the backbone is the only variable. All three
+train on RA-4M + raw Visual Genome + a 5 % share of HICO-DET. Every number is
+generated from measured evaluation files by
+[`release/make_model_cards.py`](release/make_model_cards.py).
 
 | model | backbone | params | A40, batch 1 | img/s, batch 32 | OVS-F1 | HICO F1 |
 |---|---|---|---|---|---|---|
 | [`relsgg-vits16`](https://huggingface.co/maelic/relsgg-vits16) | DINOv3 ViT-S/16 | 46.1 M | 19.5 ms | 201 | 34.6 | 36.4 |
 | [`relsgg-vits16plus`](https://huggingface.co/maelic/relsgg-vits16plus) ⭐ | DINOv3 ViT-S/16+ | 53.2 M | 20.0 ms | 188 | 37.2 | 37.1 |
 | [`relsgg-vitb16`](https://huggingface.co/maelic/relsgg-vitb16) | DINOv3 ViT-B/16 | 113.8 M | 19.3 ms | 130 | 37.2 | 37.5 |
-| [`relsgg-vits16-zeroshot`](https://huggingface.co/maelic/relsgg-vits16-zeroshot) | DINOv3 ViT-S/16 | 46.1 M | 19.5 ms | 201 | 34.7 | 18.5 |
-| [`relsgg-vits16plus-zeroshot`](https://huggingface.co/maelic/relsgg-vits16plus-zeroshot) | DINOv3 ViT-S/16+ | 53.2 M | 20.0 ms | 188 | 34.2 | 18.7 |
-| [`relsgg-vitb16-zeroshot`](https://huggingface.co/maelic/relsgg-vitb16-zeroshot) | DINOv3 ViT-B/16 | 113.8 M | 19.3 ms | 130 | 35.3 | 20.0 |
 
 ⭐ `relsgg-vits16plus` is the recommended default: it matches the ViT-B model's
 composite at half the parameters, and the advantage ViT-B holds on individual
@@ -127,7 +123,9 @@ lists the full per-benchmark numbers, deployment thresholds and provenance.
 Every number below is **cross-dataset**: the tower is evaluated on benchmarks
 that contributed no training image. The one exception is the HICO-DET row of
 the released model, which takes a 5 % relation share of that training split and
-is reported beside the zero-shot tower. The baseline is
+is reported beside the zero-shot tower — the same recipe with no HICO-DET,
+trained as an evaluation control and not published; its arguments are in
+[`training/configs/`](training/configs/). The baseline is
 [OvSGTR](https://github.com/gpt4vision/OvSGTR) pre-trained on MegaSG — the
 corpus whose images we re-annotate, which makes it the closest control for
 supervision quality — run through **our** evaluator on the same images and the

@@ -15,8 +15,12 @@ Layout of ``<org>/<model_id>``:
     calibration.json       the Platt fit (a, b) behind every threshold
     README.md              GENERATED card (release/make_model_cards.py)
 
-"bundles" marks files that exist only for the three released models with an
-ONNX export; the ``-zeroshot`` models ship the torch checkpoint only.
+"bundles" marks files that exist only where deploy/build_release.py has run an
+ONNX export; a model without one becomes a torch-only repository.
+
+Only manifest entries with status ``final`` are published. The ``-zeroshot``
+arms are status ``unreleased`` -- they exist so release_gate.py can measure each
+released model against a sibling that never saw HICO-DET -- and are skipped.
 
 Hard exclusions, enforced here rather than by convention:
     * anything matching ``*detector*`` or ``*.pt`` other than the text student.

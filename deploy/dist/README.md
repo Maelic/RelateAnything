@@ -8,11 +8,13 @@ an annotated video feed with a latency readout — one merged graph, or two
 No torch, no ultralytics, no network. Just onnxruntime, opencv and numpy.
 
 This directory holds one subfolder PER MODEL
-(`relsgg-vits16/`, `relsgg-vits16plus/`, `relsgg-vitb16/`), each with
-`relateanything.onnx`, its provenance json, its `predicate_bank.npz`
-(vocabulary + calibrated per-predicate thresholds + spatial/semantic types)
-and `thresholds.json`. The detector lives in `detector-local/` — it derives
-from AGPL ultralytics and is rebuilt locally, never redistributed.
+(`relsgg-vits16/`, `relsgg-vits16plus/`, `relsgg-vitb16/`), each with its
+provenance json, its `predicate_bank.npz` (vocabulary + calibrated
+per-predicate thresholds + spatial/semantic types) and `thresholds.json`.
+The ONNX graph the demo runs on is exported for `relsgg-vits16plus`; for the
+other two, build it with `python deploy/build_release.py --only <model_id>`.
+The detector lives in `detector-local/` — it derives from AGPL ultralytics and
+is rebuilt locally, never redistributed.
 
 ## Run it
 

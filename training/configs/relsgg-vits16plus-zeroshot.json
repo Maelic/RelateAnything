@@ -1,6 +1,6 @@
 {
  "_model_id": "relsgg-vits16plus-zeroshot",
- "_hf_repo": "maelic/relsgg-vits16plus-zeroshot",
+ "_released": false,
  "amp": true,
  "amp_dtype": "bf16",
  "augment": 0.3,

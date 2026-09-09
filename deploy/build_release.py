@@ -99,6 +99,11 @@ def main() -> None:
     for m in man["models"]:
         if a.only and m["model_id"] != a.only:
             continue
+        # Unreleased arms (the -zeroshot siblings the gate measures against)
+        # have no published bundle. Naming one with --only still builds it.
+        if not a.only and m.get("status") != "final":
+            print(f"\n=== {m['model_id']} ({m.get('status')}) === not released, skipping")
+            continue
         build_one(m, a)
 
 

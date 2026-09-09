@@ -55,12 +55,13 @@ pip install git+https://github.com/Maelic/pycocotools
 
 ## Get the weights
 
-Six models, one repository each on the Hugging Face Hub, all under `maelic/`:
-`relsgg-vits16`, `relsgg-vits16plus` (the recommended default), `relsgg-vitb16`,
-and their `-zeroshot` siblings (same recipe, no HICO-DET in the mixture). Each
-carries `model.pth` (torch, EMA weights, backbone config embedded) and
-`text_student.pt` (the distilled predicate text encoder); the three released
-models also carry the ONNX and OpenVINO bundle.
+Three models, one repository each on the Hugging Face Hub, all under `maelic/`:
+`relsgg-vits16`, `relsgg-vits16plus` (the recommended default) and
+`relsgg-vitb16`. Each carries `model.pth` (torch, EMA weights, backbone config
+embedded), `text_student.pt` (the distilled predicate text encoder),
+`predicate_embeddings.npz` (the training vocabulary already encoded with that
+student) and its calibrated `predicate_bank.npz`. `relsgg-vits16plus` also
+carries the ONNX graph the torch-free demo runs on.
 
 ```bash
 pip install -e ".[hub]"

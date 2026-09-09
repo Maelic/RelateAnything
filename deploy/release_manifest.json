@@ -5,8 +5,12 @@
   "FINAL epoch ships (checkpoint_last, EMA weights; calibration.json is fitted on it).",
   "Released family = HICO-DET 0.05 + source-aware negative masking recipe on the full pack.",
   "The *-zeroshot entries are the same recipe with no HICO-DET in the mixture: the paper's",
-  "zero-shot rows. run_dir names the training run under $RA_RUNS/train on the training machine;",
-  "hf_repo is where the weights are published."
+  "zero-shot rows. They are status=unreleased -- no weights are published for them, and every",
+  "release script skips them -- but they stay here because release_gate.py measures each",
+  "released model against its zero-shot sibling, and overall_score.py takes the head-to-head",
+  "HICO-DET cell from the zero-shot tower (the released one saw HICO-DET train).",
+  "run_dir names the training run under $RA_RUNS/train on the training machine;",
+  "hf_repo is where the weights are published, and only released entries have one."
  ],
  "models": [
   {
@@ -65,9 +69,8 @@
    "run_dir": "runs/train/relsgg-vits16-zeroshot",
    "family": "dinov3_vit",
    "backbone_model": "facebook/dinov3-vits16-pretrain-lvd1689m",
-   "status": "final",
+   "status": "unreleased",
    "notes": "canonical zero-shot recipe (paper headline row); OVS-F1 0.3756",
-   "hf_repo": "maelic/relsgg-vits16-zeroshot",
    "checkpoint": "checkpoint_last.pth"
   },
   {
@@ -75,9 +78,8 @@
    "run_dir": "runs/train/relsgg-vits16plus-zeroshot",
    "family": "dinov3_vit",
    "backbone_model": "facebook/dinov3-vits16plus-pretrain-lvd1689m",
-   "status": "final",
+   "status": "unreleased",
    "notes": "canonical zero-shot recipe; OVS-F1 0.3860; source of the 08-21 OpenVINO laptop bundle",
-   "hf_repo": "maelic/relsgg-vits16plus-zeroshot",
    "checkpoint": "checkpoint_last.pth"
   },
   {
@@ -85,9 +87,8 @@
    "run_dir": "runs/train/relsgg-vitb16-zeroshot",
    "family": "dinov3_vit",
    "backbone_model": "facebook/dinov3-vitb16-pretrain-lvd1689m",
-   "status": "final",
+   "status": "unreleased",
    "notes": "canonical zero-shot recipe; OVS-F1 0.3948",
-   "hf_repo": "maelic/relsgg-vitb16-zeroshot",
    "checkpoint": "checkpoint_last.pth"
   }
  ]
