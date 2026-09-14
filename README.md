@@ -2,8 +2,8 @@
 
 # RelateAnything
 
-**Real-time open-vocabulary relation prediction from any boxes or masks.**<br>
-53 M parameters · 20 ms per frame on an A40 · no object labels · the predicate vocabulary is an input, not a weight.
+**Real-time open-vocabulary relation prediction from any inputs.**<br>
+53 M parameters · 20 ms per frame on an A40 · no object labels · predicate vocabulary given at inference.
 
 [![arXiv](https://img.shields.io/badge/arXiv-2609.12552-b31b1b.svg)](https://arxiv.org/abs/2609.12552)
 [![models](https://img.shields.io/badge/%F0%9F%A4%97%20models-relsgg--*-yellow.svg)](https://huggingface.co/collections/maelic/relateanything)
