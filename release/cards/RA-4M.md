@@ -117,7 +117,11 @@ under their source datasets' licenses (Objects365 research terms, COCO CC BY
 @article{neau2026relateanything,
   title   = {RelateAnything: Real-Time Open-Vocabulary Relation Prediction From Any Inputs},
   author  = {Neau, Ma\"elic},
-  journal = {arXiv preprint},
+  journal = {arXiv preprint arXiv:2609.12552},
+  eprint  = {2609.12552},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV},
+  url     = {https://arxiv.org/abs/2609.12552},
   year    = {2026}
 }
 ```

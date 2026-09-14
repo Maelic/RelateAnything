@@ -19,5 +19,10 @@ preferred-citation:
   authors:
     - family-names: Neau
       given-names: Maëlic
-  journal: "arXiv preprint"
+  journal: "arXiv preprint arXiv:2609.12552"
   year: 2026
+  url: "https://arxiv.org/abs/2609.12552"
+  identifiers:
+    - type: other
+      value: "arXiv:2609.12552"
+      description: "arXiv preprint identifier"

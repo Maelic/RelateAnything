@@ -55,10 +55,11 @@ release = ["huggingface_hub~=1.23"]
 dev = ["pytest~=8.0", "black", "isort", "scikit-learn~=1.9"]
 
 [project.urls]
-Homepage = "https://maelic.github.io/Relate-Anything-Project"
+Homepage = "https://maelic.github.io/RelateAnythingProject"
 Repository = "https://github.com/Maelic/RelateAnything"
-Demo = "https://maelic.github.io/RelateAnything_demo/"
-Models = "https://huggingface.co/maelic"
+Paper = "https://arxiv.org/abs/2609.12552"
+Demo = "https://maelic.github.io/RelateAnythingProject/demo/"
+Models = "https://huggingface.co/collections/maelic/relateanything"
 
 [tool.setuptools.packages.find]
 where = ["."]

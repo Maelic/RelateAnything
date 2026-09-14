@@ -5,17 +5,18 @@
 **Real-time open-vocabulary relation prediction from any boxes or masks.**<br>
 53 M parameters · 20 ms per frame on an A40 · no object labels · the predicate vocabulary is an input, not a weight.
 
-[![paper](https://img.shields.io/badge/paper-technical%20report-b31b1b.svg)](https://maelic.github.io/RelateAnythingProject)
-[![models](https://img.shields.io/badge/%F0%9F%A4%97%20models-relsgg--*-yellow.svg)](https://huggingface.co/maelic)
+[![arXiv](https://img.shields.io/badge/arXiv-2609.12552-b31b1b.svg)](https://arxiv.org/abs/2609.12552)
+[![models](https://img.shields.io/badge/%F0%9F%A4%97%20models-relsgg--*-yellow.svg)](https://huggingface.co/collections/maelic/relateanything)
 [![dataset](https://img.shields.io/badge/%F0%9F%A4%97%20dataset-RA--4M-yellow.svg)](https://huggingface.co/datasets/maelic/RA-4M)
 [![demo](https://img.shields.io/badge/demo-in%20your%20browser-brightgreen.svg)](https://maelic.github.io/RelateAnythingProject/demo/)
 [![ci](https://github.com/Maelic/RelateAnything/actions/workflows/ci.yml/badge.svg)](https://github.com/Maelic/RelateAnything/actions/workflows/ci.yml)
 [![python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](pyproject.toml)
 [![license](https://img.shields.io/badge/code-Apache--2.0-blue.svg)](LICENSE)
 
+[Paper](https://arxiv.org/abs/2609.12552) ·
 [Project page](https://maelic.github.io/RelateAnythingProject) ·
 [Browser demo](https://maelic.github.io/RelateAnythingProject/demo/) ·
-[Models](https://huggingface.co/maelic) ·
+[Models](https://huggingface.co/collections/maelic/relateanything) ·
 [RA-4M](https://huggingface.co/datasets/maelic/RA-4M) ·
 [OV-SGG-Bench](https://huggingface.co/datasets/maelic/OV-SGG-Bench) ·
 [Docs](docs/)
@@ -378,7 +379,11 @@ Every upstream credit and the exact terms: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_
 @article{neau2026relateanything,
   title   = {RelateAnything: Real-Time Open-Vocabulary Relation Prediction From Any Inputs},
   author  = {Neau, Ma\"elic},
-  journal = {arXiv preprint},
+  journal = {arXiv preprint arXiv:2609.12552},
+  eprint  = {2609.12552},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV},
+  url     = {https://arxiv.org/abs/2609.12552},
   year    = {2026}
 }
 ```
