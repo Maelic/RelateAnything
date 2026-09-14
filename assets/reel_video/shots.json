@@ -1,0 +1,68 @@
+{
+ "_comment": [
+  "Shot list for deploy/render_video.py --reel. Five clips, six seconds each.",
+  "Fetch the footage first with deploy/fetch_footage.py --from_shots.",
+  "Every shot renders at 1280x720: four of the five sources are native 720p,",
+  "so a larger output would only upscale them. Crops are 16:9 by construction.",
+  "Licences and source pages are in credits.json beside this file."
+ ],
+ "shots": [
+  {
+   "file": "footage/r3c_adoption_54729571599.webm",
+   "start": 9.0,
+   "duration": 6.0,
+   "mode": "mask",
+   "crop": [
+    0.075,
+    0.1,
+    0.925,
+    0.95
+   ],
+   "det_conf": 0.35,
+   "credit": "R3C Adoption (54729571599) · Public domain",
+   "note": "person riding horse; the crop is exactly 16:9 so nothing is pillarboxed"
+  },
+  {
+   "file": "footage/gof_a_gweithiwr_metrel_ray_burrell_metal_fabrica.webm",
+   "start": 4.0,
+   "duration": 6.0,
+   "mode": "mask",
+   "det_conf": 0.35,
+   "credit": "Ray Burrell, Metal Fabricator and Blacksmith · CC0",
+   "note": "uncropped: the full frame is native 1280x720 and keeps the sparks. Avoid 11-17 s, where the grinder arc blows out the camera's exposure"
+  },
+  {
+   "file": "footage/technical_hardtail_riding_all_mountain_enduro.webm",
+   "start": 30.0,
+   "duration": 6.0,
+   "mode": "mask",
+   "det_conf": 0.35,
+   "credit": "Technical Hardtail riding — Radde faehrt Radd · CC BY 3.0",
+   "note": "riding 0.79 - the clearest single-rider shot of the eleven cycling clips scanned"
+  },
+  {
+   "file": "footage/jalebi_being_prepared_bangalore.webm",
+   "start": 18.0,
+   "duration": 6.0,
+   "mode": "mask",
+   "det_conf": 0.35,
+   "credit": "Jalebi being prepared, Bangalore — Subhashish Panigrahi · CC BY-SA 3.0",
+   "note": "the cook's head is never in frame in this clip; this window has the jalebi trays, pan and bowls"
+  },
+  {
+   "file": "footage/david_farmer_guitarist_at_copped_hall_open_day_a.webm",
+   "start": 35.0,
+   "duration": 6.0,
+   "mode": "mask",
+   "crop": [
+    0.05,
+    0.05,
+    1.0,
+    1.0
+   ],
+   "det_conf": 0.4,
+   "credit": "David Farmer, guitarist — Acabashi · CC BY-SA 4.0",
+   "note": "4K source, so this shot downscales 3648->1280 and is the sharpest in the reel. det_conf 0.40 drops a tree trunk the segmenter calls 'horse'"
+  }
+ ]
+}

@@ -110,8 +110,8 @@ python deploy/demo_webcam.py --backend torch --checkpoint <snapshot>/model.pth
 
 ## 7. The project reel (`make_reel.py`)
 
-`assets/hero.gif` in the README and the video on the project page are one
-rendered artifact, not a screen recording. It makes a single claim visible —
+`assets/reel/hero.gif` is a rendered artifact, not a screen recording. (The
+README's hero is now a video reel over moving footage — see section 8.) It makes a single claim visible —
 the model reads *regions*, and nothing else — by changing only where the
 regions come from, three times:
 
@@ -146,3 +146,42 @@ Two things worth knowing before changing it:
   anything whose endpoints are too small to see. `deploy/seg_detector.py`
   additionally collapses regions that are the same object under two names,
   which a 4,585-class vocabulary produces constantly (`persian cat` / `feline`).
+
+---
+
+## 8. The video reel (`render_video.py`)
+
+The README's hero is thirty seconds over five Creative Commons clips, six
+seconds each. It exists to show the thing a still cannot: that the graph stays
+put while the scene moves.
+
+```bash
+pip install -e ".[deploy,reel,detector]"   # detector is AGPL: the mask shots need it
+python deploy/fetch_footage.py --from_shots assets/reel_video/shots.json --out footage
+python deploy/render_video.py --reel assets/reel_video/shots.json --out hero.mp4 \
+    --width 1280 --fps 30 --stride 2 --crf 18 --max_edges 6 --max_spatial 2
+```
+
+The footage is not redistributed here; `fetch_footage.py` downloads it from
+Commons and writes a `credits.json` beside it. `--from_shots` re-fetches exactly
+the clips the shot list names, by their Commons page URL, so the reel is
+reproducible.
+
+Two filters do the work that a per-frame model cannot:
+
+* **A Kalman filter per track** on `(cx, cy, w, h)`, with ByteTrack-style
+  two-stage IoU association. Boxes stop jittering without lagging behind a
+  moving subject, which one EMA cannot do — it has a single knob for two jobs.
+* **A Kalman filter per relation**, on the calibrated log-odds from
+  `ScoreContract.fuse`. The distinction it draws is between a relation that was
+  *measured low* and one that was *not measurable* because an endpoint went
+  undetected: the first is evidence against, the second is no evidence at all.
+  Treating them alike is what makes a per-frame graph blink. On a 180-frame
+  clip this cut blinks by 39% and raised the mean run of an edge from 21 to 32
+  frames. Pass `--no_belief` to turn it off and see the difference.
+
+Why the output is 1280x720: four of the five sources are native 720p, so a
+larger canvas would upscale them rather than reveal anything. Only the guitarist
+clip is 4K, and it downscales. Crops are 16:9 by construction — a crop of any
+other shape gets pillarboxed into the frame, which was how an early cut ended up
+with black bars down both sides.

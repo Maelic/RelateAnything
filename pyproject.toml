@@ -44,7 +44,9 @@ detector = ["ultralytics~=8.4"]
 # train or run RelSGG). These were previously CORE dependencies, which made
 # every fresh install build autoawq — moved here.
 datagen = ["compressed-tensors", "autoawq"]
-# Render the project reel (deploy/make_reel.py). imageio-ffmpeg only vendors an
+# Render either reel (deploy/make_reel.py, deploy/render_video.py). The video
+# reel's mask shots also need the `detector` extra, which is AGPL.
+# imageio-ffmpeg only vendors an
 # ffmpeg binary; a system ffmpeg with libx264 works just as well, and the script
 # falls back to whatever `ffmpeg` is on PATH.
 reel = ["imageio-ffmpeg~=0.6"]

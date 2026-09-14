@@ -24,10 +24,24 @@ legal advice; each upstream license is authoritative.
 ## Reel photographs
 
 `assets/reel/images/` holds the six photographs `deploy/make_reel.py` renders
-into `assets/hero.gif` and the project page's video. All are from **Wikimedia
-Commons** and are redistributed here under their own terms; per-file title,
-author, licence and source page are in `assets/reel/credits.json`, which is the
-authoritative list.
+into `assets/reel/hero.gif`. All are from **Wikimedia Commons** and are
+redistributed here under their own terms; per-file title, author, licence and
+source page are in `assets/reel/credits.json`, which is the authoritative list.
+
+The README's video reel is a separate artifact, rendered by
+`deploy/render_video.py` from five Commons **video** clips. Those clips are NOT
+redistributed here — `deploy/fetch_footage.py --from_shots` downloads them from
+Commons — and their titles, authors, licences and source pages are in
+`assets/reel_video/credits.json`. One of the five is CC BY-SA, so the rendered
+reel is an adaptation and carries CC BY-SA 4.0.
+
+| Clip | Author | Licence |
+|---|---|---|
+| R3C Adoption (54729571599) | blmcalifornia | Public domain |
+| Gof a Gweithiwr Metrel Ray Burrell | Rupertmaesglas | CC0 |
+| Technical Hardtail riding | Radde faehrt Radd | CC BY 3.0 |
+| Jalebi being prepared, Bangalore | Subhashish Panigrahi | CC BY-SA 3.0 |
+| David Farmer guitarist at Copped Hall | Acabashi | CC BY-SA 4.0 |
 
 | Photograph | Author | Licence |
 |---|---|---|

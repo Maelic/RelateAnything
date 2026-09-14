@@ -21,9 +21,13 @@
 [OV-SGG-Bench](https://huggingface.co/datasets/maelic/OV-SGG-Bench) ·
 [Docs](docs/)
 
-<img src="assets/hero.gif" alt="Six photographs in turn. Regions arrive three ways — boxes from a 497-class detector, instance masks from a 4,585-class one, then masks from a class-agnostic segmenter with no names at all — and the same relation model draws a ranked graph over each" width="720">
+</div>
 
-<sub>Rebuild it with <a href="deploy/make_reel.py"><code>deploy/make_reel.py</code></a>. Photo credits: <a href="assets/reel/credits.json"><code>assets/reel/credits.json</code></a>.</sub>
+https://github.com/user-attachments/assets/76544f31-53ac-407b-9445-157e83946938
+
+<div align="center">
+
+<sub>Five Creative Commons clips, six seconds each: instance masks from a 497-class segmenter, and the same relation model over every one of them. Boxes are tracked with a Kalman filter and each relation is held by a second filter on calibrated log-odds, so an edge survives the frames where one of its endpoints goes undetected. Rebuild it with <a href="deploy/render_video.py"><code>deploy/render_video.py</code></a>. Clip credits: <a href="assets/reel_video/credits.json"><code>assets/reel_video/credits.json</code></a>.</sub>
 
 </div>
 
