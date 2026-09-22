@@ -110,7 +110,7 @@ def test_gpu_dependencies_are_optional_at_import():
             sys.executable,
             "-c",
             "import sys; sys.modules.update(torch=None, tensorrt=None, onnxruntime=None); "
-            "import deploy.trt_runtime, deploy.export_tensorrt",
+            "import deploy.trt_runtime, deploy.export_tensorrt, deploy.make_reel",
         ],
         check=True,
     )
