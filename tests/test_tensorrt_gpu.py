@@ -4,6 +4,60 @@ import numpy as np
 import pytest
 
 
+def test_sparse_sampler_onnx_cuda_preserves_unique_valid_pairs(tmp_path):
+    """Regression for CUDA TopK duplicating padding at the dtype minimum."""
+    torch = pytest.importorskip("torch")
+    ort = pytest.importorskip("onnxruntime")
+    pytest.importorskip("onnx")
+    if (
+        not torch.cuda.is_available()
+        or "CUDAExecutionProvider" not in ort.get_available_providers()
+    ):
+        pytest.skip("requires CUDA ONNX Runtime")
+    from relsgg.model.sampler import RelatednessPairSampler
+
+    ort.preload_dlls()
+    torch.manual_seed(42)
+    sampler = RelatednessPairSampler(feat_dim=8, rel_dim=4).eval()
+    boxes = torch.rand(1, 32, 4) * 0.5 + 0.25
+    feats = torch.randn(1, 32, 8)
+    counts = torch.tensor([2])
+    path = tmp_path / "sampler.onnx"
+    with torch.inference_mode():
+        torch.onnx.export(
+            sampler,
+            (boxes, feats, counts),
+            str(path),
+            input_names=["boxes", "feats", "counts"],
+            opset_version=17,
+            dynamo=False,
+        )
+    session = ort.InferenceSession(
+        str(path), providers=[("CUDAExecutionProvider", {"use_tf32": 0})]
+    )
+    assert "CUDAExecutionProvider" in session.get_providers()
+    for count in (0, 1, 2, 3, 7, 12, 20, 32):
+        counts[0] = count
+        with torch.inference_mode():
+            reference = [x.numpy() for x in sampler(boxes, feats, counts)]
+        actual = session.run(
+            None,
+            {"boxes": boxes.numpy(), "feats": feats.numpy(), "counts": counts.numpy()},
+        )
+
+        def valid_pairs(outputs):
+            sub, obj, valid = outputs[:3]
+            pairs = list(zip(sub[valid], obj[valid]))
+            assert len(pairs) == len(set(pairs)) == min(128, count * (count - 1))
+            return {pair: score for pair, score in zip(pairs, outputs[-1][valid])}
+
+        ref, got = valid_pairs(reference), valid_pairs(actual)
+        assert ref.keys() == got.keys()
+        np.testing.assert_allclose(
+            [got[key] for key in ref], list(ref.values()), atol=1e-5, rtol=1e-4
+        )
+
+
 def test_native_engine_dynamic_shapes_output_order_and_buffer_lifetime(tmp_path):
     trt = pytest.importorskip("tensorrt")
     torch = pytest.importorskip("torch")

@@ -124,7 +124,11 @@ class RelatednessPairSampler(nn.Module):
             swapped = is_gt.reshape(B, N, N).transpose(1, 2).reshape(B, N * N)
             force = is_gt | (swapped & pair_valid)
 
-        NEG = torch.finfo(geo_scores.dtype).min
+        # ORT CUDA TopK uses the dtype minimum for its internal padding.
+        # Matching that value can emit duplicate indices when real pairs do
+        # not fill the budget. Keep masked scores above that internal sentinel
+        # while still far below finite model logits (also under BF16 autocast).
+        NEG = torch.finfo(geo_scores.dtype).min / 2
         sel_scores = geo_scores.masked_fill(~pair_valid, NEG)
         if training:
             sel_scores = sel_scores.masked_fill(force & pair_valid, float("inf"))
