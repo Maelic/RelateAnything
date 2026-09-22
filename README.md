@@ -308,9 +308,13 @@ The relation graph comes with the model repository. Detector weights are not
 redistributed (AGPL upstream); [`deploy/README.md`](deploy/README.md) gives the
 two-command local rebuild, and the ONNX and OpenVINO export recipe.
 
+For NVIDIA GPU deployment, build local TensorRT engines and run the same demo
+with `--backend tensorrt`. Dynamic vocabulary, calibration and two-graph decoding
+are preserved. See the [TensorRT setup and parity checks](deploy/README.md#tensorrt-nvidia-gpu).
+
 ## How it works
 
-<div align="center"><img src="assets/pipeline.svg" alt="Architecture: a DINOv3 backbone reads the image once; boxes become query tokens; a relation transformer scores pairs against a predicate matrix produced by a text encoder from the vocabulary supplied at inference" width="820"></div>
+<div align="center"><a href="assets/architecture.png"><img src="assets/architecture.png" alt="Figure 2: RelateAnything's visual path, text embedding bank, predicate-conditioned scoring gate, and training objective" width="1000"></a><br><sub>Figure 2 from <a href="https://arxiv.org/abs/2609.12552">the paper</a>. Click for the full-resolution diagram.</sub></div>
 
 A frozen-config DINOv3 backbone reads the image once. Each region becomes a
 token from its box (or mask) geometry and pooled features; a pair sampler keeps

@@ -106,6 +106,87 @@ schema do not offer the feature, and say so rather than degrading silently.
 python deploy/demo_webcam.py --backend torch --checkpoint <snapshot>/model.pth
 ```
 
+## TensorRT (NVIDIA GPU)
+
+The native TensorRT 10 backend builds engines from the same released ONNX
+graphs. It shares preprocessing, vocabulary selection, calibration and decoding
+with the ONNX backend, including `--decompose`. PyTorch provides CUDA buffers
+and streams; inference runs in TensorRT. Use a CUDA-enabled PyTorch install and
+an NVIDIA driver compatible with both PyTorch and TensorRT.
+
+From the repository root on a Linux x86-64 NVIDIA machine:
+
+```bash
+pip install -e ".[tensorrt,hub]"
+# Download the graph into the bundle already containing the bank and sidecar.
+hf download maelic/relsgg-vits16plus relateanything.onnx \
+  --local-dir deploy/dist/relsgg-vits16plus
+
+python deploy/export_tensorrt.py \
+  --onnx deploy/dist/relsgg-vits16plus/relateanything.onnx --check
+
+# After rebuilding your detector locally (section 2):
+python deploy/export_tensorrt.py \
+  --onnx deploy/dist/detector-local/detector.onnx --check
+
+python deploy/demo_webcam.py --dist deploy/dist/relsgg-vits16plus \
+  --backend tensorrt --device cuda --image photo.jpg --decompose
+```
+
+Each build writes `<stem>_trt.engine` and `<stem>_trt.json`, retaining the source
+metadata and calibration and recording the GPU, TensorRT version, ONNX hash and
+shape profiles. Engines are specific to the GPU/platform and TensorRT version;
+build them on the deployment machine, and rebuild after changing the graph or
+TensorRT. The source ONNX and its sidecar remain unchanged. On Jetson, install
+TensorRT 10 and CUDA-enabled PyTorch through NVIDIA's platform packages instead
+of the `tensorrt` pip extra; Jetson has not been validated here.
+
+The initial backend uses **FP32 with TF32 disabled**. Reduced precision can
+change pair selection and needs separate accuracy validation. The batch size,
+image size and padded box count are fixed to the bundle's contract (normally
+1 / 448 / 32). The actual region count may be zero through `max_boxes`.
+The predicate count remains dynamic from 1 through the bank size; set
+`--max-vocab N` when building for a larger bank. Changing predicates within
+that profile does not rebuild the engine. Masks use the existing exported
+boxes-only path; segmentation can still provide those boxes.
+
+Use just the relation engine with your own region source:
+
+```python
+from deploy.trt_runtime import TensorRTRelationHead
+from deploy.postprocess import ThresholdConfig, decode
+
+head = TensorRTRelationHead(
+    "deploy/dist/relsgg-vits16plus/relateanything_trt.engine",
+    "deploy/dist/relsgg-vits16plus/predicate_bank.npz",
+    device="cuda",
+)
+head.set_predicates(["on", "holding", "beside"])
+pred, pair, sub, obj, valid = head(frame_bgr, boxes_xyxy)
+cfg = ThresholdConfig(threshold=0.5, calib_a=head.contract.calib_a,
+                      calib_b=head.contract.calib_b)
+triplets = decode(pred, pair, sub, obj, valid, head.predicates, cfg,
+                  boxes_xyxy=boxes_xyxy)
+```
+
+`--check` compares valid pair sets and raw logits with ONNX Runtime across
+empty/singleton inputs, several box counts, and small/default/full vocabulary
+selections. Invalid padding is ignored and outputs are aligned by subject/object
+pair because TopK ties can be reordered. Add `--check-images image1.jpg
+image2.jpg` to include real images (with generated boxes); these checks verify
+numerical agreement, not benchmark accuracy. A failed check exits with an
+error and does not record a successful parity report. Use `--bench` in the demo
+to measure latency on your own system; the published A40 figures are PyTorch
+measurements, not TensorRT results.
+
+Validated on an RTX 3080 Laptop GPU with TensorRT 10.16.1.11 and the released
+`relsgg-vits16plus` ONNX graph: 45 parity cases (one synthetic image plus
+`assets/reel/images/horse.jpg` and `bicycle.jpg`, five region counts, three
+vocabulary selections), identical valid pair sets, maximum absolute logit
+delta **0.000201225**. The standalone relation API also matched merged and
+decomposed decoded graphs after swapping between 3, 243 and 1 predicates.
+The other two released towers and Jetson have not been checked.
+
 ---
 
 ## 7. The project reel (`make_reel.py`)

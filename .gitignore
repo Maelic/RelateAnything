@@ -20,6 +20,7 @@ venv/
 *.ckpt
 *.safetensors
 *.onnx
+*.engine
 *.bin
 *.xml
 *_deploy.pt

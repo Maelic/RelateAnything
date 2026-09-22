@@ -33,6 +33,9 @@ dependencies = [
 # ONNX demo / laptop runtime (deploy/). The demo GUI needs full opencv; it
 # shadows the headless wheel, which is expected.
 deploy = ["onnxruntime~=1.28", "onnx~=1.22", "opencv-python~=5.0"]
+# Native TensorRT 10 engine build/runtime; CUDA-enabled torch is required.
+# On Jetson, use NVIDIA's platform-provided TensorRT instead of this pip extra.
+tensorrt = ["tensorrt-cu12>=10.8,<11", "onnxruntime~=1.28", "onnx~=1.22", "opencv-python~=5.0"]
 # The server-side demo (deploy/gradio_app.py). Needs the [detector] extra too.
 gradio = ["gradio>=5"]
 # Pull weights and packs from the Hugging Face Hub.
