@@ -179,13 +179,13 @@ error and does not record a successful parity report. Use `--bench` in the demo
 to measure latency on your own system; the published A40 figures are PyTorch
 measurements, not TensorRT results.
 
-Validated on an RTX 3080 Laptop GPU with TensorRT 10.16.1.11 and the released
-`relsgg-vits16plus` ONNX graph: 45 parity cases (one synthetic image plus
-`assets/reel/images/horse.jpg` and `bicycle.jpg`, five region counts, three
-vocabulary selections), identical valid pair sets, maximum absolute logit
-delta **0.000201225**. The standalone relation API also matched merged and
-decomposed decoded graphs after swapping between 3, 243 and 1 predicates.
-The other two released towers and Jetson have not been checked.
+All three released checkpoints have been checked on an RTX 3080 Laptop GPU
+with TensorRT 10.16.1.11. ViT-S+ uses its published ONNX graph; ViT-S and ViT-B
+use local exports of the released checkpoints. See the
+[family benchmark](../docs/benchmarks/README.md) for numerical checks, median
+and p95 latency, and commands to export and measure each model. The standalone
+ViT-S+ relation API also matched merged and decomposed decoded graphs after
+swapping between 3, 243 and 1 predicates. Jetson remains unvalidated.
 
 ---
 

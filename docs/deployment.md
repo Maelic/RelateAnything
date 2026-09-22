@@ -107,10 +107,11 @@ including empty inputs and vocabulary swaps. Installation, engine generation,
 the webcam/image demo and the standalone API are documented in
 [TensorRT deployment](../deploy/README.md#tensorrt-nvidia-gpu).
 
-For a measured comparison with PyTorch and ONNX CUDA on an RTX 3080 Laptop GPU,
-see the [README performance section](../README.md#performance). The
-[raw benchmark record](benchmarks/rtx3080-laptop.json) includes software versions,
-measurement conditions and per-call timings. Regenerate its README table with
+For measurements of all three checkpoints with PyTorch, ONNX CUDA and TensorRT
+on an RTX 3080 Laptop GPU, see the [README performance section](../README.md#performance)
+and [full benchmark and reproduction guide](benchmarks/README.md). The
+[raw benchmark record](benchmarks/rtx3080-laptop-family.json) includes software
+versions, measurement conditions and per-call timings. Regenerate both tables with
 `python release/update_readme_latency.py`; use `--check` to detect stale numbers.
 
 ## Laptop CPU (OpenVINO)

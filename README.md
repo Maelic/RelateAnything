@@ -132,28 +132,45 @@ PyTorch API. [Deployment contracts and limitations](docs/deployment.md).
 ### RTX 3080 Laptop GPU
 
 <!-- BEGIN GENERATED LATENCY -->
-Warm median latency for `relsgg-vits16plus` on an
-**RTX 3080 Laptop GPU** with an Intel Core i9-11950H @ 2.60 GHz.
-The columns use the default deployment vocabulary and the complete bundled
-predicate bank, respectively.
+Warm median latency on an **RTX 3080 Laptop GPU**
+with an 11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz. All three released checkpoints use the same inputs,
+vocabularies and host-side decoding.
 
-| Backend | 35 predicates | 243 predicates |
-|---|---:|---:|
-| PyTorch eager FP32 | 25.0 ms | 25.6 ms |
-| PyTorch eager BF16 | 20.5 ms | 21.0 ms |
-| ONNX CUDA FP32 | 27.7 ms | 28.2 ms |
-| **TensorRT FP32** | **18.0 ms** | **18.3 ms** |
+Observed GPU power limit: **55.00 W**.
+**Thermal limiting was recorded during this run.** The detailed report retains
+the earlier pass to show how the laptop's operating state affects latency.
 
-At 35 predicates, TensorRT saves **7.1 ms (28%)** compared with
-eager PyTorch FP32, and **2.6 ms (12.5%)** compared with eager PyTorch BF16.
+**35 predicates — default deployment vocabulary**
+
+| Backend | ViT-S | ViT-S+ | ViT-B |
+|---|---:|---:|---:|
+| PyTorch eager FP32 | 33.2 ms | 39.2 ms | 76.2 ms |
+| PyTorch eager BF16 | **23.9 ms** | **21.7 ms** | **28.3 ms** |
+| ONNX CUDA FP32 | 36.7 ms | 43.0 ms | 83.8 ms |
+| TensorRT FP32 | 27.1 ms | 31.3 ms | 69.5 ms |
+
+**243 predicates — complete bundled predicate bank**
+
+| Backend | ViT-S | ViT-S+ | ViT-B |
+|---|---:|---:|---:|
+| PyTorch eager FP32 | 33.4 ms | 38.9 ms | 75.3 ms |
+| PyTorch eager BF16 | **23.9 ms** | **22.3 ms** | **28.4 ms** |
+| ONNX CUDA FP32 | 37.1 ms | 43.0 ms | 82.0 ms |
+| TensorRT FP32 | 27.3 ms | 31.2 ms | 69.3 ms |
+
+At 35 predicates, TensorRT reduces median latency versus eager PyTorch FP32
+by **18% (ViT-S)**, **20% (ViT-S+)**, **9% (ViT-B)**.
 
 Batch 1, 448 × 448 input, 20 regions padded to 32, 128 candidate pairs.
 Includes preprocessing, CPU/GPU transfers and decoding; **excludes the
 detector, model loading and engine building**. Each configuration uses
 180 timed calls across 3 shuffled rounds after warmup, over 6 images
-with generated boxes. FP32 runs have TF32 disabled; `torch.compile` was not timed.
+with generated boxes.
+FP32 runs have TF32 disabled; `torch.compile` was not timed. Bold marks the
+lowest median in each column; BF16 accuracy was not evaluated here.
 
-[Versions, method and raw samples](docs/benchmarks/rtx3080-laptop.json) ·
+[p95 latency, validation and reproduction](docs/benchmarks/README.md) ·
+[Raw samples](docs/benchmarks/rtx3080-laptop-family.json) ·
 [TensorRT setup](deploy/README.md#tensorrt-nvidia-gpu). These are local
 deployment measurements, not a dataset-wide accuracy evaluation.
 <!-- END GENERATED LATENCY -->
