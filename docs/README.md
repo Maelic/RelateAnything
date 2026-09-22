@@ -9,7 +9,7 @@ makes sense on a first read.
 |---|---|
 | [Installation](installation.md) | setting up an environment, hitting gated DINOv3 weights, or running offline / on a cluster |
 | [Quickstart](quickstart.md) | you have a checkpoint and want triplets out of it |
-| [Deployment](deployment.md) | shipping to ONNX / OpenVINO / a laptop, or picking thresholds |
+| [Deployment](deployment.md) | shipping with ONNX, OpenVINO or TensorRT, or picking thresholds |
 
 ## Understanding the model
 
@@ -18,6 +18,7 @@ makes sense on a first read.
 | [Architecture](architecture.md) | you want to know what happens between pixels and triplets |
 | [Data](data.md) | you are adding a dataset, building a pack, or wondering what RA-4M contains |
 | [Evaluation](evaluation.md) | you are reporting a number, or comparing against another method |
+| [Paper results](results.md) | detailed model comparisons, transfer results, and benchmark rationale |
 | [Pitfalls](pitfalls.md) | **read before you trust a number.** Every entry here has produced a plausible wrong result at least once |
 
 ## Changing the model
