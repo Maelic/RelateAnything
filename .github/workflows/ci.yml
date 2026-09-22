@@ -37,4 +37,6 @@ jobs:
       - name: Run tests
         run: pytest tests/ -q
       - name: Check generated latency tables
-        run: python release/update_readme_latency.py --check
+        run: |
+          python release/update_readme_latency.py --check
+          python release/update_readme_e2e.py --check

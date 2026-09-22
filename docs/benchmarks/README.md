@@ -5,8 +5,8 @@ GPU. It measures a warm, batch-one relation prediction, including image/box
 preprocessing, CPU/GPU transfers and shared triplet decoding. Detection,
 model loading, text encoding and engine building are outside the timed region.
 
-For detector-inclusive timing with COCO YOLO26, YOLO-World and YOLOE, use the
-[end-to-end comparison](end-to-end.md). Its GPU measurements are pending.
+For detector-inclusive timing with COCO YOLO26, YOLO-World and YOLOE, see the
+[end-to-end comparison](end-to-end.md).
 
 The [README](../../README.md#performance) shows the median comparison.
 The [complete record](rtx3080-laptop-family.json) includes every timed call,
@@ -14,8 +14,9 @@ per-round medians, software versions, input and artifact hashes, seeds and
 numerical checks. The [earlier ViT-S+ run](rtx3080-laptop.json) is retained for
 provenance. The [first family pass](rtx3080-laptop-family-first-pass.json) is
 also retained: thermal conditions changed during that pass and the GPU
-reported throttling during ViT-B. The headline table uses a repeat with shuffled
-backend/vocabulary combinations and a recorded power limit for every block.
+reported throttling during ViT-B. The [thermally limited repeat](rtx3080-laptop-family-limited.json)
+is retained too. The headline table uses fresh exports and cooling intervals
+before each shuffled backend/vocabulary block, with telemetry for every block.
 
 ## Measurements
 
@@ -24,51 +25,51 @@ Latency in milliseconds; each cell is **median / p95**.
 
 | Checkpoint | Backend | 35 predicates | 243 predicates |
 |---|---|---:|---:|
-| ViT-S | PyTorch eager FP32 | 33.17 / 34.22 | 33.38 / 35.37 |
-| ViT-S | PyTorch eager BF16 | 23.91 / 25.43 | 23.93 / 27.38 |
-| ViT-S | ONNX CUDA FP32 | 36.69 / 39.29 | 37.06 / 39.29 |
-| ViT-S | TensorRT FP32 | 27.07 / 30.34 | 27.27 / 30.84 |
-| ViT-S+ | PyTorch eager FP32 | 39.19 / 40.69 | 38.86 / 40.43 |
-| ViT-S+ | PyTorch eager BF16 | 21.72 / 22.72 | 22.34 / 24.32 |
-| ViT-S+ | ONNX CUDA FP32 | 42.97 / 45.52 | 43.00 / 46.42 |
-| ViT-S+ | TensorRT FP32 | 31.35 / 34.19 | 31.21 / 34.97 |
-| ViT-B | PyTorch eager FP32 | 76.19 / 79.54 | 75.26 / 79.14 |
-| ViT-B | PyTorch eager BF16 | 28.32 / 29.48 | 28.44 / 29.76 |
-| ViT-B | ONNX CUDA FP32 | 83.83 / 87.20 | 82.02 / 88.30 |
-| ViT-B | TensorRT FP32 | 69.45 / 73.07 | 69.27 / 73.58 |
+| ViT-S | PyTorch eager FP32 | 21.57 / 23.50 | 21.68 / 22.60 |
+| ViT-S | PyTorch eager BF16 | 20.89 / 24.72 | 21.72 / 24.96 |
+| ViT-S | ONNX CUDA FP32 | 23.11 / 24.82 | 23.40 / 25.13 |
+| ViT-S | TensorRT FP32 | 15.61 / 16.33 | 15.82 / 17.07 |
+| ViT-S+ | PyTorch eager FP32 | 24.25 / 25.19 | 24.53 / 27.91 |
+| ViT-S+ | PyTorch eager BF16 | 23.39 / 26.07 | 23.79 / 26.71 |
+| ViT-S+ | ONNX CUDA FP32 | 26.44 / 27.85 | 26.63 / 27.38 |
+| ViT-S+ | TensorRT FP32 | 17.24 / 17.82 | 17.55 / 18.33 |
+| ViT-B | PyTorch eager FP32 | 43.46 / 44.17 | 43.52 / 44.23 |
+| ViT-B | PyTorch eager BF16 | 23.59 / 25.88 | 24.14 / 25.82 |
+| ViT-B | ONNX CUDA FP32 | 46.04 / 46.63 | 46.20 / 46.75 |
+| ViT-B | TensorRT FP32 | 34.73 / 35.46 | 34.89 / 35.63 |
 
 TensorRT compared with eager PyTorch at 35 predicates:
 
 | Checkpoint | Change vs. FP32 | Change vs. BF16 |
 |---|---:|---:|
-| ViT-S | 6.10 ms (18.4%) faster | 3.16 ms (13.2%) slower |
-| ViT-S+ | 7.84 ms (20.0%) faster | 9.63 ms (44.4%) slower |
-| ViT-B | 6.74 ms (8.8%) faster | 41.13 ms (145.3%) slower |
+| ViT-S | 5.97 ms (27.7%) faster | 5.28 ms (25.3%) faster |
+| ViT-S+ | 7.01 ms (28.9%) faster | 6.15 ms (26.3%) faster |
+| ViT-B | 8.73 ms (20.1%) faster | 11.14 ms (47.2%) slower |
 
 Engine validation against FP32 ONNX Runtime on CPU:
 
 | Checkpoint | Cases | Largest absolute logit difference |
 |---|---:|---:|
-| ViT-S | 105 | 0.000313997 |
-| ViT-S+ | 105 | 0.000234604 |
-| ViT-B | 105 | 0.000061035 |
+| ViT-S | 105 | 0.000314236 |
+| ViT-S+ | 105 | 0.000193357 |
+| ViT-B | 105 | 0.000058413 |
 
 Before timing, the benchmark also checks each FP32 GPU backend against TensorRT
 on every timing image and both vocabulary sizes (identical valid pair sets).
 
 | Checkpoint | PyTorch FP32: largest logit difference | ONNX CUDA FP32: largest logit difference |
 |---|---:|---:|
-| ViT-S | 0.006182075 | 0.000636101 |
-| ViT-S+ | 0.005680799 | 0.000077248 |
+| ViT-S | 0.006183028 | 0.000636578 |
+| ViT-S+ | 0.005682230 | 0.000095606 |
 | ViT-B | 0.004575253 | 0.000055313 |
 
 Thermal observations across the measurement blocks (warmup included):
 
 | Checkpoint | GPU temperature before / after blocks | Observed power limit | Thermal slowdown counter increase |
 |---|---|---|---:|
-| ViT-S | 81–82°C / 81–82°C | 55.00 W | 59080.6 ms |
-| ViT-S+ | 79–83°C / 79–83°C | 55.00 W | 65978.7 ms |
-| ViT-B | 71–79°C / 72–79°C | 55.00 W | 124059.4 ms |
+| ViT-S | 70–70°C / 73–76°C | 90.00 W | 0.0 ms |
+| ViT-S+ | 69–70°C / 73–76°C | 90.00 W | 0.0 ms |
+| ViT-B | 70–70°C / 76–77°C | 90.00 W | 0.0 ms |
 
 Software: PyTorch 2.14.0+cu130, CUDA 13.0, TensorRT 10.16.1.11, ONNX Runtime 1.30.0.
 
@@ -112,21 +113,23 @@ to the model or vocabulary alone. Values are **median / p95**, in milliseconds.
 - **Host work:** four PyTorch/ONNX CPU threads and one OpenCV thread. Decoding
   uses the checkpoint's calibration, threshold 0.5 and top-k 20. Image loading
   is outside the timed region, while resizing and box preprocessing are inside.
+  GPU runs are sequential, but host activity is not isolated: a background
+  filesystem check was observed during collection. Observation timestamps and
+  the execution order are retained in the records' `collection_context`.
 - **Precision:** FP32 backends disable TF32. The PyTorch BF16 arm uses
   autocast. There is no `torch.compile`, CUDA-graph capture or reduced-precision
   TensorRT arm in this comparison.
-- **Artifacts:** ViT-S+ uses its published ONNX graph. ViT-S and ViT-B are
-  exported locally from the released EMA checkpoints with the repository's
-  exporter and predicate banks. All TensorRT engines are built on this GPU.
-  Export versions and artifact hashes are in the record.
+- **Artifacts:** all three models are exported locally from the released EMA
+  checkpoints with the repository's exporter and predicate banks, including
+  the sparse-pair padding fix described below. All TensorRT engines are built
+  on this GPU. Export versions and artifact hashes are in the record.
 - **Hardware:** laptop clocks and power are not locked. Temperature, clocks, power and
   thermal-throttling counters are recorded before warmup and after timing.
-  The laptop was in its **balanced** power profile. The repeat observed a
-  reduced enforced GPU power limit. An [attempted repeat with
-  cooling intervals](rtx3080-laptop-cooling-attempt.json) did not restore the
-  earlier performance, so the final
-  comparison runs all three models in the observed limited state without
-  cooling waits. The telemetry table reports
+  No clocks, fan settings or power limits are changed by the benchmark. The
+  current rerun waits before each block for at most 70°C and clear thermal
+  flags. The previous [cooling attempt](rtx3080-laptop-cooling-attempt.json)
+  did not restore the earlier performance; that incomplete attempt and the
+  subsequent limited repeat are retained. The telemetry table reports
   any thermal limiting during the blocks, including warmup. Compare backends
   within a run; do not interpret differences between runs as model changes.
   These measurements describe this machine and workload; they do not establish
@@ -139,6 +142,22 @@ exactly; logits use `atol=1e-3, rtol=1e-4`. Separate FP32 GPU checks on the timi
 inputs use `atol=1e-2, rtol=1e-4`, with the measured differences reported above.
 BF16 is a latency baseline here; its accuracy was not evaluated. These checks
 are numerical comparisons, not a replacement for dataset-level evaluation.
+
+### Sparse-pair ONNX CUDA correction
+
+The end-to-end preflight exposed duplicate valid pairs from ONNX Runtime 1.30.0
+CUDA when a detector supplied few boxes. The exported sampler masked unused
+slots with the most-negative float, also used for padding in
+[CUDA TopK](https://github.com/microsoft/onnxruntime/blob/v1.30.0/onnxruntime/core/providers/cuda/math/topk_impl.cuh#L50-L67).
+PyTorch and TensorRT agreed on the failing input; the earlier CPU ONNX export
+checks had also passed. The [failed preflight](onnx-cuda-sparse-preflight.json)
+is retained as diagnostic evidence; it contributed no published latency samples. The sampler
+now masks with half the dtype minimum; only the padding sentinel changes, not
+model weights or real pair-selection scores. A CUDA regression test covers
+empty, singleton, sparse and dense inputs. All graphs and engines in this rerun
+are rebuilt with that fix.
+Re-export downloaded graphs before measuring the sparse ONNX CUDA path; checking
+only the earlier generated-box workload did not expose this failure.
 
 ## Reproduce
 
@@ -165,21 +184,17 @@ hf download "maelic/$model_id" model.pth calibration.json \
   --local-dir "checkpoints/$model_id"
 cp "deploy/dist/$model_id/predicate_bank.npz" "$bundle_dir/"
 
-if [ "$model_id" = relsgg-vits16plus ]; then
-  hf download "maelic/$model_id" relateanything.onnx relateanything.json \
-    --local-dir "$bundle_dir"
-else
-  OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python deploy/export_onnx.py \
-    --checkpoint "checkpoints/$model_id/model.pth" \
-    --vocab-npz "$bundle_dir/predicate_bank.npz" --vocab-mode input \
-    --out "$bundle_dir/relateanything.onnx" --check
-fi
+OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python deploy/export_onnx.py \
+  --checkpoint "checkpoints/$model_id/model.pth" \
+  --vocab-npz "$bundle_dir/predicate_bank.npz" --vocab-mode input \
+  --out "$bundle_dir/relateanything.onnx" --check
 
 python deploy/export_tensorrt.py --onnx "$bundle_dir/relateanything.onnx" \
   --check-images assets/reel/images/*.jpg
 
 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python deploy/bench_gpu_backends.py \
   --checkpoint "checkpoints/$model_id/model.pth" --bundle "$bundle_dir" \
+  --cooldown-temperature 70 \
   --out "runs/benchmark/gpu/$model_id.json"
 ```
 

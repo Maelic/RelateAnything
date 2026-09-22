@@ -136,36 +136,37 @@ Warm median latency on an **RTX 3080 Laptop GPU**
 with an 11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz. All three released checkpoints use the same inputs,
 vocabularies and host-side decoding.
 
-Observed GPU power limit: **55.00 W**.
-**Thermal limiting was recorded during this run.** The detailed report retains
+Observed GPU power limit: **90.00 W**.
+No thermal slowdown counter increase was recorded. The detailed report retains
 the earlier pass to show how the laptop's operating state affects latency.
 
 **35 predicates — default deployment vocabulary**
 
 | Backend | ViT-S | ViT-S+ | ViT-B |
 |---|---:|---:|---:|
-| PyTorch eager FP32 | 33.2 ms | 39.2 ms | 76.2 ms |
-| PyTorch eager BF16 | **23.9 ms** | **21.7 ms** | **28.3 ms** |
-| ONNX CUDA FP32 | 36.7 ms | 43.0 ms | 83.8 ms |
-| TensorRT FP32 | 27.1 ms | 31.3 ms | 69.5 ms |
+| PyTorch eager FP32 | 21.6 ms | 24.2 ms | 43.5 ms |
+| PyTorch eager BF16 | 20.9 ms | 23.4 ms | **23.6 ms** |
+| ONNX CUDA FP32 | 23.1 ms | 26.4 ms | 46.0 ms |
+| TensorRT FP32 | **15.6 ms** | **17.2 ms** | 34.7 ms |
 
 **243 predicates — complete bundled predicate bank**
 
 | Backend | ViT-S | ViT-S+ | ViT-B |
 |---|---:|---:|---:|
-| PyTorch eager FP32 | 33.4 ms | 38.9 ms | 75.3 ms |
-| PyTorch eager BF16 | **23.9 ms** | **22.3 ms** | **28.4 ms** |
-| ONNX CUDA FP32 | 37.1 ms | 43.0 ms | 82.0 ms |
-| TensorRT FP32 | 27.3 ms | 31.2 ms | 69.3 ms |
+| PyTorch eager FP32 | 21.7 ms | 24.5 ms | 43.5 ms |
+| PyTorch eager BF16 | 21.7 ms | 23.8 ms | **24.1 ms** |
+| ONNX CUDA FP32 | 23.4 ms | 26.6 ms | 46.2 ms |
+| TensorRT FP32 | **15.8 ms** | **17.6 ms** | 34.9 ms |
 
 At 35 predicates, TensorRT reduces median latency versus eager PyTorch FP32
-by **18% (ViT-S)**, **20% (ViT-S+)**, **9% (ViT-B)**.
+by **28% (ViT-S)**, **29% (ViT-S+)**, **20% (ViT-B)**.
 
 Batch 1, 448 × 448 input, 20 regions padded to 32, 128 candidate pairs.
 Includes preprocessing, CPU/GPU transfers and decoding; **excludes the
 detector, model loading and engine building**. Each configuration uses
 180 timed calls across 3 shuffled rounds after warmup, over 6 images
 with generated boxes.
+Blocks start at ≤70°C; cooling waits are excluded from latency.
 FP32 runs have TF32 disabled; `torch.compile` was not timed. Bold marks the
 lowest median in each column; BF16 accuracy was not evaluated here.
 
@@ -175,15 +176,45 @@ lowest median in each column; BF16 accuracy was not evaluated here.
 deployment measurements, not a dataset-wide accuracy evaluation.
 <!-- END GENERATED LATENCY -->
 
-For detector-inclusive measurements, the [end-to-end benchmark](docs/benchmarks/end-to-end.md)
-pairs each checkpoint with COCO YOLO26, YOLO-World or YOLOE and records detection,
-relation and decoding time separately. GPU results for that comparison are pending.
+### Detector-to-relations on RTX 3080 Laptop GPU
+
+<!-- BEGIN GENERATED E2E LATENCY -->
+Warm **end-to-end median latency** on the RTX 3080 Laptop GPU:
+detection, relation preprocessing/inference and triplet decoding, including transfers.
+Detectors run **PyTorch FP32 throughout**; columns select the **relation backend**.
+YOLOE includes segmentation computation, with boxes passed to RelateAnything.
+
+| Detector | Relation model | PyTorch FP32 | PyTorch BF16 | ONNX CUDA FP32 | TensorRT FP32 |
+|---|---|---:|---:|---:|---:|
+| YOLO26m | ViT-S | 40.7 ms | 38.9 ms | 42.4 ms | **34.7 ms** |
+| YOLO26m | ViT-S+ | 42.6 ms | 38.4 ms | 45.6 ms | **36.5 ms** |
+| YOLO26m | ViT-B | 62.5 ms | **41.1 ms** | 65.7 ms | 54.5 ms |
+| YOLO-World v2-m | ViT-S | 40.4 ms | 40.5 ms | 41.9 ms | **34.4 ms** |
+| YOLO-World v2-m | ViT-S+ | 42.7 ms | 40.8 ms | 45.0 ms | **36.1 ms** |
+| YOLO-World v2-m | ViT-B | 61.7 ms | **40.1 ms** | 65.2 ms | 53.9 ms |
+| YOLOE-26m | ViT-S | 48.8 ms | 45.8 ms | 49.9 ms | **42.1 ms** |
+| YOLOE-26m | ViT-S+ | 50.1 ms | 46.2 ms | 52.6 ms | **43.5 ms** |
+| YOLOE-26m | ViT-B | 68.1 ms | **46.0 ms** | 71.2 ms | 60.2 ms |
+
+Shown: 35 predicates, batch 1, 6 photos, COCO-80 objects.
+The full sweep contains **12,960 timed calls** across 72 configurations, including 243 predicates.
+Retained detections ranged from 2 to 8 per image; 0 calls skipped relation inference.
+Blocks start at ≤70°C; cooling waits are excluded from latency.
+Image loading, display, prompt encoding and model/engine setup are excluded. This is serial latency, not pipelined video throughput.
+FP32 runs have TF32 disabled; BF16 accuracy was not evaluated.
+
+Observed enforced GPU power limits: **90.00 W**. No thermal slowdown counter increase was recorded during the measured blocks (warmup included).
+
+[Full median/p95, stage breakdowns and reproduction](docs/benchmarks/end-to-end.md) ·
+[Raw samples (gzip JSON)](docs/benchmarks/rtx3080-laptop-e2e.json.gz).
+<!-- END GENERATED E2E LATENCY -->
 
 ### End-to-end pipeline in the paper
 
 With **YOLO-World detection included**, the compiled PyTorch pipeline reaches
-**20.3 ms/frame (49 FPS) on an A40**. This uses a different GPU and includes
-detection, so it is separate from the laptop relation-only measurements above.
+**20.3 ms/frame (49 FPS) on an A40**. Its GPU, detector configuration and compiled
+inference setup differ from the laptop comparisons above, so the numbers are
+reported separately.
 
 [Pipeline measurements and deployment choices](docs/deployment.md#realtime-pipeline) ·
 [Full comparison with OvSGTR](docs/results.md#evaluation-results)

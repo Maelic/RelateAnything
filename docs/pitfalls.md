@@ -72,6 +72,22 @@ falsifies the label. The augmentation is deliberately absent — do not add it.
 
 ## Model and scoring
 
+### CUDA TopK can duplicate pairs when padding uses the dtype minimum
+
+The detector-inclusive latency preflight exposed duplicate valid pairs in ONNX
+Runtime's CUDA backend on sparse scenes. The sampler's most-negative-float
+padding collided with TopK's internal padding value. PyTorch and TensorRT agreed
+on the valid pairs in the failing input, and the earlier CPU ONNX export checks
+passed. Those checks did not catch the CUDA error. A dense generated-box workload
+missed it too.
+
+The sampler now uses half the dtype minimum for masked selection scores. The
+CUDA regression test exports the actual sampler and checks empty, singleton,
+sparse and dense inputs for unique, matching valid pairs. Re-export old ONNX
+graphs before using sparse inputs with the CUDA provider. The
+[latency protocol](benchmarks/README.md#sparse-pair-onnx-cuda-correction) records
+which artifacts include the correction.
+
 ### The text space must match the checkpoint
 
 The head's `W` lives in the space of the text encoder the checkpoint was trained
@@ -147,4 +163,3 @@ distinctness first.
 `--seed` re-randomizes head initialization, so different-seed runs land in
 mismatched basins and averaging them halved A1. Shared-init souping is a
 different question and remains untested.
-

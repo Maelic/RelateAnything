@@ -180,8 +180,9 @@ to measure latency on your own system; the published A40 figures are PyTorch
 measurements, not TensorRT results.
 
 All three released checkpoints have been checked on an RTX 3080 Laptop GPU
-with TensorRT 10.16.1.11. ViT-S+ uses its published ONNX graph; ViT-S and ViT-B
-use local exports of the released checkpoints. See the
+with TensorRT 10.16.1.11. The latest comparison uses local exports of all three
+released checkpoints, including the sparse-pair ONNX CUDA padding correction.
+See the
 [family benchmark](../docs/benchmarks/README.md) for numerical checks, median
 and p95 latency, and commands to export and measure each model. The standalone
 ViT-S+ relation API also matched merged and decomposed decoded graphs after
@@ -189,8 +190,8 @@ swapping between 3, 243 and 1 predicates. Jetson remains unvalidated.
 
 The [end-to-end benchmark](../docs/benchmarks/end-to-end.md) adds COCO YOLO26,
 YOLO-World or YOLOE detection and records detector, relation, decoding and total
-latency. It supports the same three checkpoints and four relation backends;
-GPU measurements for this mode are pending.
+latency. It reports the same three checkpoints and four relation backends,
+with raw samples, box counts, numerical checks and thermal telemetry.
 
 ---
 

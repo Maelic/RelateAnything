@@ -179,6 +179,13 @@ def render_summary(records):
         "detector, model loading and engine building**. Each configuration uses",
         f"{data['rounds'] * data['timed_iterations_per_round']} timed calls across {data['rounds']} shuffled rounds after warmup, over {data['images']} images",
         "with generated boxes.",
+        *(
+            [
+                f"Blocks start at ≤{data['cooldown_temperature_c']}°C; cooling waits are excluded from latency."
+            ]
+            if data.get("cooldown_temperature_c") is not None
+            else []
+        ),
         "FP32 runs have TF32 disabled; `torch.compile` was not timed. Bold marks the",
         "lowest median in each column; BF16 accuracy was not evaluated here.",
         "",
@@ -310,17 +317,17 @@ def render_details(records):
     return "\n".join(lines)
 
 
-def update_block(path, body, check):
+def update_block(path, body, check, start=START, end=END):
     original = path.read_text()
-    if original.count(START) != 1 or original.count(END) != 1:
+    if original.count(start) != 1 or original.count(end) != 1:
         raise ValueError(f"Expected exactly one latency block in {path}")
-    before, remainder = original.split(START)
-    _, after = remainder.split(END)
-    updated = before + START + "\n" + body + "\n" + END + after
+    before, remainder = original.split(start)
+    _, after = remainder.split(end)
+    updated = before + start + "\n" + body + "\n" + end + after
     if check:
         if updated != original:
             raise SystemExit(
-                f"{path.relative_to(ROOT)} is stale; run python release/update_readme_latency.py"
+                f"{path.relative_to(ROOT)} is stale; regenerate its latency table"
             )
         print(f"{path.relative_to(ROOT)} matches the measured samples")
     else:

@@ -1,0 +1,44 @@
+{
+  "complete": false,
+  "failure": "Duplicate valid region pairs in the original ONNX CUDA preflight; no latency values were published from this attempt.",
+  "checkpoint": "maelic/relsgg-vits16",
+  "detector": "yolo26m.pt / COCO-80",
+  "image": "assets/reel/images/bicycle.jpg",
+  "onnxruntime": "1.30.0",
+  "original_onnx_sha256": "9d18fe60beae787d5818ec82cfa4e4f1724110adfda4fca9e7433b4b20d5292b",
+  "correction_commit": "7e3a9ae",
+  "outputs": {
+    "TensorRT FP32": {
+      "valid_slots": 2,
+      "unique_valid_pairs": 2,
+      "pair_counts": [
+        {
+          "subject": 0,
+          "object": 1,
+          "count": 1
+        },
+        {
+          "subject": 1,
+          "object": 0,
+          "count": 1
+        }
+      ]
+    },
+    "ONNX CUDA FP32": {
+      "valid_slots": 66,
+      "unique_valid_pairs": 2,
+      "pair_counts": [
+        {
+          "subject": 0,
+          "object": 1,
+          "count": 1
+        },
+        {
+          "subject": 1,
+          "object": 0,
+          "count": 65
+        }
+      ]
+    }
+  }
+}
