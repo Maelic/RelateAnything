@@ -175,6 +175,10 @@ lowest median in each column; BF16 accuracy was not evaluated here.
 deployment measurements, not a dataset-wide accuracy evaluation.
 <!-- END GENERATED LATENCY -->
 
+For detector-inclusive measurements, the [end-to-end benchmark](docs/benchmarks/end-to-end.md)
+pairs each checkpoint with COCO YOLO26, YOLO-World or YOLOE and records detection,
+relation and decoding time separately. GPU results for that comparison are pending.
+
 ### End-to-end pipeline in the paper
 
 With **YOLO-World detection included**, the compiled PyTorch pipeline reaches

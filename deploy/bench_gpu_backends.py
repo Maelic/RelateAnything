@@ -8,15 +8,15 @@ Each invocation measures one checkpoint; run checkpoints sequentially.
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
 import platform
 import random
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -66,11 +66,37 @@ def main():
     parser.add_argument("--boxes", type=int, default=20)
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument(
+        "--detector",
+        choices=["yolo26", "yolo-world", "yoloe"],
+        help="time a full pipeline with this PyTorch FP32 detector",
+    )
+    parser.add_argument(
+        "--detector-weights",
+        type=Path,
+        help="COCO-80 weights prepared with python -m deploy.e2e",
+    )
+    parser.add_argument("--detector-imgsz", type=int, default=640)
+    parser.add_argument("--detector-conf", type=float, default=0.25)
+    parser.add_argument("--detector-iou", type=float, default=0.6)
+    parser.add_argument("--max-detections", type=int, default=100)
+    parser.add_argument("--image-dir", type=Path, default=ROOT / "assets/reel/images")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="print the measurement plan without loading models or using the GPU",
+    )
+    parser.add_argument(
         "--cooldown-temperature",
         type=int,
         help="wait for GPU to reach this temperature before each block (requires nvidia-smi)",
     )
     args = parser.parse_args()
+    if bool(args.detector) != bool(args.detector_weights):
+        parser.error("--detector and --detector-weights must be supplied together")
+    if args.detector_imgsz < 32 or args.max_detections < 1:
+        parser.error("detector size must be >=32 and max-detections positive")
+    if not 0 <= args.detector_conf <= 1 or not 0 <= args.detector_iou <= 1:
+        parser.error("detector confidence and IoU must be in [0, 1]")
     if (
         args.cooldown_temperature is not None
         and not 1 <= args.cooldown_temperature <= 100
@@ -78,12 +104,35 @@ def main():
         parser.error("cooldown temperature must be between 1 and 100 degrees C")
     if min(args.rounds, args.warmup, args.iterations, args.boxes, args.threads) < 1:
         parser.error("rounds, warmup, iterations, boxes and threads must be positive")
+    if args.dry_run:
+        print(
+            json.dumps(
+                {
+                    "checkpoint": str(args.checkpoint),
+                    "bundle": str(args.bundle),
+                    "detector": args.detector,
+                    "detector_runtime": "PyTorch FP32" if args.detector else None,
+                    "detector_weights": (
+                        str(args.detector_weights) if args.detector else None
+                    ),
+                    "relation_backends": ARMS,
+                    "vocabularies": ["default", "full bank"],
+                    "rounds": args.rounds,
+                    "timed_calls_per_configuration": args.rounds * args.iterations,
+                    "max_relation_boxes": args.boxes,
+                    "image_dir": str(args.image_dir),
+                    "out": str(args.out),
+                },
+                indent=2,
+            )
+        )
+        return
 
     import cv2
     import numpy as np
-    import torch
     import onnxruntime as ort
     import tensorrt as trt
+    import torch
 
     from deploy.export_tensorrt import compare_relation_outputs
     from deploy.postprocess import ThresholdConfig, decode
@@ -136,7 +185,11 @@ def main():
     ):
         raise ValueError("PyTorch and exported deployment dimensions must agree")
 
-    paths = sorted((ROOT / "assets/reel/images").glob("*.jpg"))
+    paths = sorted(
+        p
+        for p in args.image_dir.resolve().iterdir()
+        if p.suffix.lower() in {".jpg", ".jpeg", ".png"}
+    )
     frames = [cv2.imread(str(path)) for path in paths]
     if not frames or any(frame is None for frame in frames):
         raise ValueError("Missing or unreadable benchmark images")
@@ -151,6 +204,29 @@ def main():
                 np.concatenate([xy, np.minimum(1, xy + wh)], axis=1) * [w, h, w, h]
             ).astype(np.float32)
         )
+    detector = None
+    if args.detector:
+        from deploy.e2e import CocoDetector
+
+        if args.iterations % len(frames):
+            raise ValueError(
+                "End-to-end iterations must be a multiple of the image count so every image is timed equally"
+            )
+        detector = CocoDetector(
+            args.detector,
+            args.detector_weights,
+            imgsz=args.detector_imgsz,
+            conf=args.detector_conf,
+            iou=args.detector_iou,
+            max_det=args.max_detections,
+        )
+        # Only the numerical preflight reuses boxes. Every timed call reruns detection.
+        with torch.inference_mode():
+            boxsets = [detector(frame)[0][: args.boxes] for frame in frames]
+        if not any(len(boxes) >= 2 for boxes in boxsets):
+            raise RuntimeError(
+                "No input has two detected objects; cannot measure an active relation pipeline"
+            )
     cfg = ThresholdConfig(
         topk=20,
         threshold=0.5,
@@ -204,7 +280,14 @@ def main():
             "calib_b": cfg.calib_b,
         },
         "input_images": [
-            {"path": str(path.relative_to(ROOT)), "sha256": sha256(path)}
+            {
+                "path": (
+                    str(path.relative_to(ROOT))
+                    if path.is_relative_to(ROOT)
+                    else str(path)
+                ),
+                "sha256": sha256(path),
+            }
             for path in paths
         ],
         "artifact_sha256": {
@@ -234,6 +317,22 @@ def main():
         "measurement_blocks": [],
         "fp32_cross_backend_checks": [],
     }
+    if detector is not None:
+        import ultralytics
+
+        from deploy.e2e import pipeline_call, summarize_pipeline
+
+        results.update(
+            scope="detector + relation backbone/head + CPU preprocessing/transfers + CPU decode; serial batch-one pipeline",
+            detector=detector.metadata,
+            ultralytics=ultralytics.__version__,
+            valid_boxes=None,
+            max_relation_boxes=args.boxes,
+            preflight_box_counts=[len(boxes) for boxes in boxsets],
+            box_seed=None,
+            stage_timing="synchronized wall time at detector and relation boundaries; total includes orchestration",
+        )
+        results["artifact_sha256"]["detector_adapter"] = sha256(ROOT / "deploy/e2e.py")
 
     def torch_raw(feed, bf16=False):
         inputs = {
@@ -263,15 +362,37 @@ def main():
         model.vocab_head.alpha = torch.from_numpy(t_head._alpha).cuda()
         model.vocab_head.is_reparameterized = True
 
-    def call(arm, index):
-        f, b = frames[index % len(frames)], boxsets[index % len(frames)]
+    def relation_raw(arm, f, b):
         feed = t_head.make_feed(f, b)
         if arm == "TensorRT FP32":
-            raw = t_head._run_engine(feed)
+            return t_head._run_engine(feed)
         elif arm == "ONNX CUDA FP32":
-            raw = o_head._run_engine(feed)
-        else:
-            raw = torch_raw(feed, bf16=arm == "PyTorch eager BF16")
+            return o_head._run_engine(feed)
+        return torch_raw(feed, bf16=arm == "PyTorch eager BF16")
+
+    def decode_pipeline(raw, boxes, scores, labels):
+        return decode(
+            *(x[0] for x in raw),
+            t_head.predicates,
+            cfg,
+            boxes_xyxy=boxes,
+            box_scores=scores,
+            box_labels=labels,
+        )
+
+    def call(arm, index):
+        f = frames[index % len(frames)]
+        if detector is not None:
+            return pipeline_call(
+                f,
+                detector,
+                lambda frame, boxes: relation_raw(arm, frame, boxes),
+                decode_pipeline,
+                args.boxes,
+                synchronize=torch.cuda.synchronize,
+            )
+        b = boxsets[index % len(frames)]
+        raw = relation_raw(arm, f, b)
         return decode(*(x[0] for x in raw), t_head.predicates, cfg, boxes_xyxy=b)
 
     def cool_down():
@@ -305,6 +426,7 @@ def main():
     configurations = [(arm, i) for i in range(len(vocabularies)) for arm in ARMS]
     times = {key: [] for key in configurations}
     per_round = {key: [] for key in configurations}
+    pipeline_samples = {key: [] for key in configurations}
     with torch.inference_mode():
         for vocab in vocabularies:
             select_vocab(vocab)
@@ -346,9 +468,19 @@ def main():
                 for i in range(args.iterations):
                     torch.cuda.synchronize()
                     start = time.perf_counter()
-                    call(arm, i)
+                    sample = call(arm, i)
                     torch.cuda.synchronize()
-                    samples.append((time.perf_counter() - start) * 1000)
+                    elapsed = (time.perf_counter() - start) * 1000
+                    samples.append(elapsed)
+                    if detector is not None:
+                        pipeline_samples[arm, vocab_index].append(
+                            {
+                                **sample,
+                                "total_ms": elapsed,
+                                "image_index": i % len(frames),
+                                "round": round_no + 1,
+                            }
+                        )
                 after = gpu_status()
                 times[arm, vocab_index].extend(samples)
                 per_round[arm, vocab_index].append(float(np.median(samples)))
@@ -383,6 +515,10 @@ def main():
                         "samples_ms": values,
                     }
                 )
+                if detector is not None:
+                    results["rows"][-1].update(
+                        summarize_pipeline(pipeline_samples[arm, vocab_index])
+                    )
             args.out.write_text(json.dumps(results, indent=2) + "\n")
     results["complete"] = True
     results["gpu_status_after_timing"] = gpu_status()

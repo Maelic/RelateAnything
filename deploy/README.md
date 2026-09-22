@@ -187,6 +187,11 @@ and p95 latency, and commands to export and measure each model. The standalone
 ViT-S+ relation API also matched merged and decomposed decoded graphs after
 swapping between 3, 243 and 1 predicates. Jetson remains unvalidated.
 
+The [end-to-end benchmark](../docs/benchmarks/end-to-end.md) adds COCO YOLO26,
+YOLO-World or YOLOE detection and records detector, relation, decoding and total
+latency. It supports the same three checkpoints and four relation backends;
+GPU measurements for this mode are pending.
+
 ---
 
 ## 7. The project reel (`make_reel.py`)

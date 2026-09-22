@@ -8,8 +8,8 @@ from __future__ import annotations
 import argparse
 import json
 import math
-from pathlib import Path
 import statistics
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs/benchmarks/rtx3080-laptop-family.json"
@@ -60,6 +60,10 @@ def load_records():
     for record in records:
         if not record["complete"]:
             raise ValueError("Cannot publish an incomplete benchmark")
+        if record.get("detector") is not None:
+            raise ValueError(
+                "End-to-end detector records cannot populate relation-only tables"
+            )
         if any(record[key] != records[0][key] for key in shared):
             raise ValueError("Benchmark conditions differ between checkpoints")
         rows = {(r["backend"], r["predicates"]): r for r in record["rows"]}
