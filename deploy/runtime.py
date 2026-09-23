@@ -22,7 +22,6 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Sequence
 
 import numpy as np
-import onnxruntime as ort
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -111,6 +110,7 @@ class OnnxDetector:
     # shared so the backends cannot drift apart.
     def _build_engine(self, path: str, threads: int,
                       providers: Optional[Sequence[str]]) -> None:
+        import onnxruntime as ort
         so = ort.SessionOptions()
         if threads:
             so.intra_op_num_threads = threads
@@ -215,6 +215,7 @@ class OnnxRelationHead:
     def _build_engine(self, path: str, threads: int,
                       providers: Optional[Sequence[str]]) -> List[str]:
         """Create the inference engine; returns the graph's output names."""
+        import onnxruntime as ort
         so = ort.SessionOptions()
         if threads:
             so.intra_op_num_threads = threads
@@ -446,7 +447,7 @@ def _find_detector(dist_dir: str) -> str:
 
 
 class ScenePipeline:
-    """Detector + relation head + decoding, all ONNX/numpy."""
+    """Detector + relation head + shared numpy decoding across backends."""
 
     def __init__(self, dist_dir: str = "deploy/dist", detector: str = "",
                  relation: str = "", bank: str = "", threads: int = 0,
@@ -463,7 +464,11 @@ class ScenePipeline:
         + CPU relation head is the working combo on iGPU. files are OpenVINO IR.xml produced by
         deploy/export_openvino.py — int8 preferred, fp16 fallback), or "torch"
         (needs torch + ultralytics; `relation` is a released model.pth
-        bundle and `detector` an ultralytics.pt)."""
+        bundle and `detector` an ultralytics.pt). "tensorrt" uses locally built
+        *_trt.engine files, defaults to CUDA, and accepts cuda:N in `device`.
+        All backends share the predicate bank and host decoding."""
+        if backend not in {"onnx", "openvino", "torch", "tensorrt"}:
+            raise ValueError(f"Unknown backend: {backend!r}")
         bank = bank or os.path.join(dist_dir, "predicate_bank.npz")
         if not os.path.exists(bank):
             bank = ""
@@ -474,6 +479,20 @@ class ScenePipeline:
                 detector or "checkpoints/detectors/yolov8s-worldv2_megasg497.pt",
                 arch=det_arch, device=device)
             self.rel = TorchRelationHead(relation, bank_path=bank, device=device)
+        elif backend == "tensorrt":
+            from deploy.trt_runtime import TensorRTDetector, TensorRTRelationHead
+            # Preserve the pipeline's CPU default for existing callers; this
+            # backend always runs on CUDA, with cuda:N selecting another GPU.
+            trt_device = "cuda" if device == "cpu" else device
+            if not detector:
+                candidates = [os.path.join(dist_dir, "detector_trt.engine"),
+                              os.path.join(os.path.dirname(os.path.abspath(dist_dir)),
+                                           "detector-local", "detector_trt.engine")]
+                detector = next((p for p in candidates if os.path.isfile(p)), candidates[0])
+            relation = relation or os.path.join(dist_dir, "relateanything_trt.engine")
+            self.det = TensorRTDetector(detector, device=trt_device)
+            self.rel = TensorRTRelationHead(relation, bank_path=bank,
+                                           device=rel_device or trt_device)
         elif backend == "openvino":
             from deploy.ov_runtime import OVDetector, OVRelationHead, pick_ir
             # detector prefers fp16: int8 detection is measurably damaged

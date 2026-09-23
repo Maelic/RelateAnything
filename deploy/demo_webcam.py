@@ -127,14 +127,14 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dist", default=os.path.join(os.path.dirname(
         os.path.abspath(__file__)), "dist"), help="directory with the ONNX artifacts")
-    ap.add_argument("--backend", default="onnx", choices=["onnx", "torch"],
-                    help="onnx (default, torch-free) or torch (needs torch+ultralytics)")
-    ap.add_argument("--checkpoint", default="",
-                    help="backend=torch: a released model.pth")
-    ap.add_argument("--det_weights", default="",
-                    help="backend=torch: ultralytics detector.pt")
+    ap.add_argument("--backend", default="onnx", choices=["onnx", "torch", "tensorrt"],
+                    help="onnx (default), torch or tensorrt (NVIDIA GPU)")
+    ap.add_argument("--checkpoint", "--relation", default="",
+                    help="relation model override: model.pth, .onnx or _trt.engine")
+    ap.add_argument("--det_weights", "--detector", default="",
+                    help="detector override: ultralytics .pt, .onnx or _trt.engine")
     ap.add_argument("--det_arch", default="yolo-world", choices=["yolo-world", "yoloe"])
-    ap.add_argument("--device", default="cpu", help="backend=torch: cpu or cuda")
+    ap.add_argument("--device", default="cpu", help="torch: cpu/cuda; tensorrt: cuda or cuda:N (defaults to cuda)")
     ap.add_argument("--camera", type=int, default=0)
     ap.add_argument("--image", default="")
     ap.add_argument("--video", default="")
@@ -172,7 +172,7 @@ def main() -> None:
     args = ap.parse_args()
 
     print(f"[demo] backend={args.backend}"
-          + (f"  dist={args.dist}" if args.backend == "onnx"
+          + (f"  dist={args.dist}" if args.backend != "torch"
              else f"  deploy={args.checkpoint}  device={args.device}"))
     pipe = ScenePipeline(
         args.dist, threads=args.threads, providers=args.providers,

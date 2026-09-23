@@ -26,6 +26,7 @@ The base install is enough to train and evaluate. Everything else is opt-in:
 
 ```bash
 pip install -e ".[deploy]"      # onnxruntime + onnx + full opencv — the demo
+pip install -e ".[tensorrt]"    # native TensorRT 10 on NVIDIA GPUs; see deployment guide
 pip install -e ".[detector]"    # ultralytics (AGPL-3.0) — rebuild demo detectors
 pip install -e ".[datagen]"     # vLLM annotation pipeline — heavy, GPU only
 pip install -e ".[monitoring]"  # wandb + matplotlib

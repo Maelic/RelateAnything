@@ -49,7 +49,6 @@ from typing import List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
-import onnxruntime as ort
 
 from .runtime import letterbox, nms, undo_letterbox
 
@@ -79,6 +78,8 @@ class OnnxSegDetector:
             side = os.path.splitext(onnx_path)[0] + ".classes.json"
             classes = json.load(open(side)) if os.path.exists(side) else []
         self.classes: List[str] = list(classes)
+        # Mask/colour helpers are also used without an inference backend.
+        import onnxruntime as ort
         so = ort.SessionOptions()
         if threads:
             so.intra_op_num_threads = threads

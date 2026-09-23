@@ -1,6 +1,6 @@
 # Deployment
 
-Three targets, in increasing order of constraint: a GPU with torch, a laptop CPU
+Three targets, in increasing order of constraint: a GPU with torch or TensorRT, a laptop CPU
 with ONNX or OpenVINO, and a browser.
 
 Full mechanics live in [`deploy/README.md`](../deploy/README.md); this page is
@@ -91,6 +91,29 @@ Worth knowing before you interpret a demo: **78 % of deployed edges sit on
 non-ground-truth boxes.** The relation model is being asked about objects no
 benchmark ever annotated, which is the intended use and also why benchmark
 precision understates what you see on screen.
+
+## NVIDIA GPU (TensorRT)
+
+`deploy/export_tensorrt.py` builds a native TensorRT 10 engine from a released
+ONNX graph, with a fixed batch/image/box shape and a dynamic predicate axis.
+Run with `ScenePipeline(..., backend="tensorrt", device="cuda")` or use
+`TensorRTRelationHead` directly with your own boxes. The runtime inherits ONNX
+preprocessing and the score contract; all thresholding and two-graph decoding
+stay on the host.
+
+Builds use FP32 with TF32 disabled and must be created on the target GPU. The
+`--check` option verifies valid pair sets and logits against ONNX Runtime,
+including empty inputs and vocabulary swaps. Installation, engine generation,
+the webcam/image demo and the standalone API are documented in
+[TensorRT deployment](../deploy/README.md#tensorrt-nvidia-gpu).
+
+For measurements of all three checkpoints with PyTorch, ONNX CUDA and TensorRT
+on an RTX 3080 Laptop GPU, see the [README performance section](../README.md#performance)
+and [full benchmark and reproduction guide](benchmarks/README.md). The
+benchmark writes software versions, input/model hashes and every timed sample
+into local JSON artifacts. Regenerate the documented values with
+`python release/update_readme_latency.py --source /path/to/family.json`;
+add `--check` to compare the report with that local source.
 
 ## Laptop CPU (OpenVINO)
 
