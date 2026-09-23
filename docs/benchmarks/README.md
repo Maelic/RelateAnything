@@ -8,7 +8,7 @@ model loading, text encoding and engine building are outside the timed region.
 For detector-inclusive timing with COCO YOLO26, YOLO-World and YOLOE, see the
 [end-to-end comparison](end-to-end.md).
 
-The [README](../../README.md#performance) shows the median comparison.
+The [README](../../README.md#performance) highlights the recommended model's latency.
 The [complete record](rtx3080-laptop-family.json) includes every timed call,
 per-round medians, software versions, input and artifact hashes, seeds and
 numerical checks. The [earlier ViT-S+ run](rtx3080-laptop.json) is retained for

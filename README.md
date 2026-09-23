@@ -20,10 +20,10 @@
 
 Give RelateAnything **an image, object regions, and the relations you want to
 look for**. It returns scored `(subject, relation, object)` triplets, such as
-`person → riding → horse`. The recommended model has 53 M parameters.
+`person → riding → horse`.
 
 - **Use your own regions.** Boxes can come from a detector, a segmenter, or a
-  person. Masks are optional. Object class labels are never fed to the model.
+  person. Masks are optional.
 - **Choose the relation vocabulary.** Supply phrases at inference time without
   retraining. A small text encoder embeds them once; no language model runs
   per frame.
@@ -77,17 +77,16 @@ print(graphs["semantic"])
 
 Released checkpoints include the backbone configuration and text encoder;
 **no gated DINOv3 login is needed for inference**. Replace the sample image and
-boxes with your own inputs. You can also pass masks or request the full
-19,103-predicate training vocabulary with `full_vocabulary=True` when loading.
+boxes with your own inputs; the API also supports masks and a larger built-in
+relation vocabulary.
 
 [API guide: inputs, vocabularies, masks, and scores](docs/quickstart.md) ·
 [Installation and offline use](docs/installation.md)
 
 ## Models
 
-Start with **`relsgg-vits16plus`**. It matches the larger model's four-axis
-composite score at roughly half the parameters. All three checkpoints use the
-same training recipe; their vision backbones differ.
+Start with **`relsgg-vits16plus`**, the recommended balance of quality and speed.
+All three checkpoints use the same training recipe; their vision backbones differ.
 
 | Checkpoint | Backbone | Parameters |
 |---|---|---:|
@@ -95,9 +94,8 @@ same training recipe; their vision backbones differ.
 | **[`relsgg-vits16plus`](https://huggingface.co/maelic/relsgg-vits16plus)** | **DINOv3 ViT-S/16+** | **53.2 M** |
 | [`relsgg-vitb16`](https://huggingface.co/maelic/relsgg-vitb16) | DINOv3 ViT-B/16 | 113.8 M |
 
-Each linked model card includes evaluation results, calibration and provenance.
-The [full model comparison](docs/results.md#model-comparison) explains the
-composite and reports throughput.
+[Compare model quality and speed](docs/results.md#model-comparison).
+Each model card includes evaluation results and calibration details.
 
 ## Deployment
 
@@ -129,101 +127,28 @@ PyTorch API. [Deployment contracts and limitations](docs/deployment.md).
 
 ## Performance
 
-### RTX 3080 Laptop GPU
-
 <!-- BEGIN GENERATED LATENCY -->
-Warm median latency on an **RTX 3080 Laptop GPU**
-with an 11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz. All three released checkpoints use the same inputs,
-vocabularies and host-side decoding.
-
-Observed GPU power limit: **90.00 W**.
-No thermal slowdown counter increase was recorded. The detailed report retains
-the earlier pass to show how the laptop's operating state affects latency.
-
-**35 predicates — default deployment vocabulary**
-
-| Backend | ViT-S | ViT-S+ | ViT-B |
-|---|---:|---:|---:|
-| PyTorch eager FP32 | 21.6 ms | 24.2 ms | 43.5 ms |
-| PyTorch eager BF16 | 20.9 ms | 23.4 ms | **23.6 ms** |
-| ONNX CUDA FP32 | 23.1 ms | 26.4 ms | 46.0 ms |
-| TensorRT FP32 | **15.6 ms** | **17.2 ms** | 34.7 ms |
-
-**243 predicates — complete bundled predicate bank**
-
-| Backend | ViT-S | ViT-S+ | ViT-B |
-|---|---:|---:|---:|
-| PyTorch eager FP32 | 21.7 ms | 24.5 ms | 43.5 ms |
-| PyTorch eager BF16 | 21.7 ms | 23.8 ms | **24.1 ms** |
-| ONNX CUDA FP32 | 23.4 ms | 26.6 ms | 46.2 ms |
-| TensorRT FP32 | **15.8 ms** | **17.6 ms** | 34.9 ms |
-
-At 35 predicates, TensorRT reduces median latency versus eager PyTorch FP32
-by **28% (ViT-S)**, **29% (ViT-S+)**, **20% (ViT-B)**.
-
-Batch 1, 448 × 448 input, 20 regions padded to 32, 128 candidate pairs.
-Includes preprocessing, CPU/GPU transfers and decoding; **excludes the
-detector, model loading and engine building**. Each configuration uses
-180 timed calls across 3 shuffled rounds after warmup, over 6 images
-with generated boxes.
-Blocks start at ≤70°C; cooling waits are excluded from latency.
-FP32 runs have TF32 disabled; `torch.compile` was not timed. Bold marks the
-lowest median in each column; BF16 accuracy was not evaluated here.
-
-[p95 latency, validation and reproduction](docs/benchmarks/README.md) ·
-[Raw samples](docs/benchmarks/rtx3080-laptop-family.json) ·
-[TensorRT setup](deploy/README.md#tensorrt-nvidia-gpu). These are local
-deployment measurements, not a dataset-wide accuracy evaluation.
+On an **RTX 3080 Laptop GPU**, the recommended
+**ViT-S+** model takes **17.2 ms per image** with TensorRT FP32,
+including preprocessing, transfers and triplet decoding. Object regions are provided as input.
 <!-- END GENERATED LATENCY -->
 
-### Detector-to-relations on RTX 3080 Laptop GPU
-
 <!-- BEGIN GENERATED E2E LATENCY -->
-Warm **end-to-end median latency** on the RTX 3080 Laptop GPU:
-detection, relation preprocessing/inference and triplet decoding, including transfers.
-Detectors run **PyTorch FP32 throughout**; columns select the **relation backend**.
-YOLOE includes segmentation computation, with boxes passed to RelateAnything.
+With **YOLO26m detection included**, the full pipeline takes **36.5 ms per image**.
+Detection uses PyTorch FP32; ViT-S+ relations use TensorRT FP32.
 
-| Detector | Relation model | PyTorch FP32 | PyTorch BF16 | ONNX CUDA FP32 | TensorRT FP32 |
-|---|---|---:|---:|---:|---:|
-| YOLO26m | ViT-S | 40.7 ms | 38.9 ms | 42.4 ms | **34.7 ms** |
-| YOLO26m | ViT-S+ | 42.6 ms | 38.4 ms | 45.6 ms | **36.5 ms** |
-| YOLO26m | ViT-B | 62.5 ms | **41.1 ms** | 65.7 ms | 54.5 ms |
-| YOLO-World v2-m | ViT-S | 40.4 ms | 40.5 ms | 41.9 ms | **34.4 ms** |
-| YOLO-World v2-m | ViT-S+ | 42.7 ms | 40.8 ms | 45.0 ms | **36.1 ms** |
-| YOLO-World v2-m | ViT-B | 61.7 ms | **40.1 ms** | 65.2 ms | 53.9 ms |
-| YOLOE-26m | ViT-S | 48.8 ms | 45.8 ms | 49.9 ms | **42.1 ms** |
-| YOLOE-26m | ViT-S+ | 50.1 ms | 46.2 ms | 52.6 ms | **43.5 ms** |
-| YOLOE-26m | ViT-B | 68.1 ms | **46.0 ms** | 71.2 ms | 60.2 ms |
+*Warm median latency, batch 1, 35 relation types, 6 sample images; loading and setup excluded.*
 
-Shown: 35 predicates, batch 1, 6 photos, COCO-80 objects.
-The full sweep contains **12,960 timed calls** across 72 configurations, including 243 predicates.
-Retained detections ranged from 2 to 8 per image; 0 calls skipped relation inference.
-Blocks start at ≤70°C; cooling waits are excluded from latency.
-Image loading, display, prompt encoding and model/engine setup are excluded. This is serial latency, not pipelined video throughput.
-FP32 runs have TF32 disabled; BF16 accuracy was not evaluated.
-
-Observed enforced GPU power limits: **90.00 W**. No thermal slowdown counter increase was recorded during the measured blocks (warmup included).
-
-[Full median/p95, stage breakdowns and reproduction](docs/benchmarks/end-to-end.md) ·
-[Raw samples (gzip JSON)](docs/benchmarks/rtx3080-laptop-e2e.json.gz).
+[All models and runtimes](docs/benchmarks/README.md) ·
+[YOLO26, YOLO-World and YOLOE comparison](docs/benchmarks/end-to-end.md) ·
+[Paper pipeline benchmarks](docs/deployment.md#realtime-pipeline)
 <!-- END GENERATED E2E LATENCY -->
-
-### End-to-end pipeline in the paper
-
-With **YOLO-World detection included**, the compiled PyTorch pipeline reaches
-**20.3 ms/frame (49 FPS) on an A40**. Its GPU, detector configuration and compiled
-inference setup differ from the laptop comparisons above, so the numbers are
-reported separately.
-
-[Pipeline measurements and deployment choices](docs/deployment.md#realtime-pipeline) ·
-[Full comparison with OvSGTR](docs/results.md#evaluation-results)
 
 ## Results
 
-The paper evaluates transfer, precision, open vocabulary, detection-mode
-prediction, graph quality and spatial reasoning. Selected transfer results for
-`relsgg-vits16plus`, using ground-truth boxes and one relation per ordered pair:
+The paper evaluates relation prediction across datasets, open vocabularies and
+spatial reasoning tasks. Selected transfer results for **ViT-S+**, using
+ground-truth boxes and one relation per ordered pair:
 
 | Test set | OvSGTR F1@50 | RelateAnything F1@50 |
 |---|---:|---:|
@@ -231,17 +156,10 @@ prediction, graph quality and spatial reasoning. Selected transfer results for
 | PSG | 13.5 | **34.7** |
 | IndoorVG | 20.2 | **37.8** |
 
-Both models use the same evaluator and vocabulary. OvSGTR receives ground-truth
-object labels; RelateAnything does not. ROBIN-3B is a stronger transfer baseline
-than OvSGTR and is also compared in the [paper](https://arxiv.org/abs/2609.12552).
+Both models use the same evaluator and vocabulary. OvSGTR receives object
+labels; RelateAnything does not. The [full results](docs/results.md) cover
+stronger baselines including ROBIN-3B, zero-shot controls and the complete evaluation.
 
-The five-axis OV-SGG-Bench composite is **40.1 vs. 11.8** for OvSGTR.
-It covers transfer, precision, deployment, graph quality and spatial reasoning;
-open-vocabulary performance is reported separately because OvSGTR cannot run
-that protocol. HICO-DET results distinguish the released model, which uses a
-5% HICO-DET training share, from a separate zero-shot control.
-
-[Detailed results and benchmark rationale](docs/results.md) ·
 [Evaluation protocol](benchmark/SPEC.md) · [Scoring guide](docs/evaluation.md)
 
 ## How it works
@@ -260,9 +178,9 @@ changes the vocabulary without retraining the vision model.
 
 ## Data and evaluation packs
 
-- **[RA-4M](https://huggingface.co/datasets/maelic/RA-4M):** 474,413 images
-  referenced by ID, 4,282,531 relation annotations and 10,102 distinct free-text
-  predicates. Images are not redistributed. [Format and generation](docs/data.md).
+- **[RA-4M](https://huggingface.co/datasets/maelic/RA-4M):** training annotations
+  for open-vocabulary relations. Images are referenced by ID and are not
+  redistributed. [Dataset details and generation](docs/data.md).
 - **[OV-SGG-Bench](https://huggingface.co/datasets/maelic/OV-SGG-Bench):** evaluation
   packs, explicit negatives and calibration files for six complementary axes.
   [Protocol](benchmark/SPEC.md).

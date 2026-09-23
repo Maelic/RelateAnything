@@ -10,6 +10,8 @@ makes sense on a first read.
 | [Installation](installation.md) | setting up an environment, hitting gated DINOv3 weights, or running offline / on a cluster |
 | [Quickstart](quickstart.md) | you have a checkpoint and want triplets out of it |
 | [Deployment](deployment.md) | shipping with ONNX, OpenVINO or TensorRT, or picking thresholds |
+| [GPU latency](benchmarks/README.md) | comparing relation models and inference backends, or reproducing the measurements |
+| [End-to-end latency](benchmarks/end-to-end.md) | choosing between YOLO26, YOLO-World and YOLOE detector pipelines |
 
 ## Understanding the model
 

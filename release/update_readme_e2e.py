@@ -223,7 +223,7 @@ def thermal_note(records):
     )
 
 
-def render_summary(records):
+def render_overview(records):
     first = records[0]
     lines = [
         f"Warm **end-to-end median latency** on the {first['gpu'].removeprefix('NVIDIA GeForce ')}:",
@@ -265,19 +265,42 @@ def render_summary(records):
         "Image loading, display, prompt encoding and model/engine setup are excluded. This is serial latency, not pipelined video throughput.",
         "FP32 runs have TF32 disabled; BF16 accuracy was not evaluated.",
         "",
-        thermal_note(records).replace(
-            "telemetry below", "telemetry in the detailed report"
-        ),
+        thermal_note(records),
         "",
-        "[Full median/p95, stage breakdowns and reproduction](docs/benchmarks/end-to-end.md) ·",
-        "[Raw samples (gzip JSON)](docs/benchmarks/rtx3080-laptop-e2e.json.gz).",
+        "[Raw samples (gzip JSON)](rtx3080-laptop-e2e.json.gz).",
     ]
     return "\n".join(lines)
 
 
+def render_summary(records):
+    record = next(
+        r
+        for r in records
+        if r["checkpoint"] == "maelic/relsgg-vits16plus"
+        and r["detector"]["family"] == "yolo26"
+    )
+    latency = stats(
+        [s["total_ms"] for s in samples(record, "TensorRT FP32", VOCABS[0])]
+    )[0]
+    return "\n".join(
+        [
+            f"With **{DETECTORS['yolo26']} detection included**, the full pipeline takes **{latency:.1f} ms per image**.",
+            "Detection uses PyTorch FP32; ViT-S+ relations use TensorRT FP32.",
+            "",
+            f"*Warm median latency, batch {record['batch']}, {VOCABS[0]} relation types, {record['images']} sample images; loading and setup excluded.*",
+            "",
+            "[All models and runtimes](docs/benchmarks/README.md) ·",
+            "[YOLO26, YOLO-World and YOLOE comparison](docs/benchmarks/end-to-end.md) ·",
+            "[Paper pipeline benchmarks](docs/deployment.md#realtime-pipeline)",
+        ]
+    )
+
+
 def render_details(records):
     lines = [
-        thermal_note(records),
+        render_overview(records),
+        "",
+        "### Stage breakdowns",
         "",
         "All latency cells show **median / p95 in milliseconds**, recomputed from raw calls.",
         "Total percentiles include orchestration and are measured directly, not summed from stage percentiles.",
@@ -297,7 +320,7 @@ def render_details(records):
             columns += " Skipped calls | Active-frame total |"
             separator += "---:|---:|"
         lines += [
-            f"### {label}",
+            f"#### {label}",
             "",
             f"{skipped} of {len(family_samples):,} calls skipped relation inference."
             + (

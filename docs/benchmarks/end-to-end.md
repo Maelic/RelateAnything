@@ -8,12 +8,40 @@ detection, relation prediction and triplet decoding. This report and its
 ## Measurements
 
 <!-- BEGIN GENERATED E2E LATENCY -->
+Warm **end-to-end median latency** on the RTX 3080 Laptop GPU:
+detection, relation preprocessing/inference and triplet decoding, including transfers.
+Detectors run **PyTorch FP32 throughout**; columns select the **relation backend**.
+YOLOE includes segmentation computation, with boxes passed to RelateAnything.
+
+| Detector | Relation model | PyTorch FP32 | PyTorch BF16 | ONNX CUDA FP32 | TensorRT FP32 |
+|---|---|---:|---:|---:|---:|
+| YOLO26m | ViT-S | 40.7 ms | 38.9 ms | 42.4 ms | **34.7 ms** |
+| YOLO26m | ViT-S+ | 42.6 ms | 38.4 ms | 45.6 ms | **36.5 ms** |
+| YOLO26m | ViT-B | 62.5 ms | **41.1 ms** | 65.7 ms | 54.5 ms |
+| YOLO-World v2-m | ViT-S | 40.4 ms | 40.5 ms | 41.9 ms | **34.4 ms** |
+| YOLO-World v2-m | ViT-S+ | 42.7 ms | 40.8 ms | 45.0 ms | **36.1 ms** |
+| YOLO-World v2-m | ViT-B | 61.7 ms | **40.1 ms** | 65.2 ms | 53.9 ms |
+| YOLOE-26m | ViT-S | 48.8 ms | 45.8 ms | 49.9 ms | **42.1 ms** |
+| YOLOE-26m | ViT-S+ | 50.1 ms | 46.2 ms | 52.6 ms | **43.5 ms** |
+| YOLOE-26m | ViT-B | 68.1 ms | **46.0 ms** | 71.2 ms | 60.2 ms |
+
+Shown: 35 predicates, batch 1, 6 photos, COCO-80 objects.
+The full sweep contains **12,960 timed calls** across 72 configurations, including 243 predicates.
+Retained detections ranged from 2 to 8 per image; 0 calls skipped relation inference.
+Blocks start at ≤70°C; cooling waits are excluded from latency.
+Image loading, display, prompt encoding and model/engine setup are excluded. This is serial latency, not pipelined video throughput.
+FP32 runs have TF32 disabled; BF16 accuracy was not evaluated.
+
 Observed enforced GPU power limits: **90.00 W**. No thermal slowdown counter increase was recorded during the measured blocks (warmup included).
+
+[Raw samples (gzip JSON)](rtx3080-laptop-e2e.json.gz).
+
+### Stage breakdowns
 
 All latency cells show **median / p95 in milliseconds**, recomputed from raw calls.
 Total percentiles include orchestration and are measured directly, not summed from stage percentiles.
 
-### YOLO26m
+#### YOLO26m
 
 0 of 4,320 calls skipped relation inference. Active-frame and overall totals are identical.
 
@@ -44,7 +72,7 @@ Total percentiles include orchestration and are measured directly, not summed fr
 | ViT-B | ONNX CUDA FP32 | 243 | 21.58 / 22.30 | 43.67 / 44.45 | 0.44 / 0.52 | 65.80 / 66.85 |
 | ViT-B | TensorRT FP32 | 243 | 22.28 / 23.57 | 32.03 / 32.59 | 0.43 / 0.55 | 54.83 / 56.39 |
 
-### YOLO-World v2-m
+#### YOLO-World v2-m
 
 0 of 4,320 calls skipped relation inference. Active-frame and overall totals are identical.
 
@@ -75,7 +103,7 @@ Total percentiles include orchestration and are measured directly, not summed fr
 | ViT-B | ONNX CUDA FP32 | 243 | 20.68 / 21.56 | 43.83 / 44.67 | 0.45 / 0.59 | 65.09 / 66.50 |
 | ViT-B | TensorRT FP32 | 243 | 21.30 / 22.42 | 32.17 / 32.75 | 0.42 / 0.48 | 54.05 / 55.27 |
 
-### YOLOE-26m
+#### YOLOE-26m
 
 0 of 4,320 calls skipped relation inference. Active-frame and overall totals are identical.
 

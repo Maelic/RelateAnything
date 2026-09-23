@@ -110,91 +110,15 @@ def thermal_delta(block):
 
 
 def render_summary(records):
-    data = records[0]
-    lines = [
-        f"Warm median latency on an **{data['gpu'].removeprefix('NVIDIA GeForce ')}**",
-        f"with an {data['cpu']}. All three released checkpoints use the same inputs,",
-        "vocabularies and host-side decoding.",
-        "",
-    ]
-    limits = sorted(
-        {
-            block[phase]["enforced.power.limit"]
-            for record in records
-            for block in record["measurement_blocks"]
-            for phase in ("gpu_before_warmup", "gpu_after_timing")
-        }
-    )
-    limited = any(
-        thermal_delta(block) > 0
-        for record in records
-        for block in record["measurement_blocks"]
-    )
-    lines += [
-        f"Observed GPU power limit: **{', '.join(limits)}**.",
-        (
-            "**Thermal limiting was recorded during this run.** The detailed report retains"
-            if limited
-            else "No thermal slowdown counter increase was recorded. The detailed report retains"
-        ),
-        "the earlier pass to show how the laptop's operating state affects latency.",
-        "",
-    ]
-    for count, label in [
-        (35, "default deployment vocabulary"),
-        (243, "complete bundled predicate bank"),
-    ]:
-        lines += [
-            f"**{count} predicates — {label}**",
-            "",
-            "| Backend | ViT-S | ViT-S+ | ViT-B |",
-            "|---|---:|---:|---:|",
+    record = next(r for r in records if r["checkpoint"] == "maelic/relsgg-vits16plus")
+    latency = stats(record, "TensorRT FP32", 35)[0]
+    return "\n".join(
+        [
+            f"On an **{record['gpu'].removeprefix('NVIDIA GeForce ')}**, the recommended",
+            f"**ViT-S+** model takes **{latency:.1f} ms per image** with TensorRT FP32,",
+            "including preprocessing, transfers and triplet decoding. Object regions are provided as input.",
         ]
-        for arm in ARMS:
-            values = [arm]
-            for record in records:
-                value = stats(record, arm, count)[0]
-                cell = f"{value:.1f} ms"
-                if value == min(stats(record, a, count)[0] for a in ARMS):
-                    cell = f"**{cell}**"
-                values.append(cell)
-            lines.append("| " + " | ".join(values) + " |")
-        lines.append("")
-    savings = [
-        100
-        * (1 - stats(r, "TensorRT FP32", 35)[0] / stats(r, "PyTorch eager FP32", 35)[0])
-        for r in records
-    ]
-    lines += [
-        "At 35 predicates, TensorRT reduces median latency versus eager PyTorch FP32",
-        "by "
-        + ", ".join(
-            f"**{value:.0f}% ({MODELS[r['checkpoint']]})**"
-            for r, value in zip(records, savings)
-        )
-        + ".",
-        "",
-        f"Batch {data['batch']}, {data['image_size']} × {data['image_size']} input, {data['valid_boxes']} regions padded to {data['padded_boxes']}, {data['pair_budget']} candidate pairs.",
-        "Includes preprocessing, CPU/GPU transfers and decoding; **excludes the",
-        "detector, model loading and engine building**. Each configuration uses",
-        f"{data['rounds'] * data['timed_iterations_per_round']} timed calls across {data['rounds']} shuffled rounds after warmup, over {data['images']} images",
-        "with generated boxes.",
-        *(
-            [
-                f"Blocks start at ≤{data['cooldown_temperature_c']}°C; cooling waits are excluded from latency."
-            ]
-            if data.get("cooldown_temperature_c") is not None
-            else []
-        ),
-        "FP32 runs have TF32 disabled; `torch.compile` was not timed. Bold marks the",
-        "lowest median in each column; BF16 accuracy was not evaluated here.",
-        "",
-        "[p95 latency, validation and reproduction](docs/benchmarks/README.md) ·",
-        "[Raw samples](docs/benchmarks/rtx3080-laptop-family.json) ·",
-        "[TensorRT setup](deploy/README.md#tensorrt-nvidia-gpu). These are local",
-        "deployment measurements, not a dataset-wide accuracy evaluation.",
-    ]
-    return "\n".join(lines)
+    )
 
 
 def render_details(records):
