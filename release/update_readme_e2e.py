@@ -15,16 +15,15 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from release.update_readme_latency import ARMS, MODELS, thermal_delta, update_block
 
-SOURCE = ROOT / "docs/benchmarks/rtx3080-laptop-e2e.json.gz"
 START = "<!-- BEGIN GENERATED E2E LATENCY -->"
 END = "<!-- END GENERATED E2E LATENCY -->"
 DETECTORS = {"yolo26": "YOLO26m", "yolo-world": "YOLO-World v2-m", "yoloe": "YOLOE-26m"}
 VOCABS = (35, 243)
 
 
-def load_records():
-    opener = gzip.open if SOURCE.suffix == ".gz" else open
-    with opener(SOURCE, "rt") as stream:
+def load_records(source):
+    opener = gzip.open if source.suffix == ".gz" else open
+    with opener(source, "rt") as stream:
         records = json.load(stream)["records"]
     expected = {(detector, model) for detector in DETECTORS for model in MODELS}
     keys = [(r["detector"]["family"], r["checkpoint"]) for r in records]
@@ -266,8 +265,6 @@ def render_overview(records):
         "FP32 runs have TF32 disabled; BF16 accuracy was not evaluated.",
         "",
         thermal_note(records),
-        "",
-        "[Raw samples (gzip JSON)](rtx3080-laptop-e2e.json.gz).",
     ]
     return "\n".join(lines)
 
@@ -389,7 +386,7 @@ def render_details(records):
         "",
         f"All {len(checks)} FP32 preflight comparisons passed with identical valid pair sets.",
         f"Largest absolute logit difference: {max(c['max_logit_delta'] for c in checks):.9f}.",
-        "Tolerances and per-image results are retained in the raw record. BF16 accuracy was not evaluated.",
+        "Tolerances and per-image results are saved in local result files. BF16 accuracy was not evaluated.",
         "",
         "### GPU conditions",
         "",
@@ -425,9 +422,12 @@ def render_details(records):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--source", type=Path, required=True, help="local benchmark records JSON"
+    )
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    records = load_records()
+    records = load_records(args.source)
     update_block(ROOT / "README.md", render_summary(records), args.check, START, END)
     update_block(
         ROOT / "docs/benchmarks/end-to-end.md",

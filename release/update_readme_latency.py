@@ -1,18 +1,18 @@
 """Generate README medians and detailed GPU latency tables from raw samples.
 
-Run without arguments to update both pages; --check fails if either is stale.
+Pass --source with a local result file; --check fails if either page is stale.
 """
 
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import math
 import statistics
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "docs/benchmarks/rtx3080-laptop-family.json"
 START = "<!-- BEGIN GENERATED LATENCY -->"
 END = "<!-- END GENERATED LATENCY -->"
 MODELS = {
@@ -23,8 +23,10 @@ MODELS = {
 ARMS = ["PyTorch eager FP32", "PyTorch eager BF16", "ONNX CUDA FP32", "TensorRT FP32"]
 
 
-def load_records():
-    records = json.loads(SOURCE.read_text())["records"]
+def load_records(source):
+    opener = gzip.open if source.suffix == ".gz" else open
+    with opener(source, "rt") as stream:
+        records = json.load(stream)["records"]
     if len(records) != len(MODELS) or {r["checkpoint"] for r in records} != set(MODELS):
         raise ValueError(
             "Expected exactly one completed record per released checkpoint"
@@ -215,29 +217,6 @@ def render_details(records):
         f"Software: PyTorch {data['torch']}, CUDA {data['cuda']}, "
         f"TensorRT {data['tensorrt']}, ONNX Runtime {data['onnxruntime']}.",
     ]
-    initial = json.loads(
-        (ROOT / "docs/benchmarks/rtx3080-laptop-family-first-pass.json").read_text()
-    )["records"]
-    lines += [
-        "",
-        "### Initial pass",
-        "",
-        "This pass ran ViT-S, ViT-S+ and ViT-B in that order, with the 35-predicate",
-        "configurations before the 243-predicate configurations. Thermal conditions",
-        "changed during the run; differences from the repeat must not be attributed",
-        "to the model or vocabulary alone. Values are **median / p95**, in milliseconds.",
-        "",
-        "| Checkpoint | Backend | 35 predicates | 243 predicates |",
-        "|---|---|---:|---:|",
-    ]
-    for record in initial:
-        for arm in ARMS:
-            cells = [MODELS[record["checkpoint"]], arm]
-            cells += [
-                " / ".join(f"{value:.2f}" for value in stats(record, arm, count))
-                for count in (35, 243)
-            ]
-            lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines)
 
 
@@ -261,9 +240,12 @@ def update_block(path, body, check, start=START, end=END):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--source", type=Path, required=True, help="local benchmark records JSON"
+    )
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    records = load_records()
+    records = load_records(args.source)
     update_block(ROOT / "README.md", render_summary(records), args.check)
     update_block(
         ROOT / "docs/benchmarks/README.md", render_details(records), args.check

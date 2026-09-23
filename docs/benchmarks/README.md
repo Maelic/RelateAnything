@@ -9,14 +9,9 @@ For detector-inclusive timing with COCO YOLO26, YOLO-World and YOLOE, see the
 [end-to-end comparison](end-to-end.md).
 
 The [README](../../README.md#performance) highlights the recommended model's latency.
-The [complete record](rtx3080-laptop-family.json) includes every timed call,
-per-round medians, software versions, input and artifact hashes, seeds and
-numerical checks. The [earlier ViT-S+ run](rtx3080-laptop.json) is retained for
-provenance. The [first family pass](rtx3080-laptop-family-first-pass.json) is
-also retained: thermal conditions changed during that pass and the GPU
-reported throttling during ViT-B. The [thermally limited repeat](rtx3080-laptop-family-limited.json)
-is retained too. The headline table uses fresh exports and cooling intervals
-before each shuffled backend/vocabulary block, with telemetry for every block.
+This page retains the detailed results and measurement conditions, including
+an earlier pass affected by thermal limiting. Raw JSON, logs and engine files
+are local experiment artifacts under `runs/`; they are not versioned.
 
 ## Measurements
 
@@ -72,6 +67,7 @@ Thermal observations across the measurement blocks (warmup included):
 | ViT-B | 70–70°C / 76–77°C | 90.00 W | 0.0 ms |
 
 Software: PyTorch 2.14.0+cu130, CUDA 13.0, TensorRT 10.16.1.11, ONNX Runtime 1.30.0.
+<!-- END GENERATED LATENCY -->
 
 ### Initial pass
 
@@ -94,7 +90,6 @@ to the model or vocabulary alone. Values are **median / p95**, in milliseconds.
 | ViT-B | PyTorch eager BF16 | 25.45 / 26.36 | 27.81 / 32.02 |
 | ViT-B | ONNX CUDA FP32 | 59.19 / 60.64 | 60.25 / 61.42 |
 | ViT-B | TensorRT FP32 | 41.62 / 44.07 | 44.00 / 44.74 |
-<!-- END GENERATED LATENCY -->
 
 ## Conditions and interpretation
 
@@ -127,9 +122,8 @@ to the model or vocabulary alone. Values are **median / p95**, in milliseconds.
   thermal-throttling counters are recorded before warmup and after timing.
   No clocks, fan settings or power limits are changed by the benchmark. The
   current rerun waits before each block for at most 70°C and clear thermal
-  flags. The previous [cooling attempt](rtx3080-laptop-cooling-attempt.json)
-  did not restore the earlier performance; that incomplete attempt and the
-  subsequent limited repeat are retained. The telemetry table reports
+  flags. An earlier cooling attempt did not restore performance, and a
+  subsequent repeat remained limited to 55 W. The telemetry table reports
   any thermal limiting during the blocks, including warmup. Compare backends
   within a run; do not interpret differences between runs as model changes.
   These measurements describe this machine and workload; they do not establish
@@ -150,8 +144,8 @@ CUDA when a detector supplied few boxes. The exported sampler masked unused
 slots with the most-negative float, also used for padding in
 [CUDA TopK](https://github.com/microsoft/onnxruntime/blob/v1.30.0/onnxruntime/core/providers/cuda/math/topk_impl.cuh#L50-L67).
 PyTorch and TensorRT agreed on the failing input; the earlier CPU ONNX export
-checks had also passed. The [failed preflight](onnx-cuda-sparse-preflight.json)
-is retained as diagnostic evidence; it contributed no published latency samples. The sampler
+checks had also passed. The failed preflight contributed no published latency
+samples. Its diagnostic output is kept locally. The sampler
 now masks with half the dtype minimum; only the padding sentinel changes, not
 model weights or real pair-selection scores. A CUDA regression test covers
 empty, singleton, sparse and dense inputs. All graphs and engines in this rerun
@@ -205,8 +199,9 @@ samples and marks a record complete only after all configurations finish.
 The CLI exposes sampling counts and region count for additional experiments;
 keep them identical when comparing models.
 
-After collecting all three records, assemble the checked-in source and
-regenerate both documentation tables:
+After collecting all three records, assemble a local source and regenerate
+the current documentation tables. The historical initial-pass table is retained
+separately from the generated block:
 
 ```bash
 python - <<'PY'
@@ -216,12 +211,14 @@ from pathlib import Path
 models = ["relsgg-vits16", "relsgg-vits16plus", "relsgg-vitb16"]
 records = [json.loads(Path(f"runs/benchmark/gpu/{model}.json").read_text())
            for model in models]
-Path("docs/benchmarks/rtx3080-laptop-family.json").write_text(
+Path("runs/benchmark/gpu/family.json").write_text(
     json.dumps({"records": records}, indent=2) + "\n")
 PY
-python release/update_readme_latency.py
-python release/update_readme_latency.py --check
+python release/update_readme_latency.py --source runs/benchmark/gpu/family.json
+python release/update_readme_latency.py --source runs/benchmark/gpu/family.json --check
 ```
 
 The generator recomputes the displayed medians, p95s and savings from raw
-samples. CI checks both pages and rejects incomplete or inconsistent records.
+samples and rejects incomplete or inconsistent records. Run `--check` against
+your local source before publishing updated tables. CI tests the reporting
+logic with synthetic data and does not require benchmark artifacts.

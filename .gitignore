@@ -27,6 +27,9 @@ venv/
 checkpoints/
 datasets/
 runs/
+# Benchmark measurements are local artifacts; commit only their Markdown reports.
+docs/benchmarks/*.json
+docs/benchmarks/*.json.gz
 third_party/
 .hf_cache/
 wandb/

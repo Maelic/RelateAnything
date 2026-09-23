@@ -1,9 +1,9 @@
 # Detector-to-relations latency
 
 The end-to-end mode of `deploy/bench_gpu_backends.py` measures an image through
-detection, relation prediction and triplet decoding. This report and its
-[raw record (gzip JSON)](rtx3080-laptop-e2e.json.gz) are separate from the
-[relation-only comparison](README.md).
+detection, relation prediction and triplet decoding. This report is separate
+from the [relation-only comparison](README.md). Raw measurements are local
+artifacts under `runs/` and are not committed.
 
 ## Measurements
 
@@ -33,8 +33,6 @@ Image loading, display, prompt encoding and model/engine setup are excluded. Thi
 FP32 runs have TF32 disabled; BF16 accuracy was not evaluated.
 
 Observed enforced GPU power limits: **90.00 W**. No thermal slowdown counter increase was recorded during the measured blocks (warmup included).
-
-[Raw samples (gzip JSON)](rtx3080-laptop-e2e.json.gz).
 
 ### Stage breakdowns
 
@@ -149,7 +147,7 @@ Detected / retained box-count ranges, across every timed call for each image:
 
 All 216 FP32 preflight comparisons passed with identical valid pair sets.
 Largest absolute logit difference: 0.008907795.
-Tolerances and per-image results are retained in the raw record. BF16 accuracy was not evaluated.
+Tolerances and per-image results are saved in local result files. BF16 accuracy was not evaluated.
 
 ### GPU conditions
 
@@ -316,7 +314,7 @@ separate evidence. Use a new output directory for each rerun.
 The recorded collection ran GPU jobs sequentially, but host CPU activity was
 not isolated. A background filesystem check was observed during the run;
 timestamps and the execution order are included in `collection_context` in
-both raw source files. The cooled measurements use fresh exports, so changes
+the local raw source files. The cooled measurements use fresh exports, so changes
 from the earlier run must not be attributed to temperature alone.
 
 Before timing, all FP32 relation backends are compared on the detector's actual
@@ -334,23 +332,23 @@ end-to-end source and regenerate its tables:
 
 ```bash
 python - <<'PY'
-import gzip
 import json
 from pathlib import Path
 
 records = [json.loads(Path(f"runs/benchmark/e2e/{detector}-{model}.json").read_text())
            for detector in ("yolo26", "yolo-world", "yoloe")
            for model in ("relsgg-vits16", "relsgg-vits16plus", "relsgg-vitb16")]
-Path("docs/benchmarks/rtx3080-laptop-e2e.json.gz").write_bytes(
-    gzip.compress(json.dumps({"records": records}).encode(), mtime=0))
+Path("runs/benchmark/e2e/combined.json").write_text(
+    json.dumps({"records": records}, indent=2) + "\n")
 PY
-python release/update_readme_e2e.py
-python release/update_readme_e2e.py --check
+python release/update_readme_e2e.py --source runs/benchmark/e2e/combined.json
+python release/update_readme_e2e.py --source runs/benchmark/e2e/combined.json --check
 ```
 
-CI regenerates the expected tables from raw samples and rejects missing
-configurations, inconsistent detector settings, unequal image coverage,
-incorrect stage totals, or incomplete FP32 parity evidence.
+The generator rejects missing configurations, inconsistent detector settings,
+unequal image coverage, incorrect stage totals, or incomplete FP32 parity
+evidence. Run `--check` with your local results before publishing. CI tests
+these guards using small synthetic records; raw GPU artifacts stay local.
 
 Upstream model definitions and supported checkpoints:
 [YOLO26](https://docs.ultralytics.com/models/yolo26/),

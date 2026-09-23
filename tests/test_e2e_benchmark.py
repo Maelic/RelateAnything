@@ -192,13 +192,16 @@ def test_changed_weights_and_wrong_vocabulary_are_rejected(fake_detector):
         e2e.CocoDetector("yoloe", weights, device="cpu")
 
 
-def test_end_to_end_records_cannot_be_published_as_relation_only(tmp_path, monkeypatch):
+def test_end_to_end_records_cannot_be_published_as_relation_only(tmp_path):
     from release import update_readme_latency as report
 
-    data = json.loads(report.SOURCE.read_text())
-    data["records"][0]["detector"] = {"family": "yolo26"}
+    data = {
+        "records": [
+            {"checkpoint": model, "complete": True, "detector": {"family": "yolo26"}}
+            for model in report.MODELS
+        ]
+    }
     source = tmp_path / "records.json"
     source.write_text(json.dumps(data))
-    monkeypatch.setattr(report, "SOURCE", source)
     with pytest.raises(ValueError, match="relation-only"):
-        report.load_records()
+        report.load_records(source)
