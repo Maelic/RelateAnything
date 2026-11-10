@@ -147,7 +147,7 @@ ground-truth object-category pairs, using no pixels, beats a trained model on
 the most reported metric while losing to it by a wide margin per predicate:
 
 | benchmark | edges | freq, micro | ours, micro | freq, macro | ours, macro |
-|---|---|---|---|---|---|---|
+|---|---|---|---|---|---|
 | VG150 | 152,535 | **68.4** | 57.7 (−15.6 %) | 18.9 | **35.1** (+85.7 %) |
 | PSG | 13,623 | **50.9** | 43.3 (−15.0 %) | 20.7 | **31.6** (+52.4 %) |
 | IndoorVG | 29,175 | **67.9** | 57.3 (−15.5 %) | 29.8 | **38.4** (+28.9 %) |
