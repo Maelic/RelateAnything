@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from pathlib import Path
 import sys
 
 import numpy as np
@@ -73,7 +74,17 @@ class DetBoxDataset(Dataset):
                  weight_by_conf=True, split="val", det_masks="", cov_res=32,
                  min_area_frac=0.0):
         self.meta = json.load(open(os.path.join(root, split, "meta.json")))
-        self.img_dir = self.meta["img_dir"]
+        self.img_dir = Path(self.meta["img_dir"])
+        if not self.img_dir.exists():
+            # update the image directory if the RA_DATASETS environment variable is set
+            datasets_root = os.environ.get("RA_DATASETS")
+            if datasets_root:
+                # Use the original path when setup has already relocated the pack.
+                parts = Path(self.meta.get("img_dir_built", self.meta["img_dir"])).parts
+                anchors = [i for i, part in enumerate(parts) if part.lower() == "datasets"]
+                if anchors:
+                    self.img_dir = Path(datasets_root, *parts[anchors[-1] + 1:])
+                    
         self.file_names = json.load(open(os.path.join(root, split, "file_names.json")))
         self.img_meta = np.load(os.path.join(root, split, "img_meta.npy"))
         self.boxes = np.load(os.path.join(root, split, "boxes.npy"), mmap_mode="r")

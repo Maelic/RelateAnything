@@ -26,6 +26,7 @@ silently falsifies.
 from __future__ import annotations
 
 import json
+import os
 import random
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
@@ -129,6 +130,15 @@ class RelationDataset(Dataset):
 )
         self.meta = json.load(open(meta_path))
         self.img_dir = Path(self.meta["img_dir"])
+        if not self.img_dir.exists():
+            # update the image directory if the RA_DATASETS environment variable is set
+            datasets_root = os.environ.get("RA_DATASETS")
+            if datasets_root:
+                # Use the original path when setup has already relocated the pack.
+                parts = Path(self.meta.get("img_dir_built", self.meta["img_dir"])).parts
+                anchors = [i for i, part in enumerate(parts) if part.lower() == "datasets"]
+                if anchors:
+                    self.img_dir = Path(datasets_root, *parts[anchors[-1] + 1:])
         self.resolution = resolution
         self.max_objects = max_objects
         self.geometric_weight = geometric_weight

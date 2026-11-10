@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from pathlib import Path
 
@@ -111,6 +112,15 @@ class Pack:
         self.boxes = np.load(self.root / "boxes.npy", mmap_mode="r")
         self.box_cats = np.load(self.root / "box_cats.npy", mmap_mode="r")
         self.img_dir = Path(self.meta["img_dir"])
+        if not self.img_dir.exists():
+            # update the image directory if the RA_DATASETS environment variable is set
+            datasets_root = os.environ.get("RA_DATASETS")
+            if datasets_root:
+                # Use the original path when setup has already relocated the pack.
+                parts = Path(self.meta.get("img_dir_built", self.meta["img_dir"])).parts
+                anchors = [i for i, part in enumerate(parts) if part.lower() == "datasets"]
+                if anchors:
+                    self.img_dir = Path(datasets_root, *parts[anchors[-1] + 1:])
         self.predicates = list(self.meta["predicates"])
         self.categories = list(self.meta["categories"])
 
