@@ -41,6 +41,7 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from relsgg.api import RelateAnything          # noqa: E402
+from relsgg.paths import resolve_img_dir  # noqa: E402
 from relsgg.checkpoint import build_model_from_ckpt  # noqa: E402
 
 os.environ.setdefault("YOLO_AUTOINSTALL", "false")
@@ -238,7 +239,7 @@ def main() -> None:
 
     meta = json.load(open(os.path.join(args.data_root, args.split, "meta.json")))
     file_names = json.load(open(os.path.join(args.data_root, args.split, "file_names.json")))
-    img_dir = meta["img_dir"]
+    img_dir = str(resolve_img_dir(meta))
     categories = meta["categories"]
     print(f"[render] {len(file_names)} images in {args.split}, {len(categories)} MEGASG object classes")
 

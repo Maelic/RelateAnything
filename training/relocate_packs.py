@@ -18,15 +18,10 @@ import argparse
 import json
 import os
 import sys
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
-
-def relocated(img_dir: str, root: str) -> str:
-    parts = PurePosixPath(img_dir).parts
-    hits = [i for i, p in enumerate(parts) if p.lower() == "datasets"]
-    if not hits:
-        raise ValueError(f"no 'datasets' component in {img_dir!r}")
-    return str(Path(root, *parts[hits[-1] + 1:]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from relsgg.paths import relocated  # noqa: E402,F401  (re-exported: setup_data imports it from here)
 
 
 def main() -> None:

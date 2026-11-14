@@ -19,6 +19,7 @@ import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
+from relsgg.paths import resolve_img_dir  # noqa: E402
 os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
 
@@ -42,7 +43,7 @@ def main():
 
     meta = json.load(open(os.path.join(a.pack, "meta.json")))
     names = json.load(open(os.path.join(a.pack, "file_names.json")))
-    frames = [cv2.imread(os.path.join(meta["img_dir"], n))
+    frames = [cv2.imread(os.path.join(resolve_img_dir(meta), n))
               for n in names[: a.warmup + a.n]]
     frames = [f for f in frames if f is not None]
 

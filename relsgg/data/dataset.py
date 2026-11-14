@@ -28,6 +28,8 @@ from __future__ import annotations
 import json
 import random
 from pathlib import Path
+
+from ..paths import resolve_img_dir
 from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
@@ -128,7 +130,7 @@ class RelationDataset(Dataset):
                 f"(see training/pack_megasg.py --help)"
 )
         self.meta = json.load(open(meta_path))
-        self.img_dir = Path(self.meta["img_dir"])
+        self.img_dir = resolve_img_dir(self.meta)
         self.resolution = resolution
         self.max_objects = max_objects
         self.geometric_weight = geometric_weight

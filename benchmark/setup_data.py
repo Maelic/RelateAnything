@@ -19,8 +19,12 @@ Resumable: finished sources are skipped. Images come from their sources:
 | PSG          | A1, A3, A4, A5 | maelic/PSG-coco-format (test)       | 0.4 GB |
 | IndoorVG     | A1, A3 | maelic/IndoorVG-coco-format (test)          | 0.5 GB |
 | HICO-DET     | A1, A2 | maelic/HICO-DET-coco-format (test)          | 1.1 GB |
-| Haystack     | A2     | the authors' SA-1B subset (SA-1B license)   | 7.7 GB |
-| SpatialSense | A6     | Zenodo record 8104370                       | 1.8 GB |
+| Haystack     | A2     | maelic/Haystack-coco-format (test)          | 7.7 GB |
+| SpatialSense | A6     | maelic/SpatialSense-coco-format (test, val) | 1.8 GB |
+
+Haystack (Lorenz et al., ICCVW 2023) and SpatialSense (Yang et al., ICCV 2019) are mirrored on
+the Hub because Haystack's original download location no longer answers; their images keep their
+original bytes and licenses (SA-1B Dataset Research License; CC BY 2.0), stated on each card.
 """
 
 from __future__ import annotations
@@ -29,11 +33,7 @@ import argparse
 import io
 import json
 import os
-import shutil
 import sys
-import tarfile
-import urllib.request
-import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -41,8 +41,6 @@ sys.path.insert(0, str(REPO))
 from relsgg.paths import DATASETS, DATAMIX, PACKED, RUNS  # noqa: E402
 
 BENCH_REPO = "maelic/OV-SGG-Bench"
-HAYSTACK_URL = "https://myweb.rz.uni-augsburg.de/~lorenjul/haystack/v1/sa1b-subset.zip"
-SPATIALSENSE_URL = "https://zenodo.org/api/records/8104370/files/images.tar.gz/content"
 
 # source -> (packs whose images it provides, folder under $RA_DATASETS)
 SOURCES = {
@@ -120,11 +118,17 @@ def wanted_names(packs: list[str]) -> set[str]:
 
 
 def from_parquet(
-    repo: str, splits: list[str], out: Path, keep: set[str], reencode: bool = False
+    repo: str,
+    splits: list[str],
+    out: Path,
+    keep: set[str],
+    reencode: bool = False,
+    name_prefix: str = "",
 ) -> None:
     """Write the images of `keep` from the parquet shards of a dataset's `splits`;
     shards are deleted after use. `reencode` writes RGB JPEG at quality 95, as the
     HICO-DET packs' copies were made; otherwise the bytes are written unchanged.
+    `name_prefix` is removed from the dataset's `file_name` to obtain the pack's name.
     """
     import pyarrow.parquet as pq
     from huggingface_hub import HfApi, hf_hub_download
@@ -149,8 +153,10 @@ def from_parquet(
             images = batch.column("image").to_pylist()
             names = batch.column("file_name").to_pylist()
             for name, im in zip(names, images):
+                name = name.removeprefix(name_prefix)
                 if name not in todo:
                     continue
+                (out / name).parent.mkdir(parents=True, exist_ok=True)
                 tmp = out / (name + ".part")
                 if reencode:
                     from PIL import Image
@@ -173,59 +179,6 @@ def from_parquet(
         )
 
 
-def download(url: str, dst: Path) -> None:
-    """Resumable HTTP download; only a complete file gets the final name."""
-    if dst.exists():
-        return
-    part = dst.with_suffix(dst.suffix + ".part")
-    done = part.stat().st_size if part.exists() else 0
-    req = urllib.request.Request(
-        url, headers={"Range": f"bytes={done}-"} if done else {}
-    )
-    with urllib.request.urlopen(req, timeout=120) as r:
-        if done and r.status != 206:  # the server ignored the range: start over
-            done = 0
-        total = done + int(r.headers.get("Content-Length", 0))
-        with open(part, "ab" if done else "wb") as f:
-            while chunk := r.read(1 << 22):
-                f.write(chunk)
-                done += len(chunk)
-                print(
-                    f"\r[download] {dst.name}: {done / 1e9:.2f}/{total / 1e9:.2f} GB",
-                    end="",
-                    flush=True,
-                )
-    print()
-    os.replace(part, dst)
-
-
-def from_archive(url: str, out: Path, marker_dir: str) -> None:
-    """Download an archive and move the folder holding `marker_dir` (a glob) to `out`."""
-    if (out / ".complete").exists():
-        return
-    tmp = DATASETS / ".download"
-    tmp.mkdir(parents=True, exist_ok=True)
-    arc = tmp / url.rstrip("/").split("/")[-1 if not url.endswith("/content") else -2]
-    download(url, arc)
-    unpack = tmp / (arc.name + ".unpacked")
-    shutil.rmtree(unpack, ignore_errors=True)
-    print(f"[images] unpacking {arc.name}")
-    if zipfile.is_zipfile(arc):
-        zipfile.ZipFile(arc).extractall(unpack)
-    else:
-        with tarfile.open(arc) as t:
-            t.extractall(unpack, filter="data")
-    hits = [p for p in unpack.rglob(marker_dir) if p.is_dir()]
-    if not hits:
-        sys.exit(f"[images] {arc.name}: no {marker_dir} folder inside")
-    shutil.rmtree(out, ignore_errors=True)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    shutil.move(str(hits[0].parent), str(out))
-    shutil.rmtree(unpack, ignore_errors=True)
-    arc.unlink()
-    (out / ".complete").touch()
-
-
 def fetch_images(source: str) -> None:
     packs, folder = SOURCES[source]
     out = DATASETS / folder
@@ -246,29 +199,40 @@ def fetch_images(source: str) -> None:
             reencode=True,
         )
     elif source == "haystack":
-        from_archive(HAYSTACK_URL, out, "sa_0*")  # SA-1B shard folders
+        from_parquet("maelic/Haystack-coco-format", ["test"], out, wanted_names(packs))
     elif source == "spatialsense":
-        from_archive(SPATIALSENSE_URL, out, "flickr")
+        # the mirror keeps the archive's paths (images/flickr/...); the packs name flickr/...
+        from_parquet(
+            "maelic/SpatialSense-coco-format",
+            ["test", "validation"],
+            out,
+            wanted_names(packs),
+            name_prefix="images/",
+        )
 
 
 # ---------------------------------------------------------------- relocation
 def relocate_and_check(splits: list[tuple[str, str]]) -> int:
-    """Point every split of each (pack, split)'s pack at $RA_DATASETS
-    (training/relocate_packs.py), then count the images the named splits are missing."""
-    from training.relocate_packs import relocated
+    """Point every split of every pack at $RA_DATASETS, so packs of axes not requested now
+    are also ready later, then count the images the named splits are missing."""
+    from relsgg.paths import relocated
 
     root = str(DATASETS.resolve())
     missing = 0
-    for p in sorted({pack for pack, _ in splits}):
-        for meta_path in sorted((PACKED / p).glob("*/meta.json")):
-            meta = json.load(open(meta_path))
+    for meta_path in sorted(PACKED.glob("*/*/meta.json")):
+        meta = json.load(open(meta_path))
+        try:
             new = relocated(meta.get("img_dir_built", meta["img_dir"]), root)
-            if meta["img_dir"] != new:
-                meta.setdefault("img_dir_built", meta["img_dir"])
-                meta["img_dir"] = new
-                tmp = meta_path.with_suffix(".json.tmp")
-                json.dump(meta, open(tmp, "w"))
-                os.replace(tmp, meta_path)
+        except ValueError:
+            print(f"[relocate] {meta_path.parent}: no 'datasets' component in its "
+                  f"img_dir; left as is")
+            continue
+        if meta["img_dir"] != new:
+            meta.setdefault("img_dir_built", meta["img_dir"])
+            meta["img_dir"] = new
+            tmp = meta_path.with_suffix(".json.tmp")
+            json.dump(meta, open(tmp, "w"))
+            os.replace(tmp, meta_path)
     for p, split in splits:
         d = PACKED / p / split
         names = json.load(open(d / "file_names.json"))

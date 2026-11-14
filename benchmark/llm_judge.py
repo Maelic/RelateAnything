@@ -66,6 +66,9 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from relsgg.paths import resolve_img_dir  # noqa: E402
+
 REPO = Path(__file__).resolve().parents[2]
 
 RUBRIC = """You are grading two scene graphs produced by two different computer-vision \
@@ -311,7 +314,7 @@ def main():
     meta = json.loads((pack / "meta.json").read_text())
     cat_names = list(meta["categories"])
     file_names = json.loads((pack / "file_names.json").read_text())
-    img_dir = Path(meta["img_dir"])
+    img_dir = resolve_img_dir(meta)
 
     rowA = {int(v): i for i, v in enumerate(A["image_index"])}
     rowB = {int(v): i for i, v in enumerate(B["image_index"])}

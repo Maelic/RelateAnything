@@ -41,6 +41,7 @@ from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
+from relsgg.paths import resolve_img_dir  # noqa: E402
 os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
 
@@ -89,7 +90,7 @@ def main() -> None:
     meta = json.load(open(os.path.join(a.pack, "meta.json")))
     names = json.load(open(os.path.join(a.pack, "file_names.json")))
     preds, cats = meta["predicates"], meta["categories"]
-    paths = [os.path.join(meta["img_dir"], n)
+    paths = [os.path.join(resolve_img_dir(meta), n)
              for n in names[: a.num_warmup + a.num_images]]
     imgs = [Image.open(p).convert("RGB") for p in paths]
 

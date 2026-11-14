@@ -31,6 +31,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from relsgg.paths import resolve_img_dir  # noqa: E402
 from benchmark.llm_judge import load_npz, obj_labels, triplets  # noqa: E402
 
 # Distinct, colour-blind-safe marker colours cycled across the numbered boxes.
@@ -85,7 +86,7 @@ def main():
     meta = json.loads((pack / "meta.json").read_text())
     cat_names = list(meta["categories"])
     file_names = json.loads((pack / "file_names.json").read_text())
-    img_dir = Path(meta["img_dir"])
+    img_dir = resolve_img_dir(meta)
 
     rowA = {int(v): i for i, v in enumerate(A["image_index"])}
     rowB = {int(v): i for i, v in enumerate(B["image_index"])}
