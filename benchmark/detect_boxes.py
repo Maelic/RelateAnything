@@ -13,9 +13,13 @@ Usage:
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from relsgg.paths import resolve_img_dir  # noqa: E402
 
 os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
@@ -55,7 +59,7 @@ def main():
     pack = Path(args.pack)
     meta = json.load(open(pack / "meta.json"))
     file_names = json.load(open(pack / "file_names.json"))
-    img_dir = Path(meta["img_dir"])
+    img_dir = resolve_img_dir(meta)
     paths = [str(img_dir / f) for f in file_names]
     if args.limit:
         paths = paths[: args.limit]

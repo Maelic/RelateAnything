@@ -22,6 +22,7 @@ from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
+from relsgg.paths import resolve_img_dir  # noqa: E402
 os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
 
@@ -46,7 +47,7 @@ def main() -> None:
     meta = json.load(open(os.path.join(args.pack, "meta.json")))
     names = json.load(open(os.path.join(args.pack, "file_names.json")))
     preds = meta["predicates"]
-    paths = [os.path.join(meta["img_dir"], n) for n in names[: args.num_warmup + args.num_images]]
+    paths = [os.path.join(resolve_img_dir(meta), n) for n in names[: args.num_warmup + args.num_images]]
 
     dev = torch.device("cuda")
     det = YOLO(args.det)

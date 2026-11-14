@@ -30,9 +30,14 @@ import argparse
 import json
 import os
 import re
+import sys
+from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from relsgg.paths import resolve_img_dir  # noqa: E402
 
 WEAR_RX = re.compile(r"wear|dressed in|has on|clothed", re.I)
 PALETTE = [(230, 159, 0), (86, 180, 233), (0, 158, 115), (213, 94, 0),
@@ -151,7 +156,7 @@ def main():
 
     A, B = load(a.dumps[0]), load(a.dumps[1])
     meta = json.load(open(f"{a.pack}/meta.json"))
-    catnames, img_dir = meta["categories"], meta["img_dir"]
+    catnames, img_dir = meta["categories"], str(resolve_img_dir(meta))
     names = A["names"]
     rx = re.compile(a.focus, re.I)
     foc = np.array([bool(rx.search(n)) for n in names])

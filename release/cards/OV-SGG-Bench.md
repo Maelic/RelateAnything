@@ -66,8 +66,9 @@ python benchmark/run_benchmark.py --checkpoint maelic/relsgg-vits16plus
 
 `setup_data.py --axes a1 a4 a6` downloads only the images those axes read. The images come
 from their sources (VG150, PSG and IndoorVG from `maelic/*-coco-format`, HICO-DET from
-`maelic/HICO-DET-coco-format`, Haystack from its authors, SpatialSense from Zenodo); none are
-redistributed here. Each pack's `meta.json` records `img_dir` as `datasets/<source>/<split>`,
+`maelic/HICO-DET-coco-format`, Haystack from `maelic/Haystack-coco-format` and SpatialSense
+from `maelic/SpatialSense-coco-format`, mirrors of the authors' releases under their original
+licenses); none are redistributed in this dataset. Each pack's `meta.json` records `img_dir` as `datasets/<source>/<split>`,
 which `setup_data.py` re-roots at `$RA_DATASETS`.
 
 `run_benchmark.py` takes a Hugging Face model id or any checkpoint of the recipe and prints

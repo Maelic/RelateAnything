@@ -62,6 +62,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from relsgg.paths import resolve_img_dir  # noqa: E402
 from benchmark.llm_judge import load_npz, obj_labels, render, triplets   # noqa: E402
 
 RUBRIC = """You are checking ONE claimed relationship in a photograph.
@@ -433,7 +434,7 @@ def main():
     meta = json.loads((pack / "meta.json").read_text())
     cat_names = list(meta["categories"])
     file_names = json.loads((pack / "file_names.json").read_text())
-    img_dir = Path(meta["img_dir"])
+    img_dir = resolve_img_dir(meta)
 
     systems = []
     for spec in a.system:

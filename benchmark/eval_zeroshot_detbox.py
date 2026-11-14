@@ -44,6 +44,7 @@ from torch.utils.data import DataLoader, Dataset
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from relsgg.checkpoint import build_model_from_ckpt    # noqa: E402
+from relsgg.paths import resolve_img_dir  # noqa: E402
 from benchmark.eval_detboxes import cxcywh_to_xyxy, pairwise_iou, greedy_match  # noqa: E402
 from relsgg.eval.evaluator import SGClsEvaluator                  # noqa: E402
 from relsgg.training.engine import evaluate                     # noqa: E402
@@ -73,7 +74,7 @@ class DetBoxDataset(Dataset):
                  weight_by_conf=True, split="val", det_masks="", cov_res=32,
                  min_area_frac=0.0):
         self.meta = json.load(open(os.path.join(root, split, "meta.json")))
-        self.img_dir = self.meta["img_dir"]
+        self.img_dir = str(resolve_img_dir(self.meta))
         self.file_names = json.load(open(os.path.join(root, split, "file_names.json")))
         self.img_meta = np.load(os.path.join(root, split, "img_meta.npy"))
         self.boxes = np.load(os.path.join(root, split, "boxes.npy"), mmap_mode="r")

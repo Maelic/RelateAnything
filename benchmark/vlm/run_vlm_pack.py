@@ -11,10 +11,14 @@ from importlib import metadata
 import json
 from pathlib import Path
 import platform
+import sys
 import time
 
 import numpy as np
 from PIL import Image
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from relsgg.paths import resolve_img_dir  # noqa: E402
 
 if __package__:
     from .common import cxcywh_to_xyxy_abs, read_meta, sha256
@@ -72,7 +76,7 @@ def main() -> None:
                              args.num_shards, args.limit)
     if not len(indices):
         raise ValueError("No images selected")
-    image_root = Path(args.image_root or meta["img_dir"])
+    image_root = Path(args.image_root) if args.image_root else resolve_img_dir(meta)
     # Fail before loading a large model when images have not been relocated.
     for i in indices:
         if not (image_root / files[i]).is_file():

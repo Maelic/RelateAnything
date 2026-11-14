@@ -36,6 +36,7 @@ import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
+from relsgg.paths import resolve_img_dir  # noqa: E402
 os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
 # (label, backend, overlap, compile_mode)
@@ -167,7 +168,7 @@ def main():
     names = json.load(open(os.path.join(a.pack, "file_names.json")))
     frames = []
     for n in names[: a.num_warmup + a.num_images]:
-        f = cv2.imread(os.path.join(meta["img_dir"], n))
+        f = cv2.imread(os.path.join(resolve_img_dir(meta), n))
         if f is not None:
             frames.append(f)
     import torch

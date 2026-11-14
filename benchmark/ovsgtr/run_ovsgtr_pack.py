@@ -36,6 +36,7 @@ from PIL import Image
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from relsgg.paths import resolve_img_dir  # noqa: E402
 from benchmark.ovsgtr.ovsgtr_common import (OVSGTR_ROOT, build_prompts,  # noqa: E402
                                             install_vocabulary, load_ovsgtr,
                                             _ensure_ovsgtr_on_path)
@@ -110,7 +111,7 @@ class Pack:
         self.img_meta = np.load(self.root / "img_meta.npy")
         self.boxes = np.load(self.root / "boxes.npy", mmap_mode="r")
         self.box_cats = np.load(self.root / "box_cats.npy", mmap_mode="r")
-        self.img_dir = Path(self.meta["img_dir"])
+        self.img_dir = resolve_img_dir(self.meta)
         self.predicates = list(self.meta["predicates"])
         self.categories = list(self.meta["categories"])
 

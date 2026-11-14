@@ -97,12 +97,14 @@ there. A rerun resumes.
 | MegaSG images | [`maelic/RA-4M`](https://huggingface.co/datasets/maelic/RA-4M) (also `release/ra4m/export_images.py`) |
 | Visual Genome images (`vg_raw`, VG150), PSG, IndoorVG | `maelic/VG150-coco-format`, `maelic/PSG-coco-format`, `maelic/IndoorVG-coco-format` |
 | HICO-DET images | [`maelic/HICO-DET-coco-format`](https://huggingface.co/datasets/maelic/HICO-DET-coco-format) |
-| Haystack, SpatialSense images (evaluation only) | their authors' releases (SA-1B subset; Zenodo 8104370) |
+| Haystack, SpatialSense images (evaluation only) | [`maelic/Haystack-coco-format`](https://huggingface.co/datasets/maelic/Haystack-coco-format), [`maelic/SpatialSense-coco-format`](https://huggingface.co/datasets/maelic/SpatialSense-coco-format): mirrors of the authors' releases (SA-1B subset, SA-1B Dataset Research License; Zenodo 8104370, CC BY 2.0) |
 
 `training/setup_data.py --proxy` takes the 50,000-image development pack
 (`megasg_proxy50k`, 6 GB of MegaSG images instead of 43 GB) for runs on one GPU.
 A pack records the directory of its images (`meta.json: img_dir`); to move the
-images later, rerun the setup or `training/relocate_packs.py`.
+images later, rerun the setup or `training/relocate_packs.py`. If the recorded
+directory does not exist and `RA_DATASETS` is set, the loaders look for the images
+at the same place under `RA_DATASETS` and warn, naming both paths, if they are not there.
 
 ## The gated backbone (training only)
 

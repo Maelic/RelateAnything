@@ -41,10 +41,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from relsgg.paths import resolve_img_dir  # noqa: E402
 
 PACK_ROOT = Path("runs/packed")
 
@@ -64,7 +68,7 @@ def load_pack(spec: str):
     fn = json.load(open(p / "file_names.json"))
     im = np.load(p / "img_meta.npy")
     bx = np.load(p / "boxes.npy")
-    img_dir = json.load(open(p / "meta.json"))["img_dir"]
+    img_dir = str(resolve_img_dir(json.load(open(p / "meta.json"))))
     return fn, im, bx, Path(img_dir)
 
 
